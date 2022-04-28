@@ -1,6 +1,8 @@
 # hdlib
 Hyperdimensional Computing Library for building Vector Symbolic Architectures in Python 3.
 
+<img src="https://anaconda.org/conda-forge/hdlib/badges/version.svg"> <img src="https://anaconda.org/conda-forge/hdlib/badges/downloads.svg">
+
 ## Install
 
 It is available through `pip` and `conda`.
