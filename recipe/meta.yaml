@@ -28,7 +28,7 @@ test:
     - hdlib
 
 about:
-  home: https://github.com/fabio-cumbo/hdlib
+  home: https://github.com/cumbof/hdlib
   license: MIT
   license_family: MIT
   license_file: LICENSE
