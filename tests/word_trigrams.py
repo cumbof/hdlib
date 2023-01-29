@@ -2,7 +2,8 @@
 import nltk
 import nltk.corpus
 
-import hdlib
+from hdlib.space import Space, Vector
+from hdlib.arithmetic import bind, bundle, permute
 
 
 # I am trying to encode sequences of three words "quick brown fox"
