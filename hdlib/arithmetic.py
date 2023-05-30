@@ -1,9 +1,11 @@
-__authors__ = ('Fabio Cumbo (fabio.cumbo@gmail.com)')
-__version__ = '0.1.0'
-__date__ = 'Apr 24, 2022'
+"""
+Implementation of the arithmetic operators
+"""
 
 import numpy as np
+
 from hdlib.space import Vector
+
 
 def bundle(vector1: Vector, vector2: Vector) -> Vector:
     """
@@ -21,7 +23,7 @@ def bundle(vector1: Vector, vector2: Vector) -> Vector:
 
     if not isinstance(vector1, Vector) or not isinstance(vector2, Vector):
         raise TypeError("Input is not a valid Vector object")
-    
+
     if vector1.size != vector2.size:
         raise Exception("Vectors must have the same size")
 
