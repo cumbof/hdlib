@@ -16,7 +16,7 @@ conda install -c conda-forge hdlib
 
 ## Usage
 
-The `hdlib` library provides two main modules, `space` and `arithmetic`. The first one contains constructors of `Space` and `Vector` objects that can be used to build vectors and the space that hosts them. The second module, calle `arithmetic`, contains a bunch of functions to operate on vectors.
+The `hdlib` library provides two main modules, `space` and `arithmetic`. The first one contains constructors of `Space` and `Vector` objects that can be used to build vectors and the space that hosts them. The second module, called `arithmetic`, contains a bunch of functions to operate on vectors.
 
 ```python
 from hdlib.space import Space, Vector
@@ -58,16 +58,16 @@ space.bulkInsert(names)
 
 # Encode USA information in a single vector
 # USTATES = [(NAM * USA) + (CAP * WDC) + (MON * DOL)]
-USTATES_NAM = bind(space.get("NAM"), space.get("USA")) # Bind NAM with USA
-USTATES_CAP = bind(space.get("CAP"), space.get("WDC")) # Bind CAP with WDC
-USTATES_MON = bind(space.get("MON"), space.get("DOL")) # Bind MON with DOL
+USTATES_NAM = bind(space.get(names=["NAM"])[0], space.get(names=["USA"])[0]) # Bind NAM with USA
+USTATES_CAP = bind(space.get(names=["CAP"])[0], space.get(names=["WDC"])[0]) # Bind CAP with WDC
+USTATES_MON = bind(space.get(names=["MON"])[0], space.get(names=["DOL"])[0]) # Bind MON with DOL
 USTATES = bundle(bundle(USTATES_NAM, USTATES_CAP), USTATES_MON) # Bundle USTATES_NAM, USTATES_CAP, and USTATES_MON
 
 # Repeat the last step to encode MEX information in a single vector
 # MEXICO = [(NAM * MEX) + (CAP * MXC) + (MON * PES)]
-MEXICO_NAM = bind(space.get("NAM"), space.get("MEX")) # Bind NAM with MEX
-MEXICO_CAP = bind(space.get("CAP"), space.get("MXC")) # Bind CAP with MXC
-MEXICO_MON = bind(space.get("MON"), space.get("PES")) # Bind MON with PES
+MEXICO_NAM = bind(space.get(names=["NAM"])[0], space.get(names=["MEX"])[0]) # Bind NAM with MEX
+MEXICO_CAP = bind(space.get(names=["CAP"])[0], space.get(names=["MXC"])[0]) # Bind CAP with MXC
+MEXICO_MON = bind(space.get(names=["MON"])[0], space.get(names=["PES"])[0]) # Bind MON with PES
 MEXICO = bundle(bundle(MEXICO_NAM, MEXICO_CAP), MEXICO_MON) # Bundle MEXICO_NAM, MEXICO_CAP, and MEXICO_MON
 ```
 
@@ -85,7 +85,7 @@ In order to retrieve the Monetary Unit that in Mexico corresponds to Dollar:
 #            = [noise1 + noise2 + PES + noise3]
 #            = [PES + noise4]
 #            ≈ PES
-GUESS_PES = bind(space.get("DOL"), F_UM)
+GUESS_PES = bind(space.get(names=["DOL"])[0], F_UM)
 ```
 
 Finally answer the question by searching for the closest vector in space
