@@ -1,24 +1,37 @@
-__authors__ = ('Fabio Cumbo (fabio.cumbo@gmail.com)')
-__version__ = '0.1.0'
-__date__ = 'Apr 24, 2022'
+"""
+Implementation of hyperdimensional Vector and Space
+"""
 
+import os
+import pickle
 import uuid
+
 import numpy as np
-from typing import Tuple
+from typing import List, Optional, Tuple, Union
+
 
 class Vector(object):
     """
     Vector object
     """
 
-    def __init__(self, name: str=None, size: int=1000, vector: np.ndarray=None, seed: int=None) -> None:
+    def __init__(
+        self,
+        name: Optional[str]=None,
+        size: int=1000,
+        vector: Optional[np.ndarray]=None,
+        tags: Optional[List[Union[str, int, float]]]=None,
+        seed: Optional[int]=None
+    ) -> "Vector":
         """
         Initialize a Vector object
 
         :param name:        Vector name or id
         :param size:        Vector size
         :param vector:      Vector as numpy.ndarray
+        :param tags:        Tags for grouping vectors
         :param seed:        Random seed for reproducibility
+        :return:            A Vector object
         """
 
         # Conditions on vector name or id
@@ -27,22 +40,30 @@ class Vector(object):
         try:
             if name is None:
                 name = str(uuid.uuid4())
+
             else:
                 name = str(name)
+
             self.name = name
+
         except:
             raise TypeError("Vector name must be an instance of a primitive")
-        
+
         # Conditions on vector size
         # It must be an integer number greater than 1000
         if not isinstance(size, int):
             raise TypeError("Vector size must be an integer number")
+
         if size < 1000:
             raise ValueError("Vector size must be greater than 1000")
+
         self.size = size        
 
         # Register random seed for reproducibility 
         self.seed = seed
+
+        # Add tags
+        self.tags = tags if tags else list()
 
         # Conditions on vector
         # It must be a Numpy ndarray
@@ -52,22 +73,32 @@ class Vector(object):
                 raise TypeError("Vector must be an instance of numpy.ndarray")
 
             self.vector = vector
+
         else:
             if seed is None:
                 rand = np.random
+
             else:
                 # Conditions on random seed for reproducibility
                 # Numpy allows integers as random seeds
                 if not isinstance(seed, int):
                     raise TypeError("Seed must be an integer number")
-                
+
                 rand = np.random.default_rng(seed=self.seed)
-            
+
             # Build a random bipolar vector
             self.vector = 2*rand.randint(2, size=size)-1
-    
-    # Forward reference of Vector class
-    def dist(self, vector: 'Vector') -> float:
+
+    def __len__(self) -> int:
+        """
+        Get the vector size
+
+        :return:    The length of vector
+        """
+
+        return self.size
+
+    def dist(self, vector: "Vector") -> float:
         """
         Compute distance between vectors as cosine similarity
 
@@ -83,22 +114,38 @@ class Vector(object):
 
         return np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
 
+
 class Space(object):
     """
     Vectors space
     """
 
-    def __init__(self, size: int=1000) -> None:
+    def __init__(self, size: int=1000, from_file: Optional[os.path.abspath]=None) -> "Space":
         """
         Initialize the vectors space as a dictionary of Vector objects
 
-        :size:int:      Vector size
+        :param size:        Size of vectors in the space
+        :param from_file:   Load a space from file
+        :return:            A Space object
         """
 
         self.space = dict()
+
         self.size = size
 
-    def memory(self) -> list:
+        if from_file and os.path.isfile(from_file):
+            self.size, self.space = pickle.load(open(from_file, "rb"))
+
+    def __len__(self) -> int:
+        """
+        Get the space size
+
+        :return:    The number of vectors in the space
+        """
+
+        return len(self.space)
+
+    def memory(self) -> List[str]:
         """
         Return ids of vectors in space
 
@@ -107,22 +154,46 @@ class Space(object):
 
         return list(self.space.keys())
 
-    def get(self, name: str) -> Vector:
+    def get(
+        self,
+        names: Optional[List[str]]=None,
+        tags: Optional[List[Union[str, int, float]]]=None
+    ) -> List[Vector]:
         """
-        Get a vector from the space
+        Get vectors by names or tags
 
-        :param name:    Vector name or id
-        :return:        Vector in space
+        :param names:   List of vector names or IDs
+        :param tags:    List of tags
+        :return:        List of vectors in space
         """
+
+        if not names and not tags:
+            raise Exception("No names or tags provided!")            
 
         try:
-            name = str(name)
-            if name in self.space:
-                return self.space[name]
-            raise Exception("Vector not in space")
+            vectors = list()
+
+            if names:
+                names = [str(name) for name in names]
+
+                for vector_name in names:
+                    if vector_name in self.space:
+                        vectors.append(self.space[vector_name])
+
+            elif tags:
+                for tag in tags:
+                    if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
+                        raise TypeError("Tags must be string, integer, or float")
+
+                for vector_name in self.space:
+                    if set(tags).intersection(self.space[vector_name].tags):
+                        vectors.append(self.space[vector_name])
+
+            return vectors
+
         except:
             raise TypeError("Input must be an instance of a primitive")
-    
+
     def insert(self, vector: Vector) -> None:
         """
         Add a Vector object to the space
@@ -132,35 +203,57 @@ class Space(object):
 
         if not isinstance(vector, Vector):
             raise TypeError("Input must be a Vector object")
-        
+
         if self.size != vector.size:
             raise Exception("Space and vectors with different size are not compatible")
 
         if vector.name in self.space:
             raise Exception("Vector \"{}\" already in space".format(vector.name))
+
         self.space[vector.name] = vector
 
-    def bulkInsert(self, vectors: list, ignoreExisting: bool=True) -> None:
+    def bulkInsert(
+        self,
+        vectors: List[str],
+        tags: Optional[List[List[Union[str, int, float]]]]=None,
+        ignoreExisting: bool=True
+    ) -> None:
         """
         Add vectors to the space
 
-        :param vectors:     List of vector unique names or ids
+        :param vectors:         List of vector unique names or ids
+        :param tags:            List of tags with the same size of vectors: tags of vectors[i] is in tags[i]
+        :param ignoreExisting:  Do not throw an error in case a vector already exists in the space
         """
 
         if not isinstance(vectors, list):
-            raise TypeError("Input must be a list")
+            raise TypeError("Input must be a list of strings")
+
+        if tags and not isinstance(tags, list):
+            raise TypeError("tags must be a list of lists of strings")
+
+        if tags and len(vectors) != len(tags):
+            raise Exception("The number of vectors must match the size of the tags list")
 
         vectors = list(set(vectors))
-        for name in vectors:
+
+        for pos, name in enumerate(vectors):
             try:
                 name = str(name)
+
                 if name in self.space:
                     if not ignoreExisting:
                         raise Exception("Vector \"{}\" already in space".format(name))
+
                     else:
                         continue
-                vector = Vector(name=name, size=self.size)
+
+                vector_tags = tags[pos] if tags else list()
+
+                vector = Vector(name=name, size=self.size, tags=vector_tags)
+
                 self.space[vector.name] = vector
+
             except:
                 raise TypeError("Entries in input list must be instances of primitives")
 
@@ -174,14 +267,19 @@ class Space(object):
 
         try:
             name = str(name)
+
             if name in self.space:
-                vector = self.get(name)
+                vector = self.space[name]
+
                 del self.space[name]
+
                 return vector
+
             raise Exception("Vector not in space")
+
         except:
             raise TypeError("Input must be an instance of a primitive")
-    
+
     def find(self, vector: Vector, threshold: float=-1.0) -> Tuple[str, float]:
         """
         Search for the closest vector in space
@@ -194,6 +292,7 @@ class Space(object):
         # Exploit self.findAll() to seach for the best match
         # It will take care of raising exceptions in case of problems with input arguments
         distances, best = self.findAll(vector, threshold=threshold)
+
         return best, distances[best]
 
     def findAll(self, vector: Vector, threshold: float=-1.0) -> Tuple[dict, str]:
@@ -207,7 +306,7 @@ class Space(object):
 
         if not isinstance(vector, Vector):
             raise TypeError("Input must be a Vector object")
-        
+
         if self.size != vector.size:
             raise Exception("Space and vectors with different size are not compatible")
 
@@ -215,14 +314,39 @@ class Space(object):
             raise ValueError("Threshold cannot be lower than -1.0 or higher than 1.0")
 
         distances = dict()
+
         distance = -1.0
+
         best = None
+
         for v in self.space:
             # Compute cosine similarity
-            dist = self.get(v).dist(vector)
+            dist = self.space[v].dist(vector)
+
             if dist >= threshold:
                 distances[v] = dist
+
                 if distances[v] > distance:
                     best = v
+
                     distance = distances[v]
+
         return distances, best
+
+    def dump(self, to_file: Optional[os.path.abspath]=None) -> None:
+        """
+        Dump the hyperdimensional space to a pickle file
+
+        :param to_file:     Path to the output pickle file
+        """
+
+        if not to_file:
+            # Dump the space to a pickle file in the current working directory
+            # if not file path is provided
+            to_file = os.path.join(os.getcwd, "space.pkl")
+
+        if os.path.isfile(to_file):
+            raise Exception("The output file already exists!\n{}".format(to_file))
+
+        with open(to_file, "wb") as pkl:
+            pickle.dump((self.size, self.space), pkl)
