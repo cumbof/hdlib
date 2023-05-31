@@ -138,18 +138,32 @@ class Vector(object):
 
         return self.size
 
-    def dist(self, vector: "Vector") -> float:
+    def dist(self, vector: "Vector", method: str="cosine") -> float:
         """
-        Compute distance between vectors as cosine similarity
+        Compute distance between vectors
 
         :param vector:      Vector object
-        :return:            Cosine similarity
+        :param method:      Distance method: cosine, hamming, euclidean
+        :return:            Distance
         """
 
         if self.size != vector.size:
             raise Exception("Vectors must have the same size")
 
-        return np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
+        if self.vtype != vector.vtype:
+            raise Exception("Vectors must be of the same type")
+
+        if method.lower() == "cosine":
+            return np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
+
+        elif method.lower() == "hamming":
+            return np.count_nonzero(self.vector != vector.vector)
+
+        elif method.lower() == "euclidean":
+            return np.linalg.norm(self.vector - vector.vector)
+
+        else:
+            raise ValueError("Distance method \"{}\" is not supported".format(method))
 
     def dump(self, to_file: Optional[os.path.abspath]=None) -> None:
         """
@@ -428,27 +442,29 @@ class Space(object):
             if not self.tags[tag]:
                 del self.tags[tag]
 
-    def find(self, vector: Vector, threshold: float=-1.0) -> Tuple[str, float]:
+    def find(self, vector: Vector, threshold: float=-1.0, method: str="cosine") -> Tuple[str, float]:
         """
         Search for the closest vector in space
 
         :param vector:      Vector object
         :param threshold:   Do not consider entries in memory with a distance lower than this threshold
+        :param method:      Distance method: cosine, hamming, euclidean
         :return:            Name of the closest vector in space and its distance from the input vector
         """
 
         # Exploit self.findAll() to seach for the best match
         # It will take care of raising exceptions in case of problems with input arguments
-        distances, best = self.findAll(vector, threshold=threshold)
+        distances, best = self.findAll(vector, threshold=threshold, method=method)
 
         return best, distances[best]
 
-    def findAll(self, vector: Vector, threshold: float=-1.0) -> Tuple[dict, str]:
+    def findAll(self, vector: Vector, threshold: float=-1.0, method: str="cosine") -> Tuple[dict, str]:
         """
         Compute distance of the input vector against all vectors in space
 
         :param vector:      Vector object
         :param threshold:   Do not consider entries in memory with a distance lower than this threshold
+        :param method:      Distance method: cosine, hamming, euclidean
         :return:            Dictionary with distances of the input vector against all the other vectors in space, and the name of the closest vector in space
         """
 
@@ -465,8 +481,8 @@ class Space(object):
         best = None
 
         for v in self.space:
-            # Compute cosine similarity
-            dist = self.space[v].dist(vector)
+            # Compute distance
+            dist = self.space[v].dist(vector, method=method)
 
             if dist >= threshold:
                 distances[v] = dist
