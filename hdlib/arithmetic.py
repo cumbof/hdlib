@@ -14,7 +14,7 @@ def bundle(vector1: Vector, vector2: Vector) -> Vector:
     Properties:
     > The resulting vector is similar to the input vectors
     > The more vectors are involved in bundling, the harder it is to determine the component vectors
-    > If several copies of any vector are included in bundling, the resulting vector is closer to the dominant vector than to the other component
+    > If several copies of any vector are included in bundling, the resulting vector is closer to the dominant vector than to the other components
 
     :param vector1:     Vector object
     :param vector2:     Vector object
@@ -41,7 +41,7 @@ def bind(vector1: Vector, vector2: Vector) -> Vector:
     Properties:
     > Invertible (unbind)
     > It distributes over bundling
-    > It preserves distance
+    > It preserves the distance
     > The resulting vector is dissimilar to the input vectors
 
     :param vector1:     Vector object
@@ -68,8 +68,8 @@ def permute(vector: Vector, rotateby: int=1) -> Vector:
 
     Properties:
     > Invertible
-    > It distribute over bundling and any elementwise operation
-    > It preserves distance
+    > It distributes over bundling and any elementwise operation
+    > It preserves the distance
     > The resulting vector is dissimilar to the input vectors
 
     :param vector:      Vector object
