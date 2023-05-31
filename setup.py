@@ -25,7 +25,7 @@ setuptools.setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     name="hdlib",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(include=["hdlib"], exclude=["test"]),
     python_requires=">=3",
     url="http://github.com/cumbof/hdlib",
     version=__version__,
