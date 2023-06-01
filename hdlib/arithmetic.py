@@ -29,7 +29,7 @@ def bundle(vector1: Vector, vector2: Vector) -> Vector:
 
     vector = vector1.vector + vector2.vector
 
-    tags = list(set(vector1.tags).union(set(vector2.tags)))
+    tags = set(vector1.tags).union(set(vector2.tags))
 
     return Vector(size=vector1.size, vector=vector, tags=tags, vtype=vector1.vtype, seed=vector1.seed)
 
@@ -57,12 +57,12 @@ def bind(vector1: Vector, vector2: Vector) -> Vector:
 
     vector = vector1.vector * vector2.vector
 
-    tags = list(set(vector1.tags).union(set(vector2.tags)))
+    tags = set(vector1.tags).union(set(vector2.tags))
 
     return Vector(size=vector1.size, vector=vector, tags=tags, vtype=vector1.vtype, seed=vector1.seed)
 
 
-def permute(vector: Vector, rotateby: int=1) -> Vector:
+def permute(vector: Vector, rotate_by: int=1) -> Vector:
     """
     Permute vector
 
@@ -73,10 +73,10 @@ def permute(vector: Vector, rotateby: int=1) -> Vector:
     > The resulting vector is dissimilar to the input vectors
 
     :param vector:      Vector object
-    :param rotateby:    How many rotations
-    :return:            Input vector rotated "rotateby" times
+    :param rotate_by:   How many rotations
+    :return:            Input vector rotated "rotate_by" times
     """
 
-    rolled = np.roll(vector.vector, rotateby, axis=0)
+    rolled = np.roll(vector.vector, rotate_by, axis=0)
 
     return Vector(size=vector.size, vector=rolled, tags=vector.tags, vtype=vector.vtype, seed=vector.seed)
