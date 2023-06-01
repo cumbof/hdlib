@@ -101,7 +101,7 @@ class TestHDLib(unittest.TestCase):
             # Check whether vector 5 is in the set of vectors with tag "tag"
             # Vector names are automatically converted to strings
             self.assertTrue("5" in space.tags["tag"])
-        
+
         # Remove the tag from vector 5
         space.remove_tag(5, "tag")
 
