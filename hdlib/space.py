@@ -2,6 +2,7 @@
 Implementation of hyperdimensional Vector and Space
 """
 
+import errno
 import os
 import pickle
 import uuid
@@ -60,6 +61,12 @@ class Vector(object):
         # Register random seed for reproducibility 
         self.seed = seed
 
+        # Take track of the hdlib version
+        self.version = __version__
+
+        if tags and not isinstance(tags, set):
+            raise TypeError("Tags must be a set")
+
         # Add tags
         self.tags = tags if tags else set()
 
@@ -95,13 +102,17 @@ class Vector(object):
                 if warning:
                     print("Vector type can be binary or bipolar only")
 
-        elif from_file and os.path.isfile(from_file):
-            # Load vector from pickle file
-            with open(from_file, "rb") as pkl:
-                version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed = pickle.load(pkl)
+        elif from_file:
+            if not os.path.isfile(from_file):
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), from_file)
 
-            if version != __version__:
-                print("Warning: the specified Space has been created with a different version of hdlib")
+            else:
+                # Load vector from pickle file
+                with open(from_file, "rb") as pkl:
+                    self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed = pickle.load(pkl)
+
+                if self.version != __version__:
+                    print("Warning: the specified Space has been created with a different version of hdlib")
 
         else:
             # Conditions on vector size
@@ -147,6 +158,35 @@ class Vector(object):
         """
 
         return self.size
+
+    def __str__(self) -> None:
+        """
+        Print the Vector object properties
+        """
+
+        return """
+            Class:   hdlib.space.Vector
+            Version: {}
+            Name:    {}
+            Seed:    {}
+            Size:    {}
+            Type:    {}
+            Tags:
+            
+            {}
+            
+            Vector:
+
+            {}
+        """.format(
+            self.version,
+            self.name,
+            self.seed,
+            self.size,
+            self.vtype,
+            np.array(list(self.tags)),
+            self.vector
+        )
 
     def dist(self, vector: "Vector", method: str="cosine") -> float:
         """
@@ -202,7 +242,7 @@ class Vector(object):
             raise Exception("The output file already exists!\n{}".format(to_file))
 
         with open(to_file, "wb") as pkl:
-            pickle.dump((__version__, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed), pkl)
+            pickle.dump((self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed), pkl)
 
 
 class Space(object):
@@ -222,6 +262,8 @@ class Space(object):
 
         self.space = dict()
 
+        self.version = __version__
+
         self.size = size
 
         if self.size < 10000:
@@ -238,20 +280,24 @@ class Space(object):
         # Use this flag to mark a vector as root
         self.root = None
 
-        if from_file and os.path.isfile(from_file):
-            with open(from_file, "rb") as pkl:
-                version, self.size, self.vtype, self.space, self.root = pickle.load(pkl)
+        if from_file:
+            if not os.path.isfile(from_file):
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), from_file)
 
-            if version != __version__:
-                print("Warning: the specified Space has been created with a different version of hdlib")
+            else:
+                with open(from_file, "rb") as pkl:
+                    self.version, self.size, self.vtype, self.space, self.root = pickle.load(pkl)
 
-            for name in self.space:
-                if self.space[name].tags:
-                    for tag in self.space[name].tags:
-                        if tag not in self.tags:
-                            self.tags[tag] = set()
+                if self.version != __version__:
+                    print("Warning: the specified Space has been created with a different version of hdlib")
 
-                        self.tags[tag].add(name)
+                for name in self.space:
+                    if self.space[name].tags:
+                        for tag in self.space[name].tags:
+                            if tag not in self.tags:
+                                self.tags[tag] = set()
+
+                            self.tags[tag].add(name)
 
     def __len__(self) -> int:
         """
@@ -261,6 +307,33 @@ class Space(object):
         """
 
         return len(self.space)
+
+    def __str__(self) -> None:
+        """
+        Print the Vector object properties
+        """
+
+        return """
+            Class:   hdlib.space.Space
+            Version: {}
+            Size:    {}
+            Type:    {}
+            Vectors: {}
+            Tags:
+            
+            {}
+            
+            IDs:
+
+            {}
+        """.format(
+            self.version,
+            self.size,
+            self.vtype,
+            len(self.space),
+            np.array(list(self.tags.keys())),
+            np.array(list(self.space.keys()))
+        )
 
     def memory(self) -> List[str]:
         """
@@ -335,7 +408,7 @@ class Space(object):
 
             self.tags[tag].add(vector.name)
 
-    def bulkInsert(
+    def bulk_insert(
         self,
         names: List[str],
         tags: Optional[List[List[Union[str, int, float]]]]=None,
@@ -583,4 +656,4 @@ class Space(object):
             raise Exception("The output file already exists!\n{}".format(to_file))
 
         with open(to_file, "wb") as pkl:
-            pickle.dump((__version__, self.size, self.vtype, self.space, self.root), pkl)
+            pickle.dump((self.version, self.size, self.vtype, self.space, self.root), pkl)
