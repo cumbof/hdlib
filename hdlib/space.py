@@ -9,6 +9,8 @@ import uuid
 import numpy as np
 from typing import List, Optional, Set, Tuple, Union
 
+from hdlib import __version__
+
 
 class Vector(object):
     """
@@ -29,7 +31,7 @@ class Vector(object):
         """
         Initialize a Vector object
 
-        :param name:        Vector name or id
+        :param name:        Vector name or ID
         :param size:        Vector size
         :param vector:      Vector as numpy.ndarray
         :param vtype:       Vector type: bipolar or binary
@@ -40,7 +42,7 @@ class Vector(object):
         :return:            A Vector object
         """
 
-        # Conditions on vector name or id
+        # Conditions on vector name or ID
         # Vector name is casted to string. For this reason, only Python primitives are allowed
         # A random name is assigned if not specified
         try:
@@ -61,8 +63,13 @@ class Vector(object):
         # Add tags
         self.tags = tags if tags else set()
 
+        # Add links
+        # Used to link Vectors by their names or IDs
+        self.parents = set()
+        self.children = set()
+
         # Conditions on vector
-        # It must be a Numpy ndarray
+        # It must be a numpy.ndarray
         # A random vector is generated if not specified
         if vector is not None:
             if not isinstance(vector, np.ndarray):
@@ -91,7 +98,10 @@ class Vector(object):
         elif from_file and os.path.isfile(from_file):
             # Load vector from pickle file
             with open(from_file, "rb") as pkl:
-                self.name, self.size, self.vector, self.vtype, self.tags, self.seed = pickle.load(pkl)
+                version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed = pickle.load(pkl)
+
+            if version != __version__:
+                print("Warning: the specified Space has been created with a different version of hdlib")
 
         else:
             # Conditions on vector size
@@ -116,7 +126,7 @@ class Vector(object):
 
             else:
                 # Conditions on random seed for reproducibility
-                # Numpy allows integers as random seeds
+                # numpy allows integers as random seeds
                 if not isinstance(seed, int):
                     raise TypeError("Seed must be an integer number")
 
@@ -165,6 +175,18 @@ class Vector(object):
         else:
             raise ValueError("Distance method \"{}\" is not supported".format(method))
 
+    def normalize(self) -> None:
+        """
+        Normalize a vector after a bind or bundle operation
+        """
+
+        if self.vtype not in ("bipolar", "binary"):
+            raise Exception("Vector type is not supported")
+
+        self.vector[self.vector > 0] = 1
+
+        self.vector[self.vector <= 0] = 0 if self.vtype == "binary" else -1
+
     def dump(self, to_file: Optional[os.path.abspath]=None) -> None:
         """
         Dump the hyperdimensional vector to a pickle file
@@ -173,15 +195,14 @@ class Vector(object):
         """
 
         if not to_file:
-            # Dump the vector to a pickle file in the current working directory
-            # if not file path is provided
+            # Dump the vector to a pickle file in the current working directory if not file path is provided
             to_file = os.path.join(os.getcwd, "{}.pkl".format(self.name))
 
         if os.path.isfile(to_file):
             raise Exception("The output file already exists!\n{}".format(to_file))
 
         with open(to_file, "wb") as pkl:
-            pickle.dump((self.name, self.size, self.vector, self.vtype, self.tags, self.seed), pkl)
+            pickle.dump((__version__, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed), pkl)
 
 
 class Space(object):
@@ -208,14 +229,21 @@ class Space(object):
 
         self.vtype = vtype.lower()
 
-        if self.vtype not in ["binary", "bipolar"]:
+        if self.vtype not in ("binary", "bipolar"):
             raise ValueError("Vector type not supported")
 
         self.tags = dict()
 
+        # Vector links can be used to define a tree structure
+        # Use this flag to mark a vector as root
+        self.root = None
+
         if from_file and os.path.isfile(from_file):
             with open(from_file, "rb") as pkl:
-                self.size, self.vtype, self.space = pickle.load(pkl)
+                version, self.size, self.vtype, self.space, self.root = pickle.load(pkl)
+
+            if version != __version__:
+                print("Warning: the specified Space has been created with a different version of hdlib")
 
             for name in self.space:
                 if self.space[name].tags:
@@ -236,9 +264,9 @@ class Space(object):
 
     def memory(self) -> List[str]:
         """
-        Return ids of vectors in space
+        Return names or IDs of vectors in space
 
-        :return:    Names or ids of vectors in space
+        :return:    Names or IDs of vectors in space
         """
 
         return list(self.space.keys())
@@ -264,7 +292,7 @@ class Space(object):
         if names:
             try:
                 names = [str(name) for name in names]
-            
+
             except:
                 raise TypeError("Vector name must be instance of a primitive")
 
@@ -309,30 +337,30 @@ class Space(object):
 
     def bulkInsert(
         self,
-        vectors: List[str],
+        names: List[str],
         tags: Optional[List[List[Union[str, int, float]]]]=None,
         ignoreExisting: bool=True
     ) -> None:
         """
         Add vectors to the space
 
-        :param vectors:         List of vector unique names or ids
+        :param names:           List of vector unique names or IDs
         :param tags:            List of tags with the same size of vectors: tags of vectors[i] is in tags[i]
         :param ignoreExisting:  Do not throw an error in case a vector already exists in the space
         """
 
-        if not isinstance(vectors, list):
+        if not isinstance(names, list):
             raise TypeError("Input must be a list of strings")
 
         if tags and not isinstance(tags, list):
             raise TypeError("tags must be a list of lists of strings")
 
-        if tags and len(vectors) != len(tags):
-            raise Exception("The number of vectors must match the size of the tags list")
+        if tags and len(names) != len(tags):
+            raise Exception("The number of vector IDs must match the size of the tags list")
 
-        vectors = list(set(vectors))
+        names = list(set(names))
 
-        for pos, name in enumerate(vectors):
+        for pos, name in enumerate(names):
             try:
                 name = str(name)
 
@@ -362,7 +390,7 @@ class Space(object):
         """
         Remove a vector from the space
 
-        :param name:    Vector name or id
+        :param name:    Vector name or ID
         :return:        Vector removed from the space
         """
 
@@ -430,7 +458,7 @@ class Space(object):
 
         if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
             raise TypeError("Tags must be string, integer, or float")
-        
+
         if name not in self.space:
             raise Exception("Vector not in space")
 
@@ -442,6 +470,52 @@ class Space(object):
             if not self.tags[tag]:
                 del self.tags[tag]
 
+    def link(self, name1: str, name2: str) -> None:
+        """
+        Link the current Vector object with another vector through its name.
+        Links are directed
+
+        :param name1:   Vector #1 name or ID
+        :param name2:   Vector #2 name or ID
+        """
+
+        try:
+            name1 = str(name1)
+
+            name2 = str(name2)
+
+        except:
+            raise TypeError("Vector name must be instance of a primitive")
+
+        if name1 not in self.space:
+            raise Exception("Vector \"{}\" not in space".format(name1))
+
+        if name2 not in self.space:
+            raise Exception("Vector \"{}\" not in space".format(name2))
+
+        self.space[name1].children.add(name2)
+
+        self.space[name2].parents.add(name1)
+
+    def set_root(self, name: str) -> None:
+        """
+        Vector links can be used to define a tree structure.
+        Set a specific vector as root
+
+        :param name:    Vector name or ID
+        """
+
+        try:
+            name = str(name)
+
+        except:
+            raise TypeError("Vector name must be instance of a primitive")
+
+        if name not in self.space:
+            raise Exception("Vector \"{}\" not in space".format(name))
+
+        self.root = name
+
     def find(self, vector: Vector, threshold: float=-1.0, method: str="cosine") -> Tuple[str, float]:
         """
         Search for the closest vector in space
@@ -452,13 +526,13 @@ class Space(object):
         :return:            Name of the closest vector in space and its distance from the input vector
         """
 
-        # Exploit self.findAll() to seach for the best match
+        # Exploit self.find_all() to seach for the best match
         # It will take care of raising exceptions in case of problems with input arguments
-        distances, best = self.findAll(vector, threshold=threshold, method=method)
+        distances, best = self.find_all(vector, threshold=threshold, method=method)
 
         return best, distances[best]
 
-    def findAll(self, vector: Vector, threshold: float=-1.0, method: str="cosine") -> Tuple[dict, str]:
+    def find_all(self, vector: Vector, threshold: float=-1.0, method: str="cosine") -> Tuple[dict, str]:
         """
         Compute distance of the input vector against all vectors in space
 
@@ -502,12 +576,11 @@ class Space(object):
         """
 
         if not to_file:
-            # Dump the space to a pickle file in the current working directory
-            # if not file path is provided
+            # Dump the space to a pickle file in the current working directory if not file path is provided
             to_file = os.path.join(os.getcwd, "space.pkl")
 
         if os.path.isfile(to_file):
             raise Exception("The output file already exists!\n{}".format(to_file))
 
         with open(to_file, "wb") as pkl:
-            pickle.dump((self.size, self.vtype, self.space), pkl)
+            pickle.dump((__version__, self.size, self.vtype, self.space, self.root), pkl)
