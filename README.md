@@ -9,7 +9,7 @@ Hyperdimensional Computing Library for building Vector Symbolic Architectures in
 It is available through `pip` and `conda`.
 Please, use one of the following commands to start playing with `hdlib`:
 
-```
+```bash
 # Install with pip
 pip install hdlib
 
@@ -99,12 +99,14 @@ Here is the list of Space class methods:
 | `memory`     |                                                 | Return a list with Vector IDs |
 | `get`        | `names: list, tags: list`                       | Return a list of Vector objects based on a list of Vector IDs or tags |
 | `insert`     | `vector: Vector`                                | Insert a Vector object into the Space |
-| `bulkInsert` | `vectors: list, tags: list`                     | Automatically create a Vector object for each of the ID in the input `vectors` list and finally insert them into the Space. Also tag vectors based on tags in the `tags` list of lists. Tags in position `i` are assigned to the Vector object whose name is in position `i` of the `vectors` list |
+| `bulkInsert` | `names: list, tags: list`                       | Automatically create a Vector object for each of the ID in the input `names` list and finally insert them into the Space. Also tag vectors based on tags in the `tags` list of lists. Tags in position `i` are assigned to the Vector object whose name is in position `i` of the `vectors` list |
 | `remove`     | `name: str`                                     | Remove a Vector object from the Space based on its ID |
 | `add_tag`    | `name: str, tag: str`                           | Assign a tag to a Vector object in the Space |
 | `remove_tag` | `name: str, tag: str`                           | Remove a tag to a Vector object in the Space |
+| `link`       | `name1: str, name2: str`                        | Link two vectors in the Space. Note that links are directed |
+| `set_root`   | `name: str`                                     | Vector links can be used to define a tree structure. Set a specific vector as root |
 | `find`       | `vector: Vector, threshold: float, method: str` | Given a specific Vector object, search for the closest Vector in the Space according to a specific distance metric: `cosine`, `hamming`, or `euclidean` |
-| `findAll`    | `vector: Vector, threshold: float, method: str` | Report the distance between the input Vector object and all the other Vectors in the Space |
+| `find_all`   | `vector: Vector, threshold: float, method: str` | Report the distance between the input Vector object and all the other Vectors in the Space |
 | `dump`       | `to_file: str`                                  | Dump the Space object to a pickle file |
 
 ### Arithmetic Operations
