@@ -6,9 +6,9 @@ import errno
 import os
 import pickle
 import uuid
+from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
-from typing import List, Optional, Set, Tuple, Union
 
 from hdlib import __version__
 
@@ -23,7 +23,7 @@ class Vector(object):
         name: Optional[str]=None,
         size: int=10000,
         vector: Optional[np.ndarray]=None,
-        vtype: Optional[str]="bipolar",
+        vtype: str="bipolar",
         tags: Optional[Set[Union[str, int, float]]]=None,
         seed: Optional[int]=None,
         warning: bool=False,
@@ -58,7 +58,7 @@ class Vector(object):
         except:
             raise TypeError("Vector name must be instance of a primitive")
 
-        # Register random seed for reproducibility 
+        # Register random seed for reproducibility
         self.seed = seed
 
         # Take track of the hdlib version
@@ -126,11 +126,11 @@ class Vector(object):
 
             self.size = size
 
-            # Add vector type
-            self.vtype = vtype.lower()
-
             if vtype not in ("bipolar", "binary"):
                 raise ValueError("Vector type can be binary or bipolar only")
+
+            # Add vector type
+            self.vtype = vtype.lower()
 
             if seed is None:
                 rand = np.random
@@ -227,6 +227,66 @@ class Vector(object):
 
         self.vector[self.vector <= 0] = 0 if self.vtype == "binary" else -1
 
+    def bind(self, vector: "Vector") -> None:
+        """
+        Bind vectors inplace
+        Refer to hdlib.arithmetic.bind
+
+        :param vector:  Vector object
+        """
+
+        # Import arithmetic.bind here to avoid circular imports
+        from hdlib.arithmetic import bind as bind_operator
+
+        self.__override_object(bind_operator(self, vector))
+
+    def bundle(self, vector: "Vector") -> None:
+        """
+        Bundle vectors inplace
+        Refer to hdlib.arithmetic.bundle
+
+        :param vector:  Vector object
+        """
+
+        # Import arithmetic.bundle here to avoid circular imports
+        from hdlib.arithmetic import bundle as bundle_operator
+
+        self.__override_object(bundle_operator(self, vector))
+    
+    def permute(self, rotate_by: int=1) -> None:
+        """
+        Permute vector inplace
+        Refer to hdlib.arithmetic.permute
+
+        :param rotate_by:   How many rotations
+        """
+
+        # Import arithmetic.permute here to avoid circular imports
+        from hdlib.arithmetic import permute as permute_operator
+
+        self.__override_object(permute_operator(self, rotate_by=rotate_by))
+
+    def __override_object(self, vector: "Vector") -> None:
+        """
+        Override the Vector object with another Vector object
+        This is a private method
+
+        :param vector:  Vector object
+        """
+
+        self.name = vector.name
+        self.size = vector.size
+        self.seed = vector.seed
+        self.tags = vector.tags
+
+        self.parent = vector.parent
+        self.children = vector.children
+
+        self.vtype = vector.vtype
+        self.vector = vector.vector
+
+        self.version = vector.version
+
     def dump(self, to_file: Optional[os.path.abspath]=None) -> None:
         """
         Dump the hyperdimensional vector to a pickle file
@@ -250,7 +310,7 @@ class Space(object):
     Vectors space
     """
 
-    def __init__(self, size: int=10000, vtype: Optional[str]="bipolar", from_file: Optional[os.path.abspath]=None) -> "Space":
+    def __init__(self, size: int=10000, vtype: str="bipolar", from_file: Optional[os.path.abspath]=None) -> "Space":
         """
         Initialize the vectors space as a dictionary of Vector objects
 
