@@ -80,7 +80,7 @@ class TestHDLib(unittest.TestCase):
         space = Space(vtype="bipolar")
 
         # Add 1000 vectors
-        space.bulkInsert(list(range(1000)))
+        space.bulk_insert(list(range(1000)))
 
         # Retrieve vector 0 and 1
         # Vector names are automatically converted to strings
@@ -155,7 +155,7 @@ class TestHDLib(unittest.TestCase):
 
         # Build a random bipolar vector for each feature and country information
         # Add vectors to the space
-        space.bulkInsert(names)
+        space.bulk_insert(names)
 
         # Encode USA information in a single vector
         # USTATES = [(NAM * USA) + (CAP * WDC) + (MON * DOL)]
