@@ -347,6 +347,8 @@ class Model(object):
 
             retraining_iterations += 1
 
+            retrain -= 1
+
         return test_indices, prediction
 
     def cross_val_predict(
