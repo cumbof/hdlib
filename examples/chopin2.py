@@ -154,7 +154,7 @@ def chopin2():
     accuracy_scores = list()
 
     for y_indices, y_pred in predictions:
-        y_true = [label for position, label in classes if position in y_indices]
+        y_true = [label for position, label in enumerate(classes) if position in y_indices]
 
         accuracy_scores.append(accuracy_score(y_true, y_pred))
 
