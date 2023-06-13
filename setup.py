@@ -19,13 +19,21 @@ setuptools.setup(
         "Topic :: Scientific/Engineering",
     ],
     description="Hyperdimensional Computing Library for building Vector Symbolic Architectures in Python",
-    install_requires=["numpy>=1.22.3"],
+    install_requires=[
+        "numpy>=1.22.3",
+        "scikit-learn>=1.2.2"
+    ],
     license="MIT",
     license_files=["LICENSE"],
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     name="hdlib",
     packages=setuptools.find_packages(include=["hdlib"], exclude=["test"]),
+    project_urls={
+        "Issues": "https://github.com/cumbof/hdlib/issues",
+        "Source": "https://github.com/cumbof/hdlib",
+        "Wiki": "https://github.com/cumbof/hdlib/wiki",
+    },
     python_requires=">=3",
     url="http://github.com/cumbof/hdlib",
     version=__version__,
