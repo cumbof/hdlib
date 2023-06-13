@@ -1,5 +1,16 @@
 # Changelog
 
+## Version 0.1.5
+
+[@cumbof/hdlib@0.1.5](https://github.com/cumbof/hdlib/releases/tag/0.1.5)
+
+### New features
+
+- Add `bind`, `bundle`, and `permute` as `Vector` class methods for applying arithmetic operations inplace;
+- Rename `split_dataset` in the `parser` module into `kfolds_split`;
+- Add `percentage_split` function to the `parser` module;
+- Integrate [chopin2](https://github.com/cumbof/chopin2) ML model into the `model` module withe the `Model` class.
+
 ## Version 0.1.4
 
 [@cumbof/hdlib@0.1.4](https://github.com/cumbof/hdlib/releases/tag/0.1.4)
