@@ -622,7 +622,7 @@ class Model(object):
         retrain: int=0,
         n_jobs: int=1,
         metric: str="accuracy",
-        threshold: float=60.0,
+        threshold: float=0.6,
         uncertainty: float=5.0,
     ) -> Tuple[Dict[str, int], float]:
         """
