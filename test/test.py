@@ -10,6 +10,8 @@ import tempfile
 import unittest
 
 import numpy as np
+from sklearn import datasets
+from sklearn.metrics import accuracy_score
 
 # Define the test root directory
 TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -23,6 +25,7 @@ sys.path.append(HDLIB_DIR)
 # Finally import the space, vector, and arithmetic operators
 from space import Space, Vector
 from arithmetic import bundle, bind, permute
+from model import Model
 
 
 class TestHDLib(unittest.TestCase):
@@ -132,6 +135,46 @@ class TestHDLib(unittest.TestCase):
 
             with self.subTest():
                 self.assertEqual(len(space), len(pickle_space))
+
+    def test_model(self):
+        """
+        Unit tests for hdlib/model.py:Model class
+        """
+
+        # Create a model with vector dimensionality 10000, vector type bipolar, and 10 levels
+        model = Model(size=10000, levels=10, vtype="bipolar")
+
+        # Use the IRIS dataset from sklearn
+        iris = datasets.load_iris()
+
+        # Get data points and classes
+        points = iris.data.tolist()
+        classes = iris.target.tolist()
+
+        # Fit the model
+        model.fit(points, classes)
+
+        with self.subTest():
+            # There should be N data points plus 10 level vectors in the space
+            self.assertEqual(len(model.space.memory()), len(points) + 10)
+
+        # 5-folds cross-validation
+        # 10 retraining iterations
+        predictions = model.cross_val_predict(points, classes, cv=5, retrain=10)
+
+        with self.subTest():
+            # There should be a prediction for each fold
+            self.assertEqual(len(predictions), 5)
+
+        # Collect the accuracy scores computed on each fold
+        scores = list()
+
+        for y_indices, y_pred in predictions:
+            y_true = [label for position, label in enumerate(classes) if position in y_indices]
+            accuracy = accuracy_score(y_true, y_pred)
+        
+            with self.subTest():
+                self.assertTrue(accuracy > 0.0)
 
     def test_dollar_of_mexico(self):
         """
