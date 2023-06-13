@@ -7,7 +7,7 @@ https://github.com/cumbof/chopin2
 __author__ = ("Fabio Cumbo (fabio.cumbo@gmail.com)")
 
 __version__ = "1.1.0"
-__date__ = "Jun 8, 2023"
+__date__ = "Jun 13, 2023"
 
 import argparse as ap
 import os
@@ -81,6 +81,18 @@ def read_params():
         type=int,
         default=0,
         help="Number of retraining iterations",
+    )
+    p.add_argument(
+        "--threshold",
+        type=float,
+        default=0.6,
+        help="Threshold on the accuracy score. Used in conjunction with --feature-selection",
+    )
+    p.add_argument(
+        "--uncertainty",
+        type=float,
+        default=5.0,
+        help="Uncertainty percentage. Used in conjunction with --feature-selection",
     )
     p.add_argument(
         "--nproc",
@@ -207,8 +219,8 @@ def chopin2():
             retrain=args.retrain,
             n_jobs=args.nproc,
             metric="accuracy",
-            threshold=60.0,
-            uncertainty=5.0
+            threshold=args.threshold,
+            uncertainty=args.uncertainty
         )
 
         # Print features in ascending order on their score
