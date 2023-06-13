@@ -1,13 +1,15 @@
 """
-Classification model
+Classification Model with Hyperdimensional Computing
 """
 
 import copy
+import itertools
 import multiprocessing as mp
 from functools import partial
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 from hdlib import __version__
 from hdlib.space import Space, Vector
@@ -23,17 +25,15 @@ class Model(object):
     def __init__(
         self,
         size: int=10000,
-        levels: Optional[int]=None,
+        levels: int=2,
         vtype: str="bipolar",
-        seed: Optional[int]=None,
     ) -> "Model":
         """
         Initialize a Model object
 
         :param size:        Vector size or dimensionality
-        :param levels:      Number of levels. Try to automatically establish a good number of levels if None
+        :param levels:      Number of levels
         :param vtype:       Vector type: bipolar or binary
-        :param seed:        Random seed for reproducibility
         :return:            A Model object
         """
 
@@ -61,9 +61,6 @@ class Model(object):
         # Register vectors type
         self.vtype = vtype.lower()
 
-        # Register random seed for reproducibility
-        self.seed = seed
-
         # Hyperdimensional space
         self.space = None
 
@@ -81,7 +78,6 @@ class Model(object):
         return """
             Class:   hdlib.model.Model
             Version: {}
-            Seed:    {}
             Size:    {}
             Type:    {}
             Levels:  {}
@@ -91,13 +87,88 @@ class Model(object):
             {}
         """.format(
             self.version,
-            self.seed,
             self.size,
             self.vtype,
             self.levels,
-            len(self.space.memory()) - self.levels,
+            len(self.space.memory()) - self.levels if self.space is not None else 0,
             np.array(list(self.classes))
         )
+
+    def init_fit_predict(
+        self,
+        size: int=10000,
+        levels: int=2,
+        vtype: str="bipolar",
+        points: Optional[List[List[float]]]=None,
+        labels: Optional[List[str]]=None,
+        cv: int=5,
+        distance_method: str="cosine",
+        retrain: int=0,
+        n_jobs: int=1,
+        metric: str="accuracy"
+    ) -> float:
+        """
+        Initialize a new Model, then fit and cross-validate it.
+        Used for size and levels hyperparameters tuning
+
+        :param size:            Vector size or dimensionality
+        :param levels:          Number of levels
+        :param vtype:           Vector type: bipolar or binary
+        :param points:          List of data points
+        :param labels:          Class labels
+        :param cv:              Number of folds for the cross validation
+        :param distance_method: Method used to compute the distance between vectors in the space
+                                Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
+        :param retrain:         Maximum number of retraining iterations
+        :param n_jobs:          Number of jobs for processing folds in parallel
+        :param metric:          Model score: accuracy, f1, precision, and recall
+        :return:                The dimensionality, the number of levels, and the model score
+        """
+
+        # Available score metrics
+        score_metrics = {
+            "accuracy": accuracy_score,
+            "f1": f1_score,
+            "precision": precision_score,
+            "recall": recall_score
+        }
+
+        metric = metric.lower()
+
+        if metric not in score_metrics:
+            raise ValueError("Score metric {} is not supported".format(metric))
+
+        # Generate a new Model
+        model = Model(size=size, levels=levels, vtype=vtype)
+
+        # Fit the model
+        model.fit(points, labels)
+
+        # Cross-validate the model
+        predictions = model.cross_val_predict(
+            points,
+            labels,
+            cv=cv,
+            distance_method=distance_method,
+            retrain=retrain,
+            n_jobs=n_jobs
+        )
+
+        # For each prediction, compute the score and return the average
+        scores = list()
+
+        for y_indices, y_pred in predictions:
+            y_true = [label for position, label in enumerate(labels) if position in y_indices]
+
+            if metric == "accuracy":
+                scores.append(score_metrics[metric](y_true, y_pred))
+
+            else:
+                avg = "micro" if len(set(labels)) > 2 else "binary"
+
+                scores.append(score_metrics[metric](y_true, y_pred, average=avg))
+
+        return size, levels, sum(scores) / len(scores)
 
     def fit(
         self,
@@ -105,7 +176,7 @@ class Model(object):
         labels: List[str],
     ) -> None:
         """
-        Build a vector-symbolic architecture
+        Build a vector-symbolic architecture.
         Define level vectors and encode samples
 
         :param points:  List of data points
@@ -225,16 +296,15 @@ class Model(object):
     def predict(
         self,
         test_indices: List[int],
-        exclude_points: Optional[List[int]]=None,
         distance_method: str="cosine",
         retrain: int=0
     ) -> Tuple[List[int], List[str]]:
         """
+        Supervised Learning.
         Predict the class labels of the data points in the test set
 
         :param test_indices:    Indices of data points in the list of points used with fit() to be used for testing the classification model.
-                                Note that all the other points will be used for training the model except those specified in exclude_points
-        :param exclude_points:  Optional list of indices of data points to exclude from the training set
+                                Note that all the other points will be used for training the model
         :param distance_method: Method used to compute the distance between vectors in the space
                                 Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
         :param retrain:         Maximum number of retraining iterations
@@ -247,9 +317,6 @@ class Model(object):
         # List with training vector names
         training_points = list()
 
-        if exclude_points is None:
-            exclude_points = list()
-
         # Retrieve test and training vector names from vectors in the space
         for vector_name in self.space.memory():
             if vector_name.startswith("point_"):
@@ -259,8 +326,7 @@ class Model(object):
                     test_points.append(vector_name)
 
                 else:
-                    if vector_id not in exclude_points:
-                        training_points.append(vector_name)
+                    training_points.append(vector_name)
 
         if len(test_points) != len(test_indices):
             raise Exception("Unable to retrieve all the test vectors in space")
@@ -355,7 +421,6 @@ class Model(object):
         self,
         points: List[List[float]],
         labels: List[str],
-        exclude_points: Optional[List[int]]=None,
         cv: int=5,
         distance_method: str="cosine",
         retrain: int=0,
@@ -366,7 +431,6 @@ class Model(object):
 
         :param points:          List with data points. Same used for fit()
         :param labels:          Class labels. Same used for fit()
-        :param exclude_points:  Optional list of indices of data points to exclude from the training set
         :param cv:              Number of folds for the cross validation
         :param distance_method: Method used to compute the distance between vectors in the space
                                 Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
@@ -374,10 +438,6 @@ class Model(object):
         :param n_jobs:          Number of jobs for processing folds in parallel
         :return:                A list with the result of predict() for each fold
         """
-
-        # TODO Excluded points must be removed before comparing the number of folds with the number of points
-        #      and before running kfolds_split(). Otherwise, it would potentially reduce the training and test sets
-        #      so that it does not make sense to run self.predict() anymore
 
         if len(points) != len(labels):
             raise Exception("The number of data points does not match with the number of class labels")
@@ -393,30 +453,289 @@ class Model(object):
 
         split_indices = kfolds_split(len(points), cv)
 
-        predict_partial = partial(
-            self.predict,
-            exclude_points=exclude_points,
-            distance_method=distance_method,
-            retrain=retrain
-        )
-
         # Collect results from every self.predict call
         predictions = list()
 
-        # Run prediction on folds in parallel
+        if n_jobs == 1:
+            for test_indices in split_indices:
+                predictions.append(self.predict(test_indices, distance_method=distance_method, retrain=retrain))
+
+        else:
+            predict_partial = partial(
+                self.predict,
+                distance_method=distance_method,
+                retrain=retrain
+            )
+
+            # Run prediction on folds in parallel
+            with mp.Pool(processes=n_jobs) as pool:
+                jobs = [
+                    pool.apply_async(
+                        predict_partial,
+                        args=(test_indices,)
+                    )
+                    for test_indices in split_indices
+                ]
+
+                # Get results from jobs
+                for job in jobs:
+                    test_indices, test_predictions = job.get()
+
+                    predictions.append((test_indices, test_predictions))
+
+        return predictions
+
+    def auto_tune(
+        self,
+        points: List[List[float]],
+        labels: List[str],
+        size_range: range,
+        levels_range: range,
+        cv: int=5,
+        distance_method: str="cosine",
+        retrain: int=0,
+        n_jobs: int=1,
+        metric: str="accuracy"
+    ) -> Tuple[int, int, float]:
+        """
+        Automated hyperparameters tuning.
+        Performe a Parameter Sweep Analysis (PSA) on space dimensionality and number of levels.
+        It returns the best size and levels according to the accuracies of the cross-validated models
+
+        :param points:          List of data points
+        :param labels:          Class labels
+        :param size_range:      Range of dimensionalities for performing PSA
+        :param levels_range:    Range of number of levels for performing PSA
+        :param cv:              Number of folds for the cross validation
+        :param distance_method: Method used to compute the distance between vectors in the space
+                                Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
+        :param retrain:         Maximum number of retraining iterations
+        :param n_jobs:          Number of jobs for processing models in parallel
+        :param metric:          Model score: accuracy, f1, precision, and recall
+        :return:                Best size, number of levels, and metric
+        """
+
+        partial_init_fit_predict = partial(
+            self.init_fit_predict,
+            vtype=self.vtype,
+            points=points,
+            labels=labels,
+            cv=cv,
+            distance_method=distance_method,
+            retrain=retrain,
+            n_jobs=1,
+            metric=metric
+        )
+
+        best_metric = None
+        best_size = None
+        best_levels = None
+
         with mp.Pool(processes=n_jobs) as pool:
             jobs = [
                 pool.apply_async(
-                    predict_partial,
-                    args=(test_indices,)
+                    partial_init_fit_predict,
+                    args=(size, levels,)
                 )
-                for test_indices in split_indices
+                for size, levels in list(itertools.product(size_range, levels_range)) \
+                    if size > len(points) and levels > 1
             ]
 
             # Get results from jobs
             for job in jobs:
-                test_indices, test_predictions = job.get()
+                job_size, job_levels, job_metric = job.get()
 
-                predictions.append((test_indices, test_predictions))
+                if best_metric is None:
+                    best_metric = job_metric
+                    best_size = job_size
+                    best_levels = job_levels
+                
+                else:
+                    if job_metric > best_metric:
+                        # Get the size and levels of the classification model with the best score metric
+                        best_metric = job_metric
+                        best_size = job_size
+                        best_levels = job_levels
+                    
+                    elif job_metric == best_metric:
+                        # Minimize the number of levels in this case
+                        if job_levels < best_levels:
+                            best_size = job_size
+                            best_levels = job_levels
+                        
+                        elif job_levels == best_levels:
+                            # Minimize the size in this case
+                            if job_size < best_size:
+                                best_size = job_size
 
-        return predictions
+        return best_size, best_levels, best_metric
+
+    def stepwise_regression_iter(
+        self,
+        features_indices: Set[int],
+        points: List[List[float]],
+        labels: List[str],
+        cv: int=5,
+        distance_method: str="cosine",
+        retrain: int=0,
+        metric: str="accuracy"
+    ) -> Tuple[List[List[float]], float]:
+        """
+        Just a single iteration of the feature selection method.
+
+        :param features_indices:    Indices of features for shaping points
+        :param points:              List of data points
+        :param labels:              Class labels
+        :param cv:                  Number of folds for the cross validation
+        :param distance_method:     Method used to compute the distance between vectors in the space
+                                    Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
+        :param retrain:             Maximum number of retraining iterations
+        :param metric:              Model score: accuracy, f1, precision, and recall
+        :return:                    The considered features and the score metric of the classification model
+        """
+
+        data_points = [[point[i] for i in range(len(point)) if i in features_indices] for point in points]
+
+        _, _, score = self.init_fit_predict(
+            size=self.size,
+            levels=self.levels,
+            vtype=self.vtype,
+            points=data_points,
+            labels=labels,
+            cv=cv,
+            distance_method=distance_method,
+            retrain=retrain,
+            n_jobs=1,
+            metric=metric
+        )
+
+        return features_indices, score
+
+    def stepwise_regression(
+        self,
+        points: List[List[float]],
+        features: List[str],
+        labels: List[str],
+        method: str="backward",
+        cv: int=5,
+        distance_method: str="cosine",
+        retrain: int=0,
+        n_jobs: int=1,
+        metric: str="accuracy",
+        threshold: float=60.0,
+        uncertainty: float=5.0,
+    ) -> Tuple[Dict[str, int], float]:
+        """
+        Stepwise feature selection as backward variable elimination or forward variable selection
+
+        :param points:              List of data points
+        :param features:            List of features
+        :param labels:              Class labels
+        :param method:              Type of stepwise regression: backward or forward
+        :param cv:                  Number of folds for the cross validation
+        :param distance_method:     Method used to compute the distance between vectors in the space
+                                    Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
+        :param retrain:             Maximum number of retraining iterations
+        :param n_jobs:              Number of jobs for processing models in parallel
+        :param metric:              Model score: accuracy, f1, precision, and recall
+        :param threshold:           Threshold on the model score metric
+                                    Stop running the feature selection if the best reached score is lower than this threshold
+        :param uncertainty:         Uncertainty threshold for comparing models accuracies
+        :return:                    A dictionary with features and their importance in addition to the best score
+                                    In case of backward, the lower the better. In case of forward, the higher the better
+        """
+
+        method = method.lower()
+
+        if method not in ("backward", "forward"):
+            raise ValueError("Stepwise method {} is not supported".format(method))
+
+        # Initialize the importance of features to 0
+        features_importance = {feature: 0 for feature in features}
+
+        features_indices = set(range(len(features)))
+
+        prev_score = 0.0
+
+        if method == "forward":
+            features_set_size = 1
+
+        while features_indices:
+            if method == "backward":
+                features_set_size = len(features_indices) - 1
+
+            if features_set_size > 0:
+                best_score = 0.0
+                classification_results = list()
+
+                partial_stepwise_regression_iter = partial(
+                    self.stepwise_regression_iter,
+                    points=points,
+                    labels=labels,
+                    cv=cv,
+                    distance_method=distance_method,
+                    retrain=retrain,
+                    metric=metric
+                )
+
+                with mp.Pool(processes=n_jobs) as pool:
+                    # Get all combinations of features of a given size
+                    jobs = [
+                        pool.apply_async(
+                            partial_stepwise_regression_iter,
+                            args=(features_set,)
+                        )
+                        for features_set in itertools.combinations(features_indices, features_set_size)
+                    ]
+
+                    # Get results from jobs
+                    for job in jobs:
+                        job_features_set, job_score = job.get()
+
+                        if job_score >= best_score:
+                            # Keep track of the best score
+                            best_score = job_score
+
+                        classification_results.append((job_features_set, job_score))
+
+                if best_score < threshold:
+                    break
+
+                if best_score < prev_score - (prev_score * uncertainty / 100.0):
+                    break
+
+                selection = set()
+
+                for features_set, score in classification_results:
+                    if score >= best_score - (best_score * uncertainty / 100.0):
+                        # Keep track of the missing features in models that reached the best score
+                        if method == "backward":
+                            selection.update(features_indices.difference(job_features_set))
+
+                        elif method == "forward":
+                            selection.update(job_features_set)
+
+                if method == "backward":
+                    # Keep decreasing the importance of worst features detected in previous iterations
+                    for feature in features_importance:
+                        if features_importance[feature] > 1:
+                            features_importance[feature] += 1
+
+                # Fix the importance of selected features
+                for feature_index in selection:
+                    features_importance[features[feature_index]] += 1
+
+                prev_score = best_score
+
+                if method == "backward":
+                    features_indices = features_indices.difference(selection)
+
+                elif method == "forward":
+                    features_indices = best_features
+
+                    features_set_size += 1
+
+                    if len(features_indices) < features_set_size:
+                        break
+
+        return features_importance, prev_score
