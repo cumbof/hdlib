@@ -13,7 +13,8 @@ import argparse as ap
 import os
 import time
 
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from tabulate import tabulate
 
 from hdlib.parser import load_dataset, percentage_split
 from hdlib.model import Model
@@ -69,6 +70,13 @@ def read_params():
         help="Percentage of data points for defining the test set",
     )
     p.add_argument(
+        "--feature-selection",
+        type=str.lower,
+        choices=["forward", "backward"],
+        dest="feature_selection",
+        help="Run the feature selection and report a ranking of features based on their importance",
+    )
+    p.add_argument(
         "--retrain",
         type=int,
         default=0,
@@ -78,7 +86,7 @@ def read_params():
         "--nproc",
         type=int,
         default=1,
-        help="Make it parallel",
+        help="Make it parallel when possible",
     )
     p.add_argument(
         "-v",
@@ -104,6 +112,9 @@ def chopin2():
     # Load command line parameters
     args = read_params()
 
+    if args.feature_selection and args.kfolds == 0:
+        raise Exception("The --feature-selection option can only be used in conjunction with --kfolds")
+
     if args.kfolds == 0 and args.test_percentage == 0.0:
         raise Exception(
             (
@@ -113,53 +124,103 @@ def chopin2():
             )
         )
 
+    if args.nproc < 1:
+        args.nproc = os.cpu_count()
+
     # Load the input matrix
     print("Loading dataset")
     
-    _, _, content, classes = load_dataset(args.input, sep=args.fieldsep)
+    _, features, content, classes = load_dataset(args.input, sep=args.fieldsep)
 
     # Initialise the model
     print("Building the HD model")
     
     model = Model(size=args.dimensionality, levels=args.levels, vtype="bipolar")
 
-    model.fit(content, classes)
+    if not args.feature_selection:
+        # Fit the model
+        model.fit(content, classes)
 
-    if args.kfolds > 0:
-        # Predict in cross-validation
-        print("Cross-validating model with {} folds".format(args.kfolds))
+        if args.kfolds > 0:
+            # Predict in cross-validation
+            print("Cross-validating model with {} folds".format(args.kfolds))
 
-        predictions = model.cross_val_predict(
+            predictions = model.cross_val_predict(
+                content,
+                classes,
+                cv=args.kfolds,
+                distance_method="cosine",
+                retrain=args.retrain,
+                n_jobs=args.nproc
+            )
+
+        elif args.test_percentage > 0.0:
+            # Predict with a percentage-split
+            print("Percentage-split: training={}% test={}%".format(100.0 - args.test_percentage, args.test_percentage))
+
+            test_indices = percentage_split(len(content), args.test_percentage)
+
+            predictions = [
+                model.predict(
+                    test_indices,
+                    distance_method="cosine",
+                    retrain=args.retrain
+                )
+            ]
+
+        # For each prediction, compute the accuracy, f1, precision, and recall
+        accuracy_scores = list()
+        f1_scores = list()
+        precision_scores = list()
+        recall_scores = list()
+
+        for y_indices, y_pred in predictions:
+            y_true = [label for position, label in enumerate(classes) if position in y_indices]
+
+            accuracy_scores.append(accuracy_score(y_true, y_pred))
+
+            f1_scores.append(f1_score(y_true, y_pred), average="micro")
+
+            precision_scores.append(precision_score(y_true, y_pred), average="micro")
+
+            recall_scores.append(recall_score(y_true, y_pred), average="micro")
+
+        print("Accuracy: {:.2f}".format(sum(accuracy_scores) / len(accuracy_scores)))
+
+        print("F1-Score: {:.2f}".format(sum(f1_scores) / len(f1_scores)))
+
+        print("Precision: {:.2f}".format(sum(precision_scores) / len(precision_scores)))
+
+        print("Recall: {:.2f}".format(sum(recall_scores) / len(recall_scores)))
+
+    else:
+        print("Selecting features.. This may take a while\n")
+
+        # Run the feature selection
+        importance, accuracy = model.stepwise_regression(
             content,
+            features,
             classes,
+            method=args.feature_selection,
             cv=args.kfolds,
             distance_method="cosine",
             retrain=args.retrain,
-            n_jobs=args.nproc
+            n_jobs=args.nproc,
+            metric="accuracy",
+            threshold=60.0,
+            uncertainty=5.0
         )
 
-    elif args.test_percentage > 0.0:
-        # Predict with a percentage-split
-        test_indices = percentage_split(len(content), args.test_percentage)
+        # Print features in ascending order on their score
+        # The smaller the better
+        table = [["Feature", "Importance"]]
 
-        predictions = [
-            model.predict(
-                test_indices,
-                distance_method="cosine",
-                retrain=args.retrain
-            )
-        ]
+        for feature in sorted(importance.keys(), key=lambda f: importance[f]):
+            table.append([feature, importance[feature]])
 
-    # For each prediction, compute the accuracy
-    accuracy_scores = list()
+        print(tabulate(table, headers="firstrow", tablefmt="fancy_grid"))
 
-    for y_indices, y_pred in predictions:
-        y_true = [label for position, label in enumerate(classes) if position in y_indices]
-
-        accuracy_scores.append(accuracy_score(y_true, y_pred))
-
-    print("Accuracy: {:.2f}".format(sum(accuracy_scores) / len(accuracy_scores)))
-
+        print("\nAccuracy: {:.2f}".format(accuracy))
 
 if __name__ == "__main__":
     t0 = time.time()
