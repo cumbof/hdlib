@@ -7,7 +7,7 @@ https://github.com/cumbof/chopin2
 __author__ = ("Fabio Cumbo (fabio.cumbo@gmail.com)")
 
 __version__ = "1.1.0"
-__date__ = "Jun 13, 2023"
+__date__ = "Jun 14, 2023"
 
 import argparse as ap
 import os
@@ -230,7 +230,7 @@ def chopin2():
         for feature in sorted(importance.keys(), key=lambda f: importance[f]):
             table.append([feature, importance[feature]])
 
-        print(tabulate(table, headers="firstrow", tablefmt="fancy_grid"))
+        print(tabulate(table, headers="firstrow", tablefmt="simple"))
 
         print("\nAccuracy: {:.2f}".format(accuracy))
 
