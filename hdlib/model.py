@@ -5,6 +5,7 @@ Classification Model with Hyperdimensional Computing
 import copy
 import itertools
 import multiprocessing as mp
+import statistics
 from functools import partial
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -624,6 +625,7 @@ class Model(object):
         metric: str="accuracy",
         threshold: float=0.6,
         uncertainty: float=5.0,
+        stop_if_worse: bool=False
     ) -> Tuple[Dict[str, int], float]:
         """
         Stepwise feature selection as backward variable elimination or forward variable selection
@@ -641,6 +643,7 @@ class Model(object):
         :param threshold:           Threshold on the model score metric
                                     Stop running the feature selection if the best reached score is lower than this threshold
         :param uncertainty:         Uncertainty threshold for comparing models accuracies
+        :param stop_if_worse:       Stop running the feature selection if the accuracy reached at the iteration i is lower than the accuracy reached at i-1
         :return:                    A dictionary with features and their importance in addition to the best score
                                     In case of backward, the lower the better. In case of forward, the higher the better
         """
@@ -701,31 +704,35 @@ class Model(object):
                 if best_score < threshold:
                     break
 
-                if best_score < prev_score - (prev_score * uncertainty / 100.0):
-                    break
+                if stop_if_worse:
+                    if best_score < prev_score - (prev_score * uncertainty / 100.0):
+                        break
 
                 selection = set()
+                best_scores = list()
 
                 for features_set, score in classification_results:
                     if score >= best_score - (best_score * uncertainty / 100.0):
                         # Keep track of the missing features in models that reached the best score
                         if method == "backward":
-                            selection.update(features_indices.difference(job_features_set))
+                            selection.update(features_indices.difference(features_set))
 
                         elif method == "forward":
-                            selection.update(job_features_set)
+                            selection.update(features_set)
+                        
+                        best_scores.append(score)
+
+                prev_score = statistics.mean(best_scores)
 
                 if method == "backward":
                     # Keep decreasing the importance of worst features detected in previous iterations
                     for feature in features_importance:
-                        if features_importance[feature] > 1:
+                        if features_importance[feature] >= 1:
                             features_importance[feature] += 1
 
                 # Fix the importance of selected features
                 for feature_index in selection:
                     features_importance[features[feature_index]] += 1
-
-                prev_score = best_score
 
                 if method == "backward":
                     features_indices = features_indices.difference(selection)
