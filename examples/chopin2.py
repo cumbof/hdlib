@@ -11,6 +11,7 @@ __date__ = "Jun 14, 2023"
 
 import argparse as ap
 import os
+import statistics
 import time
 
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
@@ -144,6 +145,8 @@ def chopin2():
     
     _, features, content, classes = load_dataset(args.input, sep=args.fieldsep)
 
+    print("Points: {}; Features {}; Classes {}".format(len(content), len(features), len(set(classes))))
+
     # Initialise the model
     print("Building the HD model")
     
@@ -176,7 +179,8 @@ def chopin2():
                 model.predict(
                     test_indices,
                     distance_method="cosine",
-                    retrain=args.retrain
+                    retrain=args.retrain,
+                    stop_if_worse=True
                 )
             ]
 
@@ -186,30 +190,30 @@ def chopin2():
         precision_scores = list()
         recall_scores = list()
 
-        for y_indices, y_pred in predictions:
+        retraining_iterations = list()
+
+        for y_indices, y_pred, retrainings in predictions:
             y_true = [label for position, label in enumerate(classes) if position in y_indices]
 
             accuracy_scores.append(accuracy_score(y_true, y_pred))
-
             f1_scores.append(f1_score(y_true, y_pred), average="micro")
-
             precision_scores.append(precision_score(y_true, y_pred), average="micro")
-
             recall_scores.append(recall_score(y_true, y_pred), average="micro")
 
-        print("Accuracy: {:.2f}".format(sum(accuracy_scores) / len(accuracy_scores)))
+            retraining_iterations.append(retrainings)
 
-        print("F1-Score: {:.2f}".format(sum(f1_scores) / len(f1_scores)))
+        print("Accuracy: {:.2f}".format(statistics.mean(accuracy_scores)))
+        print("F1-Score: {:.2f}".format(statistics.mean(f1_scores)))
+        print("Precision: {:.2f}".format(statistics.mean(precision_scores)))
+        print("Recall: {:.2f}".format(statistics.mean(recall_scores)))
 
-        print("Precision: {:.2f}".format(sum(precision_scores) / len(precision_scores)))
-
-        print("Recall: {:.2f}".format(sum(recall_scores) / len(recall_scores)))
+        print("Retraining iterations: {}".format(statistics.mean(retraining_iterations)))
 
     else:
         print("Selecting features.. This may take a while\n")
 
         # Run the feature selection
-        importance, accuracy = model.stepwise_regression(
+        importance, scores, top_importance = model.stepwise_regression(
             content,
             features,
             classes,
@@ -224,7 +228,6 @@ def chopin2():
         )
 
         # Print features in ascending order on their score
-        # The smaller the better
         table = [["Feature", "Importance"]]
 
         for feature in sorted(importance.keys(), key=lambda f: importance[f]):
@@ -232,7 +235,17 @@ def chopin2():
 
         print(tabulate(table, headers="firstrow", tablefmt="simple"))
 
-        print("\nAccuracy: {:.2f}".format(accuracy))
+        print()
+
+        # Also print the score for each importance level
+        table = [["Importance", "Score (accuracy)"]]
+
+        for imp in sorted(scores.keys()):
+            table.append([imp, scores[imp]])
+
+        print(tabulate(table, headers="firstrow", tablefmt="simple"))
+
+        print("\nAccuracy: {:.2f}".format(scores[top_importance]))
 
 if __name__ == "__main__":
     t0 = time.time()
