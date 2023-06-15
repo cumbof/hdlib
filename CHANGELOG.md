@@ -1,5 +1,21 @@
 # Changelog
 
+## Version 0.1.7
+
+[@cumbof/hdlib@0.1.7](https://github.com/cumbof/hdlib/releases/tag/0.1.7)
+
+### Fixes
+
+- Fix the break condition in `model.Model.stepwise_regression` for both the `backward` and `forward` methods.
+
+## Version 0.1.6
+
+[@cumbof/hdlib@0.1.6](https://github.com/cumbof/hdlib/releases/tag/0.1.6)
+
+### New features
+
+- Add `stepwise_regression` as `model.Model` class method for performing the feature selection as backward variable elimination or forward variable selection.
+
 ## Version 0.1.5
 
 [@cumbof/hdlib@0.1.5](https://github.com/cumbof/hdlib/releases/tag/0.1.5)
