@@ -107,7 +107,7 @@ class Model(object):
         retrain: int=0,
         n_jobs: int=1,
         metric: str="accuracy"
-    ) -> float:
+    ) -> Tuple[int, int, float]:
         """
         Initialize a new Model, then fit and cross-validate it.
         Used for size and levels hyperparameters tuning
@@ -158,7 +158,7 @@ class Model(object):
         # For each prediction, compute the score and return the average
         scores = list()
 
-        for y_indices, y_pred in predictions:
+        for y_indices, y_pred, _ in predictions:
             y_true = [label for position, label in enumerate(labels) if position in y_indices]
 
             if metric == "accuracy":
@@ -169,7 +169,7 @@ class Model(object):
 
                 scores.append(score_metrics[metric](y_true, y_pred, average=avg))
 
-        return size, levels, sum(scores) / len(scores)
+        return size, levels, statistics.mean(scores)
 
     def fit(
         self,
@@ -299,7 +299,7 @@ class Model(object):
         test_indices: List[int],
         distance_method: str="cosine",
         retrain: int=0
-    ) -> Tuple[List[int], List[str]]:
+    ) -> Tuple[List[int], List[str], int]:
         """
         Supervised Learning.
         Predict the class labels of the data points in the test set
@@ -309,7 +309,8 @@ class Model(object):
         :param distance_method: Method used to compute the distance between vectors in the space
                                 Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
         :param retrain:         Maximum number of retraining iterations
-        :return:                The list test_indices and a list with the predicted class labels with the same size of test_indices
+        :return:                The list test_indices in addition to a list with the predicted class labels with the same size of test_indices and
+                                the total number of retraining iterations used to retrain the classification model
         """
 
         # List with test vector names
@@ -365,10 +366,15 @@ class Model(object):
         # Take track of the predictions in the last retraining iteration 
         last_predictions = dict()
 
-        while retrain + 1 > 0:
-            prediction = list()
+        # Take track of the number of wrongly predicted points for the best retraining iteration
+        best_wrong_predictions = len(test_vectors)
 
+        best_prediction = list()
+
+        while retrain + 1 > 0:
             if retraining_iterations > 0:
+                wrong_predictions = 0
+
                 for test_point in last_predictions:
                     true_class = None
 
@@ -383,6 +389,8 @@ class Model(object):
                     if true_class != None:
                         # In case the test point has been wrongly predicted
                         if last_predictions[test_point] != true_class:
+                            wrong_predictions += 1
+
                             for class_vector in retraining_class_vectors:
                                 if last_predictions[test_point] in class_vector.tags:
                                     class_vector.vector = class_vector.vector - test_vector.vector
@@ -390,14 +398,22 @@ class Model(object):
                                 if true_class in class_vector.tags:
                                     class_vector.vector = class_vector.vector + test_vector.vector
 
+                if wrong_predictions < best_wrong_predictions:
+                    best_wrong_predictions = wrong_predictions
+
+                    # Get the last prediction
+                    best_prediction = prediction
+
+            prediction = list()
+
             for test_vector in sorted(test_vectors, key=lambda vector: test_indices.index(int(vector.name.split("_")[-1]))):
                 closest_class = None
                 closest_dist = np.NINF
 
                 for class_vector in retraining_class_vectors:
-                    # Compute the distance between the test points and 
-                    # the hyperdimensional representations of classes
-                    distance = test_vector.dist(class_vector, method=distance_method)
+                    # Compute the distance between the test points and the hyperdimensional representations of classes
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        distance = test_vector.dist(class_vector, method=distance_method)
 
                     if closest_class is None:
                         closest_class = list(class_vector.tags)[0]
@@ -416,7 +432,10 @@ class Model(object):
 
             retrain -= 1
 
-        return test_indices, prediction
+        if best_prediction:
+            prediction = best_prediction
+
+        return test_indices, prediction, retraining_iterations
 
     def cross_val_predict(
         self,
@@ -426,7 +445,7 @@ class Model(object):
         distance_method: str="cosine",
         retrain: int=0,
         n_jobs: int=1
-    ) -> List[List[str]]:
+    ) -> List[Tuple[List[int], List[str], int]]:
         """
         Run predict() in cross validation
 
@@ -459,7 +478,13 @@ class Model(object):
 
         if n_jobs == 1:
             for test_indices in split_indices:
-                predictions.append(self.predict(test_indices, distance_method=distance_method, retrain=retrain))
+                _, test_predictions, retraining_iterations = self.predict(
+                    test_indices,
+                    distance_method=distance_method,
+                    retrain=retrain
+                )
+
+                predictions.append((test_indices, test_predictions, retraining_iterations))
 
         else:
             predict_partial = partial(
@@ -480,9 +505,9 @@ class Model(object):
 
                 # Get results from jobs
                 for job in jobs:
-                    test_indices, test_predictions = job.get()
+                    test_indices, test_predictions, retraining_iterations = job.get()
 
-                    predictions.append((test_indices, test_predictions))
+                    predictions.append((test_indices, test_predictions, retraining_iterations))
 
         return predictions
 
@@ -592,7 +617,7 @@ class Model(object):
                                     Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
         :param retrain:             Maximum number of retraining iterations
         :param metric:              Model score: accuracy, f1, precision, and recall
-        :return:                    The considered features and the score metric of the classification model
+        :return:                    The considered features and the score of the classification model based on metric
         """
 
         data_points = [[point[i] for i in range(len(point)) if i in features_indices] for point in points]
@@ -626,7 +651,7 @@ class Model(object):
         threshold: float=0.6,
         uncertainty: float=5.0,
         stop_if_worse: bool=False
-    ) -> Tuple[Dict[str, int], float]:
+    ) -> Tuple[Dict[str, int], Dict[int, float], int]:
         """
         Stepwise feature selection as backward variable elimination or forward variable selection
 
@@ -644,7 +669,7 @@ class Model(object):
                                     Stop running the feature selection if the best reached score is lower than this threshold
         :param uncertainty:         Uncertainty threshold for comparing models accuracies
         :param stop_if_worse:       Stop running the feature selection if the accuracy reached at the iteration i is lower than the accuracy reached at i-1
-        :return:                    A dictionary with features and their importance in addition to the best score
+        :return:                    A dictionary with features and their importance in addition to the best score for each importance rank and the top importance
                                     In case of backward, the lower the better. In case of forward, the higher the better
         """
 
@@ -654,18 +679,27 @@ class Model(object):
             raise ValueError("Stepwise method {} is not supported".format(method))
 
         # Initialize the importance of features to 0
-        features_importance = {feature: 0 for feature in features}
+        features_importance = {feature: {"importance": 0, "score": 0.0} for feature in features}
 
         features_indices = set(range(len(features)))
 
+        # Take track of the last feature selection
+        # Only in case of forward variable selection
+        last_selection = set()
+
         prev_score = 0.0
 
-        if method == "forward":
-            features_set_size = 1
+        count_iter = 0
 
         while features_indices:
+            if len(features_indices) == 1:
+                break
+
             if method == "backward":
                 features_set_size = len(features_indices) - 1
+
+            elif method == "forward":
+                features_set_size = 1
 
             if features_set_size > 0:
                 best_score = 0.0
@@ -701,14 +735,8 @@ class Model(object):
 
                         classification_results.append((job_features_set, job_score))
 
-                if best_score < threshold:
-                    break
-
-                if stop_if_worse:
-                    if best_score < prev_score - (prev_score * uncertainty / 100.0):
-                        break
-
                 selection = set()
+
                 best_scores = list()
 
                 for features_set, score in classification_results:
@@ -719,30 +747,60 @@ class Model(object):
 
                         elif method == "forward":
                             selection.update(features_set)
-                        
+
                         best_scores.append(score)
 
-                prev_score = statistics.mean(best_scores)
+                if method == "forward" and last_selection:
+                    if len(last_selection) == len(selection) and len(last_selection.difference(selection)) == 0:
+                        break
+
+                last_selection = selection
+
+                avg_score = statistics.mean(best_scores)
 
                 if method == "backward":
                     # Keep decreasing the importance of worst features detected in previous iterations
                     for feature in features_importance:
-                        if features_importance[feature] >= 1:
-                            features_importance[feature] += 1
+                        if features_importance[feature]["importance"] >= 1:
+                            features_importance[feature]["importance"] += 1
 
-                # Fix the importance of selected features
+                # Set the importance of the selected features
                 for feature_index in selection:
-                    features_importance[features[feature_index]] += 1
+                    features_importance[features[feature_index]]["importance"] += 1
+                    features_importance[features[feature_index]]["score"] = avg_score
 
                 if method == "backward":
                     features_indices = features_indices.difference(selection)
 
                 elif method == "forward":
-                    features_indices = best_features
+                    features_indices = selection
 
-                    features_set_size += 1
+                if stop_if_worse:
+                    if best_score < prev_score - (prev_score * uncertainty / 100.0):
+                        prev_score = avg_score
 
-                    if len(features_indices) < features_set_size:
                         break
 
-        return features_importance, prev_score
+                prev_score = avg_score
+
+                count_iter += 1
+
+                if best_score < threshold:
+                    break
+
+        importance = dict()
+
+        scores = dict()
+
+        for feature in features_importance:
+            importance[feature] = features_importance[feature]["importance"]
+
+            scores[features_importance[feature]["importance"]] = features_importance[feature]["score"]
+
+        if method == "backward":
+            top_importance = min(importance.values())
+
+        else:
+            top_importance = max(importance.values())
+
+        return importance, scores, top_importance
