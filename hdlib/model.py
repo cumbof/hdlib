@@ -689,17 +689,20 @@ class Model(object):
 
         prev_score = 0.0
 
-        count_iter = 0
+        count_iter = 1
 
         while features_indices:
-            if len(features_indices) == 1:
-                break
-
             if method == "backward":
                 features_set_size = len(features_indices) - 1
 
+                if len(features_indices) == 1:
+                    break
+
             elif method == "forward":
-                features_set_size = 1
+                features_set_size = count_iter
+
+                if features_set_size >= len(features_indices):
+                    break
 
             if features_set_size > 0:
                 best_score = 0.0
@@ -798,9 +801,11 @@ class Model(object):
             scores[features_importance[feature]["importance"]] = features_importance[feature]["score"]
 
         if method == "backward":
-            top_importance = min(importance.values())
+            imp_values = [imp for imp in importance.values() if scores[imp] > 0.0]
 
-        else:
+            top_importance = min(imp_values) if imp_values else 0
+
+        elif method == "forward":
             top_importance = max(importance.values())
 
         return importance, scores, top_importance
