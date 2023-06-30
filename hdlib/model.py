@@ -1,6 +1,4 @@
-"""
-Classification Model with Hyperdimensional Computing
-"""
+"""Classification Model with Hyperdimensional Computing."""
 
 import copy
 import itertools
@@ -19,9 +17,7 @@ from hdlib.parser import kfolds_split
 
 
 class Model(object):
-    """
-    Classification Model
-    """
+    """Classification Model."""
 
     def __init__(
         self,
@@ -29,13 +25,40 @@ class Model(object):
         levels: int=2,
         vtype: str="bipolar",
     ) -> "Model":
-        """
-        Initialize a Model object
+        """Initialize a Model object.
 
-        :param size:        Vector size or dimensionality
-        :param levels:      Number of levels
-        :param vtype:       Vector type: bipolar or binary
-        :return:            A Model object
+        Parameters
+        ----------
+        size : int, default 10000
+            The size of vectors used to create a Space and define Vector objects.
+        levels : int, default 2
+            The number of level vectors used to represent numerical data. It is 2 by default.
+        vtype : {'binary', 'bipolar'}, default 'bipolar'
+            The vector type in space, which is bipolar by default.
+
+        Raises
+        ------
+        TypeError
+            If the vector size or the number of levels are not integer numbers.
+        ValueError
+            If the vector size is lower than 10,000 or the number of level vectors is lower than 2.
+
+        Examples
+        --------
+        >>> from hdlib.model import Model
+        >>> model = Model(size=10000, levels=100, vtype='bipolar')
+        >>> type(model)
+        <class 'hdlib.model.Model'>
+
+        This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
+        It also defines the number of level vectors to 100.
+
+        Notes
+        -----
+        The classification model based on the hyperdimensional computing paradigm has been originally described in [1]_.
+
+        .. [1] Cumbo, Fabio, Eleonora Cappelli, and Emanuel Weitschek. "A brain-inspired hyperdimensional computing approach 
+        for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020): 233.
         """
 
         if not isinstance(size, int):
@@ -72,8 +95,32 @@ class Model(object):
         self.version = __version__
 
     def __str__(self) -> None:
-        """
-        Print the Model object properties
+        """Print the Model object properties.
+
+        Returns
+        -------
+        str
+            A description of the Model object. It reports the vectors size, the vector type,
+            the number of level vectors, the number of data points, and the number of class labels.
+
+        Examples
+        --------
+        >>> from hdlib.model import Model
+        >>> model = Model()
+        >>> print(model)
+
+                Class:   hdlib.model.Model
+                Size:    10000
+                Type:    bipolar
+                Levels:  2
+                Points:  0
+                Classes:
+
+                []
+
+        Print the Model object properties. By default, the size of vectors in space is 10,000,
+        their types is bipolar, and the number of level vectors is 2. The number of data points 
+        and the number of class labels are empty here since no dataset has been processed yet.
         """
 
         return """
@@ -95,7 +142,7 @@ class Model(object):
             np.array(list(self.classes))
         )
 
-    def init_fit_predict(
+    def _init_fit_predict(
         self,
         size: int=10000,
         levels: int=2,
@@ -108,22 +155,41 @@ class Model(object):
         n_jobs: int=1,
         metric: str="accuracy"
     ) -> Tuple[int, int, float]:
-        """
-        Initialize a new Model, then fit and cross-validate it.
-        Used for size and levels hyperparameters tuning
+        """Initialize a new Model, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
 
-        :param size:            Vector size or dimensionality
-        :param levels:          Number of levels
-        :param vtype:           Vector type: bipolar or binary
-        :param points:          List of data points
-        :param labels:          Class labels
-        :param cv:              Number of folds for the cross validation
-        :param distance_method: Method used to compute the distance between vectors in the space
-                                Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
-        :param retrain:         Maximum number of retraining iterations
-        :param n_jobs:          Number of jobs for processing folds in parallel
-        :param metric:          Model score: accuracy, f1, precision, and recall
-        :return:                The dimensionality, the number of levels, and the model score
+        Parameters
+        ----------
+        size : int, default 10000
+            The size of vectors used to create a Space and define Vector objects.
+        levels : int, default 2
+            The number of level vectors used to represent numerical data. It is 2 by default.
+        vtype : {'binary', 'bipolar'}, default 'bipolar'
+            The vector type in space, which is bipolar by default.
+        points : list
+            List of lists with numerical data (floats).
+        labels : list
+            List with class labels. It has the same size of `points`.
+        cv : int, default 5
+            Number of folds for cross-validating the model.
+        distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
+            Method used to compute the distance/similarity between vectors in space.
+        retrain : int, default 0
+            Number of retraining iterations.
+        n_jobs : int, default 1,
+            Number of jobs for processing folds in parallel.
+        metric: {'accuracy', 'f1', 'precision', 'recall'}, default 'accuracy'
+            Metric used to evaluate the model.
+
+        Returns
+        -------
+        tuple
+            A tuple with the input size, the number of level vectors, and the model score
+            according to the input metric.
+
+        Raises
+        ------
+        ValueError
+            If the provided metric is not supported.
         """
 
         # Available score metrics
@@ -176,12 +242,21 @@ class Model(object):
         points: List[List[float]],
         labels: List[str],
     ) -> None:
-        """
-        Build a vector-symbolic architecture.
-        Define level vectors and encode samples
+        """Build a vector-symbolic architecture. Define level vectors and encode samples.
 
-        :param points:  List of data points
-        :param labels:  Class labels
+        Parameters
+        ----------
+        points : list
+            List of lists with numerical data (floats).
+        labels : list
+            List with class labels. It has the same size of `points`.
+
+        Raises
+        ------
+        Exception
+            - if there are not enough data points (the length of `points` is < 3);
+            - if the length of `points` does not match the length of `labels`;
+            - if there is only one class label.
         """
 
         if len(points) < 3:
@@ -300,17 +375,28 @@ class Model(object):
         distance_method: str="cosine",
         retrain: int=0
     ) -> Tuple[List[int], List[str], int]:
-        """
-        Supervised Learning.
-        Predict the class labels of the data points in the test set
+        """Supervised Learning. Predict the class labels of the data points in the test set.
 
-        :param test_indices:    Indices of data points in the list of points used with fit() to be used for testing the classification model.
-                                Note that all the other points will be used for training the model
-        :param distance_method: Method used to compute the distance between vectors in the space
-                                Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
-        :param retrain:         Maximum number of retraining iterations
-        :return:                The list test_indices in addition to a list with the predicted class labels with the same size of test_indices and
-                                the total number of retraining iterations used to retrain the classification model
+        Parameters
+        ----------
+        test_indices : list
+            Indices of data points in the list of points used with fit() to be used for testing the classification model.
+            Note that all the other points will be used for training the model.
+        distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
+            Method used to compute the distance between vectors in the space.
+        retrain : int, default 0
+            Maximum number of retraining iterations.
+
+        Returns
+        -------
+        tuple
+            A tuple with the input list `test_indices` in addition to a list with the predicted class labels with the 
+            same size of `test_indices` and the total number of retraining iterations used to retrain the classification model.
+
+        Raises
+        ------
+        Exception
+            If the number of test indices does not match the number of points retrieved from the space.
         """
 
         # List with test vector names
@@ -446,17 +532,36 @@ class Model(object):
         retrain: int=0,
         n_jobs: int=1
     ) -> List[Tuple[List[int], List[str], int]]:
-        """
-        Run predict() in cross validation
+        """Run `predict()` in cross validation.
 
-        :param points:          List with data points. Same used for fit()
-        :param labels:          Class labels. Same used for fit()
-        :param cv:              Number of folds for the cross validation
-        :param distance_method: Method used to compute the distance between vectors in the space
-                                Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
-        :param retrain:         Maximum number of retraining iterations
-        :param n_jobs:          Number of jobs for processing folds in parallel
-        :return:                A list with the result of predict() for each fold
+        Parameters
+        ----------
+        points : list
+            List of lists with numerical data (floats).
+        labels : list
+            List with class labels. It has the same size of `points`.
+        cv : int, default 5
+            Number of folds for cross-validating the model.
+        distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
+            Method used to compute the distance/similarity between vectors in space.
+        retrain : int, default 0
+            Number of retraining iterations.
+        n_jobs : int, default 1,
+            Number of jobs for processing folds in parallel.
+
+        Returns
+        -------
+        list
+            A list with the results of `predict()` for each fold.
+
+        Raises
+        ------
+        Exception
+            - if the number of data points does not match with the number of class labels;
+            - if there is only one class label.
+        ValueError
+            - if the number of folds is a number < 1;
+            - if the number of folds exceeds the number of data points.
         """
 
         if len(points) != len(labels):
@@ -523,26 +628,37 @@ class Model(object):
         n_jobs: int=1,
         metric: str="accuracy"
     ) -> Tuple[int, int, float]:
-        """
-        Automated hyperparameters tuning.
-        Performe a Parameter Sweep Analysis (PSA) on space dimensionality and number of levels.
-        It returns the best size and levels according to the accuracies of the cross-validated models
+        """Automated hyperparameters tuning. Perform a Parameter Sweep Analysis (PSA) on space dimensionality and number of levels.
 
-        :param points:          List of data points
-        :param labels:          Class labels
-        :param size_range:      Range of dimensionalities for performing PSA
-        :param levels_range:    Range of number of levels for performing PSA
-        :param cv:              Number of folds for the cross validation
-        :param distance_method: Method used to compute the distance between vectors in the space
-                                Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
-        :param retrain:         Maximum number of retraining iterations
-        :param n_jobs:          Number of jobs for processing models in parallel
-        :param metric:          Model score: accuracy, f1, precision, and recall
-        :return:                Best size, number of levels, and metric
+        Parameters
+        ----------
+        points : list
+            List of lists with numerical data (floats).
+        labels : list
+            List with class labels. It has the same size of `points`.
+        size_range : range
+            Range of dimensionalities for performing PSA.
+        levels_range : range
+            Range of number of levels for performing PSA.
+        cv : int, default 5
+            Number of folds for cross-validating the model.
+        distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
+            Method used to compute the distance/similarity between vectors in space.
+        retrain : int, default 0
+            Number of retraining iterations.
+        n_jobs : int, default 1,
+            Number of jobs for processing folds in parallel.
+        metric: {'accuracy', 'f1', 'precision', 'recall'}, default 'accuracy'
+            Metric used to evaluate the model.
+
+        Returns
+        -------
+        tuple
+            A tuple with the best size and levels according to the accuracies of the cross-validated models.
         """
 
         partial_init_fit_predict = partial(
-            self.init_fit_predict,
+            self._init_fit_predict,
             vtype=self.vtype,
             points=points,
             labels=labels,
@@ -575,20 +691,20 @@ class Model(object):
                     best_metric = job_metric
                     best_size = job_size
                     best_levels = job_levels
-                
+
                 else:
                     if job_metric > best_metric:
                         # Get the size and levels of the classification model with the best score metric
                         best_metric = job_metric
                         best_size = job_size
                         best_levels = job_levels
-                    
+
                     elif job_metric == best_metric:
                         # Minimize the number of levels in this case
                         if job_levels < best_levels:
                             best_size = job_size
                             best_levels = job_levels
-                        
+
                         elif job_levels == best_levels:
                             # Minimize the size in this case
                             if job_size < best_size:
@@ -596,7 +712,7 @@ class Model(object):
 
         return best_size, best_levels, best_metric
 
-    def stepwise_regression_iter(
+    def _stepwise_regression_iter(
         self,
         features_indices: Set[int],
         points: List[List[float]],
@@ -605,24 +721,35 @@ class Model(object):
         distance_method: str="cosine",
         retrain: int=0,
         metric: str="accuracy"
-    ) -> Tuple[List[List[float]], float]:
-        """
-        Just a single iteration of the feature selection method.
+    ) -> Tuple[Set[float], float]:
+        """Just a single iteration of the feature selection method.
 
-        :param features_indices:    Indices of features for shaping points
-        :param points:              List of data points
-        :param labels:              Class labels
-        :param cv:                  Number of folds for the cross validation
-        :param distance_method:     Method used to compute the distance between vectors in the space
-                                    Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
-        :param retrain:             Maximum number of retraining iterations
-        :param metric:              Model score: accuracy, f1, precision, and recall
-        :return:                    The considered features and the score of the classification model based on metric
+        Parameters
+        ----------
+        features_indices : set
+            Indices of features for shaping points.
+        points : list
+            List of lists with numerical data (floats).
+        labels : list
+            List with class labels. It has the same size of `points`.
+        cv : int, default 5
+            Number of folds for cross-validating the model.
+        distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
+            Method used to compute the distance/similarity between vectors in space.
+        retrain : int, default 0
+            Number of retraining iterations.
+        metric: {'accuracy', 'f1', 'precision', 'recall'}, default 'accuracy'
+            Metric used to evaluate the model.
+
+        Returns
+        -------
+        tuple
+            A tuple with the considered features and the score of the classification model based on the provided metric.
         """
 
         data_points = [[point[i] for i in range(len(point)) if i in features_indices] for point in points]
 
-        _, _, score = self.init_fit_predict(
+        _, _, score = self._init_fit_predict(
             size=self.size,
             levels=self.levels,
             vtype=self.vtype,
@@ -652,25 +779,41 @@ class Model(object):
         uncertainty: float=5.0,
         stop_if_worse: bool=False
     ) -> Tuple[Dict[str, int], Dict[int, float], int]:
-        """
-        Stepwise feature selection as backward variable elimination or forward variable selection
+        """Stepwise regression as backward variable elimination or forward variable selection.
 
-        :param points:              List of data points
-        :param features:            List of features
-        :param labels:              Class labels
-        :param method:              Type of stepwise regression: backward or forward
-        :param cv:                  Number of folds for the cross validation
-        :param distance_method:     Method used to compute the distance between vectors in the space
-                                    Look at the dist() method of htlib.space.Vector class for a list of supported distance methods
-        :param retrain:             Maximum number of retraining iterations
-        :param n_jobs:              Number of jobs for processing models in parallel
-        :param metric:              Model score: accuracy, f1, precision, and recall
-        :param threshold:           Threshold on the model score metric
-                                    Stop running the feature selection if the best reached score is lower than this threshold
-        :param uncertainty:         Uncertainty threshold for comparing models accuracies
-        :param stop_if_worse:       Stop running the feature selection if the accuracy reached at the iteration i is lower than the accuracy reached at i-1
-        :return:                    A dictionary with features and their importance in addition to the best score for each importance rank and the top importance
-                                    In case of backward, the lower the better. In case of forward, the higher the better
+        Parameters
+        ----------
+        points : list
+            List of lists with numerical data (floats).
+        features : list
+            List of features
+        labels : list
+            List with class labels. It has the same size of `points`.
+        method : {'backward', 'forward'}, default 'backward'
+            Feature selection method.
+        cv : int, default 5
+            Number of folds for cross-validating the model.
+        distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
+            Method used to compute the distance/similarity between vectors in space.
+        retrain : int, default 0
+            Number of retraining iterations.
+        n_jobs : int, default 1,
+            Number of jobs for processing models in parallel.
+        metric: {'accuracy', 'f1', 'precision', 'recall'}, default 'accuracy'
+            Metric used to evaluate the model.
+        threshold : float, default 0.6
+            Threshold on the model score metric. Stop running the feature selection if the best 
+            reached score is lower than this threshold.
+        uncertainty : float, default 5.0
+            Uncertainty percentage threshold for comparing models metrics.
+        stop_if_worse : bool, default False
+            Stop running the feature selection if the accuracy reached at the iteration i is lower than the accuracy reached at i-1.
+
+        Returns
+        -------
+        tuple
+            A tuple with a dictionary with features and their importance in addition to the best score for each importance rank 
+            and the top importance. In case of backward, the lower the better. In case of forward, the higher the better.
         """
 
         method = method.lower()
@@ -709,7 +852,7 @@ class Model(object):
                 classification_results = list()
 
                 partial_stepwise_regression_iter = partial(
-                    self.stepwise_regression_iter,
+                    self._stepwise_regression_iter,
                     points=points,
                     labels=labels,
                     cv=cv,
