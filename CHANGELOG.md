@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.1.8
+
+[@cumbof/hdlib@0.1.8](https://github.com/cumbof/hdlib/releases/tag/0.1.8)
+
+### Fixes
+
+- Fix the initialization of Vector objects with a specific seed;
+- `model.Model._init_fit_predict` and `model.Model._stepwise_regression_iter` are now private;
+- Improving docstring adopting the [numpydoc](https://numpydoc.readthedocs.io/en/latest/) documentation format.
+
 ## Version 0.1.7
 
 [@cumbof/hdlib@0.1.7](https://github.com/cumbof/hdlib/releases/tag/0.1.7)
