@@ -169,7 +169,7 @@ class TestHDLib(unittest.TestCase):
         # Collect the accuracy scores computed on each fold
         scores = list()
 
-        for y_indices, y_pred in predictions:
+        for y_indices, y_pred, _ in predictions:
             y_true = [label for position, label in enumerate(classes) if position in y_indices]
             accuracy = accuracy_score(y_true, y_pred)
         
