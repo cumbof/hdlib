@@ -1,6 +1,4 @@
-"""
-Utility to parse input files
-"""
+"""Utility to parse input files."""
 
 import errno
 import os
@@ -14,12 +12,20 @@ def load_dataset(
     filepath: os.path.abspath,
     sep: str="\t"
 ) -> Tuple[List[str], List[List[float]], List[str]]:
-    """
-    Load the input dataset
+    """Load the input dataset.
 
-    :param filepath:    Path to the input dataset
-    :param sep:         Field separator
-    :return:            The list of sample IDs, the list of features, the content as list of lists, and the list of classes
+    Parameters
+    ----------
+    filepath : str
+        Path to the input dataset.
+    sep : str
+        Filed separator for the input dataset.
+
+    Returns
+    -------
+    tuple
+        A tuple with a list of sample IDs, a list of features, a list of lists with the
+        actual numerical data (floats), and a list with class labels.
     """
 
     if not os.path.isfile(filepath):
@@ -54,12 +60,32 @@ def load_dataset(
 
 
 def kfolds_split(points: int, folds: int) -> List[List[int]]:
-    """
-    Given a number of data points and the number of folds, split a dataset into different folds
+    """Given a number of data points and the number of folds, split a dataset into different folds.
 
-    :param points:  Number of data points
-    :param folds:   Number of folds
-    :return:        List of lists with the indices of data points
+    Parameters
+    ----------
+    points : int
+        Number of data points in the input dataset.
+    folds : int
+        Number of folds.
+
+    Returns
+    -------
+    list
+        A list of lists. Every list is a fold with the indices of data points in the original dataset.
+
+    Raises
+    ------
+    ValueError
+        If the number of folds is greater than the number of data points.
+
+    Examples
+    --------
+    >>> from hdlib.parser import kfolds_split
+    >>> kfolds_split(10, 3)
+    [[0, 3, 6, 9], [1, 4, 7], [2, 5, 8]]
+
+    Considering a dataset with 10 data points, split them into 3 folds.
     """
 
     if folds > points:
@@ -70,21 +96,47 @@ def kfolds_split(points: int, folds: int) -> List[List[int]]:
     return [data_points[i::folds] for i in range(folds)]
 
 
-def percentage_split(points: int, percentage: float) -> List[int]:
-    """
-    Given a number of data points and a percentage number, split a dataset in two and report
-    the indices of the smallest set
+def percentage_split(points: int, percentage: float, seed: int=0) -> List[int]:
+    """Given a number of data points and a percentage number, split a dataset and report the indices of the of data points.
 
-    :param points:      Number of data points
-    :param percentage:  Percentage split
-    :return:            List with indices of the smallest set after split
+    Parameters
+    ----------
+    points : int
+        Number of data points in the input dataset.
+    percentage : float
+        Percentage of points to split out of the original dataset.
+    seed : int
+        Random seed for reproducing the same results.
+
+    Returns
+    -------
+    list
+        A list with the indices of selected points.
+
+    Raises
+    ------
+    ValueError
+        - if the input `percentage` is lower than or equal to 0.0 or greater than 100.0;
+        - if the input `seed` is not an integer number.
+
+    Examples
+    --------
+    >>> from hdlib.parser import percentage_split
+    >>> percentage_split(10, 20.0, seed=0)
+    [6, 9]
+
+    Consider a dataset with 10 data points, select 20% of the points (2 points in this case),
+    and report their indices in the original dataset.
     """
 
     if percentage <= 0.0 or percentage > 100.0:
         raise ValueError("Percentage must be greater than 0 and lower than or equal to 100")
 
+    if not isinstance(seed, int):
+        raise ValueError("The input seed must be an integer number")
+
     select_points = percentage * points / 100.0
 
-    random.seed(0)
+    random.seed(seed)
 
     return random.sample(list(range(points)), int(select_points))
