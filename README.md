@@ -4,6 +4,12 @@ Hyperdimensional Computing Library for building Vector Symbolic Architectures in
 
 ![Conda](https://img.shields.io/conda/dn/conda-forge/hdlib?label=hdlib%20on%20Conda)
 
+Vector-Symbolic Architectures (VSA, a.k.a. Hyperdimensional Computing) is an emergent computing paradigm that works by combining vectors in a high-dimensional space for representing and processing information. This approach recently shown promise in various domains for dealing with different kind of computational problems, including artificial intelligence, cognitive science, robotics, natural language processing, bioinformatics, medical informatics, cheminformatics, and internet of things among other scientific disciplines.
+
+Here we present _hdlib_, a Python library for designing Vector-Symbolic Architectures. It is distributed under the MIT license as a Python package through PyPI and Conda on the _conda-forge_ channel.
+
+GitHub releases are also available on Zenodo at https://doi.org/10.5281/zenodo.7996502.
+
 Please refer to the official [Wiki](https://github.com/cumbof/hdlib/wiki) for any information about the implemented modules and how to use the library.
 
 Here is the table of content:
