@@ -444,51 +444,69 @@ class Model(object):
         # Retrieve the test vectors from the space        
         test_vectors = self.space.get(names=test_points)
 
+        # Also retrieve the training vectors from the space
+        training_vectors = self.space.get(names=training_points)
+
+        # Make a copy of the vector representation of classes for retraining the model
         retraining_class_vectors = copy.deepcopy(class_vectors)
 
-        # Retrain model
+        # Count retraining iterations
         retraining_iterations = 0
 
-        # Take track of the predictions in the last retraining iteration 
-        last_predictions = dict()
-
-        # Take track of the number of wrongly predicted points for the best retraining iteration
-        best_wrong_predictions = len(test_vectors)
-
-        best_prediction = list()
+        # Take track of the error rate while retraining the model
+        last_error_rate = 1.0
 
         while retrain + 1 > 0:
             if retraining_iterations > 0:
-                wrong_predictions = 0
+                wrongly_redicted_training_vectors = 0
 
-                for test_point in last_predictions:
+                for training_point in training_points:
                     true_class = None
 
-                    # Retrieve the test vector tags
-                    for test_vector in test_vectors:
-                        if test_vector.name == test_point:
+                    # Retrieve the training vector tags
+                    for training_vector in training_vectors:
+                        if training_vector.name == training_point:
                             # Vectors contain only their class info in tags
-                            true_class = list(test_vector.tags)[0]
+                            true_class = list(training_vector.tags)[0]
 
                             break
 
                     if true_class != None:
-                        # In case the test point has been wrongly predicted
-                        if last_predictions[test_point] != true_class:
-                            wrong_predictions += 1
+                        closest_class = None
+                        closest_dist = np.NINF
 
+                        for class_vector in retraining_class_vectors:
+                            # Compute the distance between the training points and the hyperdimensional representations of classes
+                            with np.errstate(invalid="ignore", divide="ignore"):
+                                distance = training_vector.dist(class_vector, method=distance_method)
+
+                            if closest_class is None:
+                                closest_class = list(class_vector.tags)[0]
+                                closest_dist = distance
+
+                            else:
+                                if distance > closest_dist:
+                                    closest_class = list(class_vector.tags)[0]
+                                    closest_dist = distance
+
+                        if closest_class != true_class:
+                            # Try to mitigate the error
                             for class_vector in retraining_class_vectors:
-                                if last_predictions[test_point] in class_vector.tags:
-                                    class_vector.vector = class_vector.vector - test_vector.vector
-
                                 if true_class in class_vector.tags:
-                                    class_vector.vector = class_vector.vector + test_vector.vector
+                                    class_vector.vector = class_vector.vector + training_vector.vector
 
-                if wrong_predictions < best_wrong_predictions:
-                    best_wrong_predictions = wrong_predictions
+                                elif closest_class in class_vector.tags:
+                                    class_vector.vector = class_vector.vector - training_vector.vector
 
-                    # Get the last prediction
-                    best_prediction = prediction
+                            wrongly_redicted_training_vectors += 1
+
+                error_rate = wrongly_redicted_training_vectors / len(training_points)
+
+                if last_error_rate < error_rate:
+                    # Does not make sense to keep retraining if the error rate increases compared to the previous iteration
+                    break
+
+                last_error_rate = error_rate
 
             prediction = list()
 
@@ -510,16 +528,11 @@ class Model(object):
                             closest_class = list(class_vector.tags)[0]
                             closest_dist = distance
 
-                last_predictions[test_vector.name] = closest_class
-
                 prediction.append(closest_class)
 
             retraining_iterations += 1
 
             retrain -= 1
-
-        if best_prediction:
-            prediction = best_prediction
 
         return test_indices, prediction, retraining_iterations
 
