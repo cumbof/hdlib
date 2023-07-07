@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.1.9
+
+[@cumbof/hdlib@0.1.9](https://github.com/cumbof/hdlib/releases/tag/0.1.9)
+
+### Fixes
+
+- Fix the retrining process in `model.Model.predict` to avoid overfitting.
+
+:warning: Avoid using previous versions of `hdlib`.
+
 ## Version 0.1.8
 
 [@cumbof/hdlib@0.1.8](https://github.com/cumbof/hdlib/releases/tag/0.1.8)
