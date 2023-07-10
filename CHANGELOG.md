@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 0.1.10
+
+[@cumbof/hdlib@0.1.10](https://github.com/cumbof/hdlib/releases/tag/0.1.10)
+
+### New features
+
+- Add `error_rate` as `model.Model` class method for computing the error rate of a classification model.
+
+### Fixes
+
+- The `model.Model.predict` function computes the error rate before retraining the classification model.
+
 ## Version 0.1.9
 
 [@cumbof/hdlib@0.1.9](https://github.com/cumbof/hdlib/releases/tag/0.1.9)
