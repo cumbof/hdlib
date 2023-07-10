@@ -369,6 +369,65 @@ class Model(object):
             # Tag vector with its class label
             self.space.add_tag(name=sum_vector.name, tag=labels[point_position])
 
+    def error_rate(
+        self,
+        training_vectors: List[Vector],
+        class_vectors: List[Vector],
+        distance_method: str="cosine"
+    ) -> Tuple[float, List[Vector], List[str]]:
+        """Compute the error rate.
+        
+        Parameters
+        ----------
+        training_vectors : list
+            List with Vector objects used for training the classification model.
+        class_vectors : list
+            List with the Vector representation of classes.
+        distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
+            Method used to compute the distance between vectors in the space.
+
+        Returns
+        -------
+        tuple
+            A tuple with the error rate, the list of wrongly predicted Vector objects, and the list
+            of wrong predictions with the same length of the list with wrongly predicted Vector objects.
+        """
+
+        wrongly_predicted_training_vectors = list()
+
+        wrong_predictions = list()
+
+        for training_vector in training_vectors:
+            # Vectors contain only their class info in tags
+            true_class = list(training_vector.tags)[0]
+
+            if true_class != None:
+                closest_class = None
+                closest_dist = np.NINF
+
+                for class_vector in class_vectors:
+                    # Compute the distance between the training points and the hyperdimensional representations of classes
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        distance = training_vector.dist(class_vector, method=distance_method)
+
+                    if closest_class is None:
+                        closest_class = list(class_vector.tags)[0]
+                        closest_dist = distance
+
+                    else:
+                        if distance > closest_dist:
+                            closest_class = list(class_vector.tags)[0]
+                            closest_dist = distance
+
+                if closest_class != true_class:
+                    wrongly_predicted_training_vectors.append(training_vector)
+
+                    wrong_predictions.append(closest_class)
+
+        model_error_rate = len(wrongly_predicted_training_vectors) / len(training_vectors)
+
+        return model_error_rate, wrongly_predicted_training_vectors, wrong_predictions
+
     def predict(
         self,
         test_indices: List[int],
@@ -444,95 +503,77 @@ class Model(object):
         # Retrieve the test vectors from the space        
         test_vectors = self.space.get(names=test_points)
 
-        # Also retrieve the training vectors from the space
-        training_vectors = self.space.get(names=training_points)
-
         # Make a copy of the vector representation of classes for retraining the model
-        retraining_class_vectors = copy.deepcopy(class_vectors)
+        retraining_class_vectors = copy.deepcopy(class_vectors) if retrain > 0 else class_vectors
 
         # Count retraining iterations
         retraining_iterations = 0
 
-        # Take track of the error rate while retraining the model
-        last_error_rate = 1.0
+        if retrain > 0:
+            # Retrieve the training vectors from the space
+            training_vectors = self.space.get(names=training_points)
 
-        while retrain + 1 > 0:
-            if retraining_iterations > 0:
-                wrongly_redicted_training_vectors = 0
+            # Take track of the error rate while retraining the model
+            model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
+                training_vectors,
+                retraining_class_vectors,
+                distance_method=distance_method
+            )
 
-                for training_point in training_points:
-                    true_class = None
+            for _ in range(retrain):
+                retraining_class_vectors_iter = copy.deepcopy(retraining_class_vectors)
 
-                    # Retrieve the training vector tags
-                    for training_vector in training_vectors:
-                        if training_vector.name == training_point:
-                            # Vectors contain only their class info in tags
-                            true_class = list(training_vector.tags)[0]
+                for training_vector in wrongly_predicted_training_vectors:
+                    true_class = list(training_vector.tags)[0]
 
-                            break
+                    # Error mitigation
+                    for vector_position, class_vector in enumerate(retraining_class_vectors_iter):
+                        if true_class in class_vector.tags:
+                            class_vector.vector = class_vector.vector + training_vector.vector
 
-                    if true_class != None:
-                        closest_class = None
-                        closest_dist = np.NINF
+                        elif wrong_predictions[vector_position] in class_vector.tags:
+                            class_vector.vector = class_vector.vector - training_vector.vector
 
-                        for class_vector in retraining_class_vectors:
-                            # Compute the distance between the training points and the hyperdimensional representations of classes
-                            with np.errstate(invalid="ignore", divide="ignore"):
-                                distance = training_vector.dist(class_vector, method=distance_method)
+                retraining_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
+                    training_vectors,
+                    retraining_class_vectors_iter,
+                    distance_method=distance_method
+                )
 
-                            if closest_class is None:
-                                closest_class = list(class_vector.tags)[0]
-                                closest_dist = distance
-
-                            else:
-                                if distance > closest_dist:
-                                    closest_class = list(class_vector.tags)[0]
-                                    closest_dist = distance
-
-                        if closest_class != true_class:
-                            # Try to mitigate the error
-                            for class_vector in retraining_class_vectors:
-                                if true_class in class_vector.tags:
-                                    class_vector.vector = class_vector.vector + training_vector.vector
-
-                                elif closest_class in class_vector.tags:
-                                    class_vector.vector = class_vector.vector - training_vector.vector
-
-                            wrongly_redicted_training_vectors += 1
-
-                error_rate = wrongly_redicted_training_vectors / len(training_points)
-
-                if last_error_rate < error_rate:
+                if model_error_rate < retraining_error_rate:
                     # Does not make sense to keep retraining if the error rate increases compared to the previous iteration
                     break
 
-                last_error_rate = error_rate
+                # Take track of the error rate
+                model_error_rate = retraining_error_rate
 
-            prediction = list()
+                # Use the retrained class vectors
+                retraining_class_vectors = retraining_class_vectors_iter
 
-            for test_vector in sorted(test_vectors, key=lambda vector: test_indices.index(int(vector.name.split("_")[-1]))):
-                closest_class = None
-                closest_dist = np.NINF
+                # Also take track of the number of retraining iterations
+                retraining_iterations += 1
 
-                for class_vector in retraining_class_vectors:
-                    # Compute the distance between the test points and the hyperdimensional representations of classes
-                    with np.errstate(invalid="ignore", divide="ignore"):
-                        distance = test_vector.dist(class_vector, method=distance_method)
+        prediction = list()
 
-                    if closest_class is None:
+        for test_vector in sorted(test_vectors, key=lambda vector: test_indices.index(int(vector.name.split("_")[-1]))):
+            closest_class = None
+            closest_dist = np.NINF
+
+            for class_vector in retraining_class_vectors:
+                # Compute the distance between the test points and the hyperdimensional representations of classes
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    distance = test_vector.dist(class_vector, method=distance_method)
+
+                if closest_class is None:
+                    closest_class = list(class_vector.tags)[0]
+                    closest_dist = distance
+
+                else:
+                    if distance > closest_dist:
                         closest_class = list(class_vector.tags)[0]
                         closest_dist = distance
 
-                    else:
-                        if distance > closest_dist:
-                            closest_class = list(class_vector.tags)[0]
-                            closest_dist = distance
-
-                prediction.append(closest_class)
-
-            retraining_iterations += 1
-
-            retrain -= 1
+            prediction.append(closest_class)
 
         return test_indices, prediction, retraining_iterations
 
