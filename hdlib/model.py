@@ -231,9 +231,8 @@ class Model(object):
                 scores.append(score_metrics[metric](y_true, y_pred))
 
             else:
-                avg = "micro" if len(set(labels)) > 2 else "binary"
-
-                scores.append(score_metrics[metric](y_true, y_pred, average=avg))
+                # Use the average weighted to account for label imbalance
+                scores.append(score_metrics[metric](y_true, y_pred, average="weighted"))
 
         return size, levels, statistics.mean(scores)
 
@@ -867,7 +866,7 @@ class Model(object):
         -------
         tuple
             A tuple with a dictionary with features and their importance in addition to the best score for each importance rank 
-            and the top importance. In case of backward, the lower the better. In case of forward, the higher the better.
+            and the best importance. In case of backward, the lower the better. In case of forward, the higher the better.
         """
 
         method = method.lower()
@@ -988,21 +987,15 @@ class Model(object):
                 if best_score < threshold:
                     break
 
-        importance = dict()
+        importances = dict()
 
         scores = dict()
 
         for feature in features_importance:
-            importance[feature] = features_importance[feature]["importance"]
+            importances[feature] = features_importance[feature]["importance"]
 
             scores[features_importance[feature]["importance"]] = features_importance[feature]["score"]
 
-        if method == "backward":
-            imp_values = [imp for imp in importance.values() if scores[imp] > 0.0]
+        best_importance = sorted(scores.keys(), key=lambda imp: scores[imp])[-1]
 
-            top_importance = min(imp_values) if imp_values else 0
-
-        elif method == "forward":
-            top_importance = max(importance.values())
-
-        return importance, scores, top_importance
+        return importances, scores, best_importance
