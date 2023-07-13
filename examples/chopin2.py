@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
-"""
-Implementation of chopin2 ML model with hdlib
-https://github.com/cumbof/chopin2
-"""
+"""Implementation of chopin2 ML model with hdlib."""
 
 __author__ = ("Fabio Cumbo (fabio.cumbo@gmail.com)")
 
 __version__ = "1.1.0"
-__date__ = "Jun 14, 2023"
+__date__ = "Jul 13, 2023"
 
 import argparse as ap
 import os
 import statistics
 import time
 
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 from tabulate import tabulate
 
 from hdlib.parser import load_dataset, percentage_split
@@ -22,10 +19,12 @@ from hdlib.model import Model
 
 
 def read_params():
-    """
-    Read and test input arguments
+    """Read and test the input arguments.
 
-    :return:        The ArgumentParser object
+    Returns
+    -------
+    argparse.ArgumentParser
+        The ArgumentParser object
     """
 
     p = ap.ArgumentParser(
@@ -113,8 +112,12 @@ def read_params():
 
 
 def chopin2():
-    """
-    The ML model implemented in chopin2 is described in the following scientific paper:
+    """Domain-agnostic supervised learning with hyperdimensional computing.
+    
+    Notes
+    -----
+    chopin2 is available in GitHub at https://github.com/cumbof/chopin2 and its ML model is described
+    in the following scientific article:
 
     Cumbo F, Cappelli E, Weitschek E.
     A brain-inspired hyperdimensional computing approach for classifying massive dna methylation data of cancer
@@ -145,75 +148,20 @@ def chopin2():
     
     _, features, content, classes = load_dataset(args.input, sep=args.fieldsep)
 
-    print("Points: {}; Features {}; Classes {}".format(len(content), len(features), len(set(classes))))
+    class_labels = sorted(list(set(classes)))
+
+    print("Points: {}; Features {}; Classes {}".format(len(content), len(features), len(class_labels)))
 
     # Initialise the model
     print("Building the HD model")
     
     model = Model(size=args.dimensionality, levels=args.levels, vtype="bipolar")
 
-    if not args.feature_selection:
-        # Fit the model
-        model.fit(content, classes)
-
-        if args.kfolds > 0:
-            # Predict in cross-validation
-            print("Cross-validating model with {} folds".format(args.kfolds))
-
-            predictions = model.cross_val_predict(
-                content,
-                classes,
-                cv=args.kfolds,
-                distance_method="cosine",
-                retrain=args.retrain,
-                n_jobs=args.nproc
-            )
-
-        elif args.test_percentage > 0.0:
-            # Predict with a percentage-split
-            print("Percentage-split: training={}% test={}%".format(100.0 - args.test_percentage, args.test_percentage))
-
-            test_indices = percentage_split(len(content), args.test_percentage)
-
-            predictions = [
-                model.predict(
-                    test_indices,
-                    distance_method="cosine",
-                    retrain=args.retrain,
-                    stop_if_worse=True
-                )
-            ]
-
-        # For each prediction, compute the accuracy, f1, precision, and recall
-        accuracy_scores = list()
-        f1_scores = list()
-        precision_scores = list()
-        recall_scores = list()
-
-        retraining_iterations = list()
-
-        for y_indices, y_pred, retrainings in predictions:
-            y_true = [label for position, label in enumerate(classes) if position in y_indices]
-
-            accuracy_scores.append(accuracy_score(y_true, y_pred))
-            f1_scores.append(f1_score(y_true, y_pred), average="micro")
-            precision_scores.append(precision_score(y_true, y_pred), average="micro")
-            recall_scores.append(recall_score(y_true, y_pred), average="micro")
-
-            retraining_iterations.append(retrainings)
-
-        print("Accuracy: {:.2f}".format(statistics.mean(accuracy_scores)))
-        print("F1-Score: {:.2f}".format(statistics.mean(f1_scores)))
-        print("Precision: {:.2f}".format(statistics.mean(precision_scores)))
-        print("Recall: {:.2f}".format(statistics.mean(recall_scores)))
-
-        print("Retraining iterations: {}".format(statistics.mean(retraining_iterations)))
-
-    else:
+    if args.feature_selection:
         print("Selecting features.. This may take a while\n")
 
         # Run the feature selection
-        importance, scores, top_importance = model.stepwise_regression(
+        importances, scores, best_importance = model.stepwise_regression(
             content,
             features,
             classes,
@@ -230,8 +178,8 @@ def chopin2():
         # Print features in ascending order on their score
         table = [["Feature", "Importance"]]
 
-        for feature in sorted(importance.keys(), key=lambda f: importance[f]):
-            table.append([feature, importance[feature]])
+        for feature in sorted(importances.keys(), key=lambda f: importances[f]):
+            table.append([feature, importances[feature]])
 
         print(tabulate(table, headers="firstrow", tablefmt="simple"))
 
@@ -245,7 +193,97 @@ def chopin2():
 
         print(tabulate(table, headers="firstrow", tablefmt="simple"))
 
-        print("\nAccuracy: {:.2f}".format(scores[top_importance]))
+        print("\nBest importance: {}".format(best_importance))
+
+        # Select features based on the best importance
+        if args.feature_selection == "backward":
+            selected_features = [feature for feature in importances if importances[feature] <= best_importance]
+
+        elif args.feature_selection == "forward":
+            selected_features = [feature for feature in importances if importances[feature] >= best_importance]
+
+        print("Selected features: {}\n".format(len(selected_features)))
+
+        # Also print the score for each importance level
+        table = [["Features"]]
+
+        for feature in selected_features:
+            table.append([feature])
+
+        print(tabulate(table, headers="firstrow", tablefmt="simple"))
+
+        # Replace features with their positions in the original list of features
+        selected_features = [features.index(feature) for feature in selected_features]
+
+        print("\nBuilding a model with the selected features only")
+
+        # Reshape content by considering the selected features only
+        content = [[value for position, value in enumerate(sample) if position in selected_features] for sample in content]
+
+    # Fit the model
+    model.fit(content, classes)
+
+    if args.kfolds > 0:
+        # Predict in cross-validation
+        print("Cross-validating model with {} folds\n".format(args.kfolds))
+
+        predictions = model.cross_val_predict(
+            content,
+            classes,
+            cv=args.kfolds,
+            distance_method="cosine",
+            retrain=args.retrain,
+            n_jobs=args.nproc
+        )
+
+    elif args.test_percentage > 0.0:
+        # Predict with a percentage-split
+        print("Percentage-split: training={}% test={}%\n".format(100.0 - args.test_percentage, args.test_percentage))
+
+        test_indices = percentage_split(len(content), args.test_percentage)
+
+        predictions = [
+            model.predict(
+                test_indices,
+                distance_method="cosine",
+                retrain=args.retrain
+            )
+        ]
+
+    # For each prediction, compute the accuracy, f1, precision, and recall
+    accuracy_scores = list()
+    f1_scores = list()
+    precision_scores = list()
+    recall_scores = list()
+
+    retraining_iterations = list()
+
+    print("Labels: {}".format(class_labels))
+
+    for fold, (y_indices, y_pred, retrainings) in enumerate(predictions):
+        y_true = [label for position, label in enumerate(classes) if position in y_indices]
+
+        accuracy_scores.append(accuracy_score(y_true, y_pred))
+        f1_scores.append(f1_score(y_true, y_pred, average="weighted"))
+        precision_scores.append(precision_score(y_true, y_pred, average="weighted"))
+        recall_scores.append(recall_score(y_true, y_pred, average="weighted"))
+
+        retraining_iterations.append(retrainings)
+
+        # Produce the confusion matrix for each fold
+        print("Fold {}".format(fold + 1))
+
+        print(confusion_matrix(y_true, y_pred, labels=class_labels))
+
+        print()
+
+    print("Accuracy: {:.2f}".format(statistics.mean(accuracy_scores)))
+    print("F1-Score: {:.2f}".format(statistics.mean(f1_scores)))
+    print("Precision: {:.2f}".format(statistics.mean(precision_scores)))
+    print("Recall: {:.2f}".format(statistics.mean(recall_scores)))
+
+    print("Retraining iterations: {}".format(statistics.mean(retraining_iterations)))
+
 
 if __name__ == "__main__":
     t0 = time.time()
