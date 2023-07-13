@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.1.11
+
+[@cumbof/hdlib@0.1.11](https://github.com/cumbof/hdlib/releases/tag/0.1.11)
+
+### Fixes
+
+- The `model.Model.stepwise_regression` function now report the importance corresponding to the best score;
+- The `model.Model._init_fit_predict` function uses `average="weighted"` for computing a score different from the accuracy to account for label imbalance;
+- `examples/chopin2.py` now computes different scores on the resulting predictions, prints the list of selected features based on the best score, and finally reports the confusion matrices.
+
 ## Version 0.1.10
 
 [@cumbof/hdlib@0.1.10](https://github.com/cumbof/hdlib/releases/tag/0.1.10)
