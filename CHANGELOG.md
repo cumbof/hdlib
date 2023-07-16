@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 0.1.12
+
+[@cumbof/hdlib@0.1.12](https://github.com/cumbof/hdlib/releases/tag/0.1.12)
+
+### New features
+
+- `examples/chopin2.py` now reports the Accuracy, F1, Precision, Recall, and the Matthews correlation coefficient for each of the folds in addition to the average of these scores as evaluation metrics of the hyperdimensional computing models;
+- `model.Model` class functions now raise different exceptions based on multiple checks on the input parameters.
+
 ## Version 0.1.11
 
 [@cumbof/hdlib@0.1.11](https://github.com/cumbof/hdlib/releases/tag/0.1.11)
