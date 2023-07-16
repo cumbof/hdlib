@@ -4,14 +4,14 @@
 __author__ = ("Fabio Cumbo (fabio.cumbo@gmail.com)")
 
 __version__ = "1.1.0"
-__date__ = "Jul 13, 2023"
+__date__ = "Jul 16, 2023"
 
 import argparse as ap
 import os
 import statistics
 import time
 
-from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, matthews_corrcoef, precision_score, recall_score
 from tabulate import tabulate
 
 from hdlib.parser import load_dataset, percentage_split
@@ -189,7 +189,7 @@ def chopin2():
         table = [["Importance", "Score (accuracy)"]]
 
         for imp in sorted(scores.keys()):
-            table.append([imp, scores[imp]])
+            table.append([imp, "{:.4f}".format(scores[imp])])
 
         print(tabulate(table, headers="firstrow", tablefmt="simple"))
 
@@ -250,39 +250,70 @@ def chopin2():
             )
         ]
 
-    # For each prediction, compute the accuracy, f1, precision, and recall
+    # For each prediction, compute the Accuracy, F1, Precision, Recall, AUC
     accuracy_scores = list()
     f1_scores = list()
     precision_scores = list()
     recall_scores = list()
+    mcc_scores = list()
 
     retraining_iterations = list()
 
-    print("Labels: {}".format(class_labels))
+    print("Class labels: {}\n".format(class_labels))
 
     for fold, (y_indices, y_pred, retrainings) in enumerate(predictions):
-        y_true = [label for position, label in enumerate(classes) if position in y_indices]
-
-        accuracy_scores.append(accuracy_score(y_true, y_pred))
-        f1_scores.append(f1_score(y_true, y_pred, average="weighted"))
-        precision_scores.append(precision_score(y_true, y_pred, average="weighted"))
-        recall_scores.append(recall_score(y_true, y_pred, average="weighted"))
-
+        # Produce the confusion matrix for each fold
+        print("Fold {} ({} retrainings)".format(fold + 1, retrainings))
         retraining_iterations.append(retrainings)
 
-        # Produce the confusion matrix for each fold
-        print("Fold {}".format(fold + 1))
+        y_true = [label for position, label in enumerate(classes) if position in y_indices]
 
-        print(confusion_matrix(y_true, y_pred, labels=class_labels))
+        fold_accuracy = accuracy_score(y_true, y_pred)
+        print("\tAccuracy: {}".format("{:.4f}".format(fold_accuracy)))
+        accuracy_scores.append(fold_accuracy)
+
+        fold_f1 = f1_score(y_true, y_pred, average="weighted")
+        print("\tF1: {}".format("{:.4f}".format(fold_f1)))
+        f1_scores.append(fold_f1)
+
+        fold_precision = precision_score(y_true, y_pred, average="weighted")
+        print("\tPrecision: {}".format("{:.4f}".format(fold_precision)))
+        precision_scores.append(fold_precision)
+
+        fold_recall = recall_score(y_true, y_pred, average="weighted")
+        print("\tRecall: {}".format("{:.4f}".format(fold_recall)))
+        recall_scores.append(fold_recall)
+
+        fold_mcc = matthews_corrcoef(y_true, y_pred)
+        print("\tMatthews Corr. Coeff.: {}".format("{:.4f}".format(fold_mcc)))
+        mcc_scores.append(fold_mcc)
+
+        print("\tConfusion Matrix:")
+        if len(class_labels) > 2:
+            for row in confusion_matrix(y_true, y_pred, labels=class_labels):
+                print("\t\t{}".format(row))
+
+        else:
+            tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=class_labels).ravel()
+
+            print("\t\tTN: {}".format(tn))
+            print("\t\tFP: {}".format(fp))
+            print("\t\tFN: {}".format(fn))
+            print("\t\tTP: {}".format(tp))
 
         print()
 
-    print("Accuracy: {:.2f}".format(statistics.mean(accuracy_scores)))
-    print("F1-Score: {:.2f}".format(statistics.mean(f1_scores)))
-    print("Precision: {:.2f}".format(statistics.mean(precision_scores)))
-    print("Recall: {:.2f}".format(statistics.mean(recall_scores)))
-
-    print("Retraining iterations: {}".format(statistics.mean(retraining_iterations)))
+    for score_label, score_values in zip(
+        ["Retrainings", "Accuracy", "F1", "Precision", "Recall", "Matthews Corr. Coeff."],
+        [retraining_iterations, accuracy_scores, f1_scores, precision_scores, recall_scores, mcc_scores]
+    ):
+        print(
+            "{}: {:.4f}{}".format(
+                score_label,
+                statistics.mean(score_values),
+                " ({:.4f} stdev)".format(statistics.stdev(score_values)) if len(score_values) > 1 else ""
+            )
+        )
 
 
 if __name__ == "__main__":
