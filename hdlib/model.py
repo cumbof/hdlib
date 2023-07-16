@@ -390,13 +390,35 @@ class Model(object):
         tuple
             A tuple with the error rate, the list of wrongly predicted Vector objects, and the list
             of wrong predictions with the same length of the list with wrongly predicted Vector objects.
+
+        Raises
+        ------
+        ValueError
+            - if the input `training_vectors` does not contain Vector objects;
+            - if the input `class_vectors` does not contain Vector objects.
+        Exception
+            - if no training vectors have been provided;
+            - if no class vectors have been provided.
         """
+
+        if not training_vectors:
+            raise Exception("No training vectors have been provided")
+
+        if not class_vectors:
+            raise Exception("No class vectors have been provided")
 
         wrongly_predicted_training_vectors = list()
 
         wrong_predictions = list()
 
+        for class_vector in class_vectors:
+            if not isinstance(class_vector, Vector):
+                raise ValueError("The list of class vectors does not contain Vector objects")
+
         for training_vector in training_vectors:
+            if not isinstance(training_vector, Vector):
+                raise ValueError("The list of training vectors does not contain Vector objects")
+
             # Vectors contain only their class info in tags
             true_class = list(training_vector.tags)[0]
 
@@ -453,35 +475,46 @@ class Model(object):
 
         Raises
         ------
+        ValueError
+            If the number of retraining iterations is <0.
         Exception
-            If the number of test indices does not match the number of points retrieved from the space.
+            - if no test indices have been provided;
+            - if the number of test indices does not match the number of points retrieved from the space.
         """
 
-        # List with test vector names
-        test_points = list()
+        if not test_indices:
+            raise Exception("No test indices have been provided")
 
-        # List with training vector names
-        training_points = list()
+        if retrain < 0:
+            raise ValueError("The number of retraining iterations must be >=0")
 
-        # Retrieve test and training vector names from vectors in the space
-        for vector_name in self.space.memory():
+        # List with test vectors
+        test_vectors = list()
+
+        # List with training vectors
+        training_vectors = list()
+
+        # Retrieve test and training vectors from the space
+        for vector_name in self.space.space:
             if vector_name.startswith("point_"):
                 vector_id = int(vector_name.split("_")[-1])
 
+                vector = self.space.space[vector_name]
+
                 if vector_id in test_indices:
-                    test_points.append(vector_name)
+                    test_vectors.append(vector)
 
                 else:
-                    training_points.append(vector_name)
+                    training_vectors.append(vector)
 
-        if len(test_points) != len(test_indices):
-            raise Exception("Unable to retrieve all the test vectors in space")
+        if len(test_vectors) != len(test_indices):
+            raise Exception("Unable to retrieve all the test vectors from the space")
 
         class_vectors = list()
 
         for class_pos, class_label in enumerate(sorted(list(self.classes))):
             # Get training vectors for the current class label
-            class_points = [vector for vector in self.space.get(names=training_points) if class_label in vector.tags]
+            class_points = [vector for vector in training_vectors if class_label in vector.tags]
 
             # Build the vector representations of the current class
             class_vector = None
@@ -499,9 +532,6 @@ class Model(object):
 
             class_vectors.append(class_vector)
 
-        # Retrieve the test vectors from the space        
-        test_vectors = self.space.get(names=test_points)
-
         # Make a copy of the vector representation of classes for retraining the model
         retraining_class_vectors = copy.deepcopy(class_vectors) if retrain > 0 else class_vectors
 
@@ -509,9 +539,6 @@ class Model(object):
         retraining_iterations = 0
 
         if retrain > 0:
-            # Retrieve the training vectors from the space
-            training_vectors = self.space.get(names=training_points)
-
             # Take track of the error rate while retraining the model
             model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
                 training_vectors,
@@ -613,8 +640,9 @@ class Model(object):
             - if the number of data points does not match with the number of class labels;
             - if there is only one class label.
         ValueError
-            - if the number of folds is a number < 1;
-            - if the number of folds exceeds the number of data points.
+            - if the number of folds is a number < 2;
+            - if the number of folds exceeds the number of data points;
+            - if the number of retraining iterations is <0.
         """
 
         if len(points) != len(labels):
@@ -623,11 +651,17 @@ class Model(object):
         if len(set(labels)) < 2:
             raise Exception("The number of unique class labels must be > 1")
 
-        if cv < 1:
-            raise ValueError("The number of folds must be a positive number > 0")
+        if cv < 2:
+            raise ValueError("Not enough folds for cross-validating the model. Please use a minimum of 2 folds")
 
         if cv > len(points):
-            raise ValueError("The number of folds cannot exceed the number of data points")        
+            raise ValueError("The number of folds cannot exceed the number of data points")
+
+        if retrain < 0:
+            raise ValueError("The number of retraining iterations must be >=0")
+
+        # Use all the available resources if n_job < 1
+        n_jobs = os.cpu_count() if n_jobs < 1 else n_jobs
 
         split_indices = kfolds_split(len(points), cv)
 
@@ -708,7 +742,39 @@ class Model(object):
         -------
         tuple
             A tuple with the best size and levels according to the accuracies of the cross-validated models.
+
+        Raises
+        ------
+        ValueError
+            - if the number of class labels does not match with the number of data points;
+            - if the number of specified folds for cross-validating the model is lower than 2;
+            - if the number of folds exceeds the number of data points;
+            - if the number of retraining iterations is <0.
+        Exception
+            - if no data points have been provided in input;
+            - if no class labels have been provided in input.
         """
+
+        if not points:
+            raise Exception("No data points have been provided")
+
+        if not labels:
+            raise Exception("No class labels have been provided")
+
+        if len(points) != len(labels):
+            raise ValueError("The number of class labels must match with the number of data points")
+
+        if cv < 2:
+            raise ValueError("Not enough folds for cross-validating the model. Please use a minimum of 2 folds")
+
+        if cv > len(points):
+            raise ValueError("The number of folds cannot exceed the number of data points")
+
+        if retrain < 0:
+            raise ValueError("The number of retraining iterations must be >=0")
+
+        # Use all the available resources if n_job < 1
+        n_jobs = os.cpu_count() if n_jobs < 1 else n_jobs
 
         partial_init_fit_predict = partial(
             self._init_fit_predict,
@@ -867,12 +933,57 @@ class Model(object):
         tuple
             A tuple with a dictionary with features and their importance in addition to the best score for each importance rank 
             and the best importance. In case of backward, the lower the better. In case of forward, the higher the better.
+
+        Raises
+        ------
+        ValueError
+            - if there are not enough features for running the feature selection;
+            - if the number of class labels does not match with the number of data points;
+            - if the specified feature selection method is not supported;
+            - if the number of specified folds for cross-validating the model is lower than 2;
+            - if the number of folds exceeds the number of data points;
+            - if the number of retraining iterations is <0;
+            - if the threshold is negative or greater than 1.0;
+            - if the uncertainty percentage is negative or greater than 100.0.
+        Exception
+            - if no data points have been provided in input;
+            - if no class labels have been provided in input.
         """
+
+        if not points:
+            raise Exception("No data points have been provided")
+
+        if len(features) < 2:
+            raise ValueError("Not enough features for running a feature selection")
+
+        if not labels:
+            raise Exception("No class labels have been provided")
+
+        if len(points) != len(labels):
+            raise ValueError("The number of class labels must match with the number of data points")
 
         method = method.lower()
 
         if method not in ("backward", "forward"):
             raise ValueError("Stepwise method {} is not supported".format(method))
+
+        if cv < 2:
+            raise ValueError("Not enough folds for cross-validating the model. Please use a minimum of 2 folds")
+
+        if cv > len(points):
+            raise ValueError("The number of folds cannot exceed the number of data points")
+
+        if retrain < 0:
+            raise ValueError("The number of retraining iterations must be >=0")
+
+        if threshold < 0.0 or threshold > 1.0:
+            raise ValueError("Invalid threshold! It must be >= 0.0 and <= 1.0")
+
+        if uncertainty < 0.0 or uncertainty > 100.0:
+            raise ValueError("Invalid uncertainty percentage! It must be >= 0.0 and <= 100.0")
+
+        # Use all the available resources if n_job < 1
+        n_jobs = os.cpu_count() if n_jobs < 1 else n_jobs
 
         # Initialize the importance of features to 0
         features_importance = {feature: {"importance": 0, "score": 0.0} for feature in features}
