@@ -549,11 +549,11 @@ class Model(object):
             for _ in range(retrain):
                 retraining_class_vectors_iter = copy.deepcopy(retraining_class_vectors)
 
-                for training_vector in wrongly_predicted_training_vectors:
+                for vector_position, training_vector in enumerate(wrongly_predicted_training_vectors):
                     true_class = list(training_vector.tags)[0]
 
                     # Error mitigation
-                    for vector_position, class_vector in enumerate(retraining_class_vectors_iter):
+                    for class_vector in retraining_class_vectors_iter:
                         if true_class in class_vector.tags:
                             class_vector.vector = class_vector.vector + training_vector.vector
 
