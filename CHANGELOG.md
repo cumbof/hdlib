@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 0.1.13
+
+[@cumbof/hdlib@0.1.13](https://github.com/cumbof/hdlib/releases/tag/0.1.13)
+
+### Fixes
+
+- Fix the retraining process in `model.Model.predict`.
+
 ## Version 0.1.12
 
 [@cumbof/hdlib@0.1.12](https://github.com/cumbof/hdlib/releases/tag/0.1.12)
