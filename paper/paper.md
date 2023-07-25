@@ -39,7 +39,7 @@ The need for a general framework for designing vector-symbolic architectures is 
 
 The design of such architectures is usually a time consuming task which requires the tuning of multiple parameters that are dependent upon the input data. By providing a general framework, here called _hdlib_, researchers can focus on the creative aspects of the architecture design, rather than being burdened by low-level implementation details.
 
-The framework provides abstractions and reusable components as described in the following section, enabling rapid prototyping and experimentation with various architectural configurations.
+Despite the presence of a few existing libraries for building vector-symbolic architectures [@heddes2023torchhd; @kang2022openhd; @simon2022hdtorch], the development of _hdlib_ was driven by the need to offer increased flexibility and a more intuitive interface to complex abstractions, thereby facilitating a wider adoption in the research community. It does not only consolidate most of the features from the existing libraries but also introduces novel functionalities which are easily accessible through a set of abstractions and reusable components as described in the following section, enabling rapid prototyping and experimentation with various architectural configurations.
 
 # Library overview
 
