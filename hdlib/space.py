@@ -300,7 +300,7 @@ class Vector(object):
         >>> vector1.dist(vector2, method='cosine')
         0.0034
 
-        Generate two random bipolar vectors and compute the cosine similarity between them.
+        Generate two random bipolar vectors and compute the distance between them.
         """
 
         if self.size != vector.size:
@@ -310,7 +310,7 @@ class Vector(object):
             raise Exception("Vectors must be of the same type")
 
         if method.lower() == "cosine":
-            return np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
+            return 1 - np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
 
         elif method.lower() == "hamming":
             return np.count_nonzero(self.vector != vector.vector)
@@ -1131,22 +1131,22 @@ class Space(object):
 
         self.root = name
 
-    def find(self, vector: Vector, threshold: float=-1.0, method: str="cosine") -> Tuple[str, float]:
+    def find(self, vector: Vector, threshold: float=0.0, method: str="cosine") -> Tuple[str, float]:
         """Search for the closest vector in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default -1.0
-            Threshold on distance/similarity.
+        threshold : float, default 0.0
+            Threshold on distance between vectors.
         method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
-            Distance/similarity measure.
+            Distance metric.
 
         Returns
         -------
         tuple
-            A tuple with the name of the closest vector in space and its distance/similarity with the input vector.
+            A tuple with the name of the closest vector in space and its distance with the input vector.
 
         Examples
         --------
@@ -1159,10 +1159,10 @@ class Space(object):
         >>> space.insert(vector2)
         >>> space.insert(vector3)
         >>> space.find(vector1)
-        ('vector1', 1.0)
+        ('vector1', 0.0)
 
         Create a space with three vectors 'vector1', 'vector2', and 'vector3', and search for the closest vector to 'vector1'.
-        The result is obviously itself, 'vector1', with a cosine similarity of 1.0.
+        The result is obviously itself, 'vector1', with a cosine distance of 0.0.
         """
 
         # Exploit self.find_all() to seach for the best match
@@ -1171,28 +1171,28 @@ class Space(object):
 
         return best, distances[best]
 
-    def find_all(self, vector: Vector, threshold: float=-1.0, method: str="cosine") -> Tuple[dict, str]:
+    def find_all(self, vector: Vector, threshold: float=0.0, method: str="cosine") -> Tuple[dict, str]:
         """Compute distance of the input vector against all vectors in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default -1.0
-            Threshold on distance/similarity.
+        threshold : float, default 0.0
+            Threshold on distance between vectors.
         method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
-            Distance/similarity measure.
+            Distance metric.
 
         Returns
         -------
         dict
-            A dictionary the distances/similarities between the input vector and all the other vectors in the space,
+            A dictionary the distances between the input vector and all the other vectors in the space,
             in addition to the name of the closest vector.
 
         Raises
         ------
         ValueError
-            If the threshold is lower than -1.0 or higher than 1.0.
+            If the threshold is lower than 0.0.
         Exception
             If the size of the input vector is not compatible with the size of vectors in the space.
 
@@ -1207,22 +1207,22 @@ class Space(object):
         >>> space.insert(vector2)
         >>> space.insert(vector3)
         >>> space.find_all(vector1)
-        ({'vector1': 1.0, 'vector2': 0.004, 'vector3': 0.015}, 'vector1')
+        ({'vector1': 0.0, 'vector2': 0.004, 'vector3': 0.015}, 'vector1')
 
-        Create a space with three vectors 'vector1', 'vector2', and 'vector3', and compute the cosine similarity between 'vector1'
+        Create a space with three vectors 'vector1', 'vector2', and 'vector3', and compute the cosine distance between 'vector1'
         and all the other vectors in space (including itseld). The closest vector is obviously itself, 'vector1', with a cosine 
-        similarity of 1.0. Use a seed for reproducing the same distances.
+        distance of 0.0. Use a seed for reproducing the same distances.
         """
 
         if self.size != vector.size:
             raise Exception("Space and vectors with different size are not compatible")
 
-        if threshold < -1.0 or threshold > 1.0:
-            raise ValueError("Threshold cannot be lower than -1.0 or higher than 1.0")
+        if threshold < 0.0:
+            raise ValueError("Threshold cannot be lower than 0.0")
 
         distances = dict()
 
-        distance = -1.0
+        distance = 2.0
 
         best = None
 
@@ -1230,10 +1230,10 @@ class Space(object):
             # Compute distance
             dist = self.space[v].dist(vector, method=method)
 
-            if dist >= threshold:
+            if dist <= threshold:
                 distances[v] = dist
 
-                if distances[v] > distance:
+                if distances[v] < distance:
                     best = v
 
                     distance = distances[v]
