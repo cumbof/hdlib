@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.1.14
+
+[@cumbof/hdlib@0.1.14](https://github.com/cumbof/hdlib/releases/tag/0.1.14)
+
+### Fixes
+
+- `model.Model.fit` now correctly generates both bipolar and binary level vectors;
+- `space.Vector.dist` automatically converts the cosine similarity into a distance measure;
+- `model.Model.predict` and `model.Model.error_rate` are now compatible with all the supported distance metrics (euclidean, hamming, and cosine).
+
 ## Version 0.1.13
 
 [@cumbof/hdlib@0.1.13](https://github.com/cumbof/hdlib/releases/tag/0.1.13)
