@@ -52,13 +52,6 @@ class Model(object):
 
         This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
         It also defines the number of level vectors to 100.
-
-        Notes
-        -----
-        The classification model based on the hyperdimensional computing paradigm has been originally described in [1]_.
-
-        .. [1] Cumbo, Fabio, Eleonora Cappelli, and Emanuel Weitschek. "A brain-inspired hyperdimensional computing approach 
-        for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020): 233.
         """
 
         if not isinstance(size, int):
@@ -172,7 +165,7 @@ class Model(object):
         cv : int, default 5
             Number of folds for cross-validating the model.
         distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
-            Method used to compute the distance/similarity between vectors in space.
+            Method used to compute the distance between vectors in space.
         retrain : int, default 0
             Number of retraining iterations.
         n_jobs : int, default 1,
@@ -209,7 +202,7 @@ class Model(object):
         model = Model(size=size, levels=levels, vtype=vtype)
 
         # Fit the model
-        model.fit(points, labels)
+        model.fit(points, labels=labels)
 
         # Cross-validate the model
         predictions = model.cross_val_predict(
@@ -239,7 +232,7 @@ class Model(object):
     def fit(
         self,
         points: List[List[float]],
-        labels: List[str],
+        labels: Optional[List[str]]=None,
     ) -> None:
         """Build a vector-symbolic architecture. Define level vectors and encode samples.
 
@@ -247,15 +240,16 @@ class Model(object):
         ----------
         points : list
             List of lists with numerical data (floats).
-        labels : list
+        labels : list, optional
             List with class labels. It has the same size of `points`.
+            Used in case of supervised learning only.
 
         Raises
         ------
         Exception
             - if there are not enough data points (the length of `points` is < 3);
-            - if the length of `points` does not match the length of `labels`;
-            - if there is only one class label.
+            - if `labels` is not None and the length of `points` does not match the length of `labels`;
+            - if `labels` is not None and there is only one class label.
         """
 
         if len(points) < 3:
@@ -263,13 +257,15 @@ class Model(object):
             # the classification model is 2, while 1 data point is enough for the test set
             raise Exception("Not enough data points")
 
-        if len(points) != len(labels):
-            raise Exception("The number of data points does not match with the number of class labels")
+        if labels:
+            # Labels are optional here. They are used in case of supervised learning only
+            if len(points) != len(labels):
+                raise Exception("The number of data points does not match with the number of class labels")
 
-        if len(set(labels)) < 2:
-            raise Exception("The number of unique class labels must be > 1")
+            if len(set(labels)) < 2:
+                raise Exception("The number of unique class labels must be > 1")
 
-        self.classes = set(labels)
+            self.classes = set(labels)
 
         # Initialize the hyperdimensional space so that it overwrites any existing space in Model
         self.space = Space(size=self.size, vtype=self.vtype)
@@ -302,14 +298,14 @@ class Model(object):
             level = "level_{}".format(level_count)
 
             if level_count == 0:
-                base = np.full(self.size, -1)
+                base = np.full(self.size, -1 if self.vtype == "bipolar" else 0)
                 to_one = np.random.RandomState(seed=0).permutation(index_vector)[:change]
 
             else:
                 to_one = np.random.RandomState(seed=0).permutation(index_vector)[:next_level]
 
             for index in to_one:
-                base[index] = base[index] * -1
+                base[index] = base[index] * -1 if self.vtype == "bipolar" else base[index] + 1
 
             vector = Vector(
                 name=level,
@@ -365,8 +361,9 @@ class Model(object):
             sum_vector.name = "point_{}".format(point_position)
             self.space.insert(sum_vector)
 
-            # Tag vector with its class label
-            self.space.add_tag(name=sum_vector.name, tag=labels[point_position])
+            if labels:
+                # Tag vector with its class label
+                self.space.add_tag(name=sum_vector.name, tag=labels[point_position])
 
     def error_rate(
         self,
@@ -436,7 +433,7 @@ class Model(object):
                         closest_dist = distance
 
                     else:
-                        if distance > closest_dist:
+                        if distance < closest_dist:
                             closest_class = list(class_vector.tags)[0]
                             closest_dist = distance
 
@@ -479,7 +476,15 @@ class Model(object):
             If the number of retraining iterations is <0.
         Exception
             - if no test indices have been provided;
+            - if no class labels have been provided while fitting the model;
             - if the number of test indices does not match the number of points retrieved from the space.
+
+        Notes
+        -----
+        The supervised classification model based on the hyperdimensional computing paradigm has been originally described in [1]_.
+
+        .. [1] Cumbo, Fabio, Eleonora Cappelli, and Emanuel Weitschek. "A brain-inspired hyperdimensional computing approach 
+        for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020): 233.
         """
 
         if not test_indices:
@@ -487,6 +492,9 @@ class Model(object):
 
         if retrain < 0:
             raise ValueError("The number of retraining iterations must be >=0")
+
+        if len(self.classes) == 0:
+            raise Exception("No class labels found")
 
         # List with test vectors
         test_vectors = list()
@@ -595,7 +603,7 @@ class Model(object):
                     closest_dist = distance
 
                 else:
-                    if distance > closest_dist:
+                    if distance < closest_dist:
                         closest_class = list(class_vector.tags)[0]
                         closest_dist = distance
 
@@ -623,7 +631,7 @@ class Model(object):
         cv : int, default 5
             Number of folds for cross-validating the model.
         distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
-            Method used to compute the distance/similarity between vectors in space.
+            Method used to compute the distance between vectors in space.
         retrain : int, default 0
             Number of retraining iterations.
         n_jobs : int, default 1,
@@ -730,7 +738,7 @@ class Model(object):
         cv : int, default 5
             Number of folds for cross-validating the model.
         distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
-            Method used to compute the distance/similarity between vectors in space.
+            Method used to compute the distance between vectors in space.
         retrain : int, default 0
             Number of retraining iterations.
         n_jobs : int, default 1,
@@ -854,7 +862,7 @@ class Model(object):
         cv : int, default 5
             Number of folds for cross-validating the model.
         distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
-            Method used to compute the distance/similarity between vectors in space.
+            Method used to compute the distance between vectors in space.
         retrain : int, default 0
             Number of retraining iterations.
         metric: {'accuracy', 'f1', 'precision', 'recall'}, default 'accuracy'
@@ -913,7 +921,7 @@ class Model(object):
         cv : int, default 5
             Number of folds for cross-validating the model.
         distance_method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
-            Method used to compute the distance/similarity between vectors in space.
+            Method used to compute the distance between vectors in space.
         retrain : int, default 0
             Number of retraining iterations.
         n_jobs : int, default 1,
