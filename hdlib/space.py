@@ -298,7 +298,7 @@ class Vector(object):
         >>> vector1 = Vector(seed=1)
         >>> vector2 = Vector(seed=2)
         >>> vector1.dist(vector2, method='cosine')
-        0.0034
+        0.996
 
         Generate two random bipolar vectors and compute the distance between them.
         """
@@ -337,7 +337,7 @@ class Vector(object):
         >>> vector2 = Vector()
         >>> vector3 = bind(vector1, vector2)
         >>> vector3.normalize()
-        >>> ((vector3.vector == 0) | (vector3.vector == 1)).all()
+        >>> ((vector3.vector == -1) | (vector3.vector == 1)).all()
         True
 
         Binding or bundling two vectors can produce a new vector whose vtype is different from the
@@ -1131,14 +1131,14 @@ class Space(object):
 
         self.root = name
 
-    def find(self, vector: Vector, threshold: float=0.0, method: str="cosine") -> Tuple[str, float]:
+    def find(self, vector: Vector, threshold: float=2.0, method: str="cosine") -> Tuple[str, float]:
         """Search for the closest vector in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 0.0
+        threshold : float, default 2.0
             Threshold on distance between vectors.
         method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
             Distance metric.
@@ -1171,14 +1171,14 @@ class Space(object):
 
         return best, distances[best]
 
-    def find_all(self, vector: Vector, threshold: float=0.0, method: str="cosine") -> Tuple[dict, str]:
+    def find_all(self, vector: Vector, threshold: float=2.0, method: str="cosine") -> Tuple[dict, str]:
         """Compute distance of the input vector against all vectors in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 0.0
+        threshold : float, default 2.0
             Threshold on distance between vectors.
         method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
             Distance metric.
@@ -1207,7 +1207,7 @@ class Space(object):
         >>> space.insert(vector2)
         >>> space.insert(vector3)
         >>> space.find_all(vector1)
-        ({'vector1': 0.0, 'vector2': 0.004, 'vector3': 0.015}, 'vector1')
+        ({'vector1': 0.0, 'vector2': 0.996, 'vector3': 0.985}, 'vector1')
 
         Create a space with three vectors 'vector1', 'vector2', and 'vector3', and compute the cosine distance between 'vector1'
         and all the other vectors in space (including itseld). The closest vector is obviously itself, 'vector1', with a cosine 
