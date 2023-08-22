@@ -39,7 +39,7 @@ The need for a general framework for designing vector-symbolic architectures is 
 
 The design of such architectures is usually a time consuming task which requires the tuning of multiple parameters that are dependent upon the input data. By providing a general framework, here called _hdlib_, researchers can focus on the creative aspects of the architecture design, rather than being burdened by low-level implementation details.
 
-Despite the presence of a few existing libraries for building vector-symbolic architectures [@heddes2023torchhd; @kang2022openhd; @simon2022hdtorch], the development of _hdlib_ was driven by the need to offer increased flexibility and a more intuitive interface to complex abstractions, thereby facilitating a wider adoption in the research community. It does not only consolidate most of the features from the existing libraries but also introduces novel functionalities which are easily accessible through a set of abstractions and reusable components as described in the following section, enabling rapid prototyping and experimentation with various architectural configurations.
+Despite the presence of a few existing libraries for building vector-symbolic architectures [@heddes2023torchhd; @kang2022openhd; @simon2022hdtorch], the development of _hdlib_ was driven by the need to offer increased flexibility and a more intuitive interface to complex abstractions, thereby facilitating a wider adoption in the research community. It not only consolidates most of the features from the existing libraries but also introduces novel functionalities which are easily accessible through a set of abstractions and reusable components as described in the following section, enabling rapid prototyping and experimentation with various architectural configurations.
 
 # Library overview
 
@@ -58,7 +58,7 @@ Vectors are characterized by (i) a name or ID, (ii) a dimensionality usually gre
 The `Vector` class also provides the following three arithmetic functions for manipulating and combining `Vector` objects:
 
 - `bind`: (i) it is invertible, (ii) it distributes over bundling (see `bundle`), (iii) it preserves the distance, and (iv) the resulting vector is dissimilar to the input vectors;
-- `bundle`: (i) the resulting vector is similar to the input vectors, (ii) the more vectors are involved in bundling, the harder it is to determine the component vectors, and (iii) if several copies of any vector are included in bundling, the resulting vector is closer to the dominant vector then to the other components;
+- `bundle`: (i) the resulting vector is similar to the input vectors, (ii) the more vectors are involved in bundling, the harder it is to determine the component vectors, and (iii) if several copies of any vector are included in bundling, the resulting vector is closer to the dominant vector than to the other components;
 - `permute`: (i) it is invertible, (ii) it distributes over bundling and any element-wise operation, (iii) it preserves the distance, and (iv) the resulting vector is dissimilar to the input vectors.
 
 It also provides a `dist` function for computing the distance between two `Vector` objects in the hyperdimensional space according to a specific similarity or distance measure (i.e., cosine similarity, euclidean distance, and hamming distance).
