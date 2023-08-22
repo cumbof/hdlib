@@ -1,8 +1,15 @@
-"""Classification Model with Hyperdimensional Computing."""
+"""Classification Model with Hyperdimensional Computing.
+
+It implements the __hdlib.Model__ class object which allows to generate, fit, and test a classification model
+built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
+
+It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
+relevant features in a dataset according to the same HDC paradigm."""
 
 import copy
 import itertools
 import multiprocessing as mp
+import os
 import statistics
 from functools import partial
 from typing import Dict, List, Optional, Set, Tuple
@@ -484,7 +491,7 @@ class Model(object):
         The supervised classification model based on the hyperdimensional computing paradigm has been originally described in [1]_.
 
         .. [1] Cumbo, Fabio, Eleonora Cappelli, and Emanuel Weitschek. "A brain-inspired hyperdimensional computing approach 
-        for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020): 233.
+        for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020): 233. 
         """
 
         if not test_indices:
