@@ -8,7 +8,7 @@ Vector-Symbolic Architectures (VSA, a.k.a. Hyperdimensional Computing) is an eme
 
 Here we present _hdlib_, a Python library for designing Vector-Symbolic Architectures. It is distributed under the MIT license as a Python package through PyPI and Conda on the _conda-forge_ channel.
 
-GitHub releases are also available on Zenodo at https://doi.org/10.5281/zenodo.7996502.
+GitHub releases are also available on Zenodo at [https://doi.org/10.5281/zenodo.7996502](https://doi.org/10.5281/zenodo.7996502).
 
 Please refer to the official [Wiki](https://github.com/cumbof/hdlib/wiki) for any information about the implemented modules and how to use the library.
 
@@ -34,8 +34,10 @@ Please credit our work in your manuscript by citing:
 
 ## Support and contributions
 
-Long-term discussion and bug reports are maintained via GitHub Issues, while code review is managed via GitHub Pull Requests.
+Long-term discussion and bug reports are maintained via [GitHub Issues](https://github.com/cumbof/hdlib/issues), while code review is managed via [GitHub Pull Requests](https://github.com/cumbof/hdlib/pulls).
 
 Please, (i) be sure that there are no existing issues/PR concerning the same bug or improvement before opening a new issue/PR; (ii) write a clear and concise description of what the bug/PR is about; (iii) specifying the list of steps to reproduce the behavior in addition to versions and other technical details is highly recommended.
+
+For additional information about how to contribute, please visit the [CONTRIBUTING](https://github.com/cumbof/hdlib/blob/main/CONTRIBUTING.md) section.
 
 Copyright © 2022 [Fabio Cumbo](https://github.com/cumbof). See [LICENSE](https://github.com/cumbof/hdlib/blob/main/LICENSE) for additional details.
