@@ -1,4 +1,8 @@
-"""Implementation of the arithmetic operators."""
+"""Implementation of the arithmetic operators.
+
+This library also provides the same set of arithmetic functions also accessible as _Vector_'s class methods. 
+However, while the result of calling these functions from a _Vector_ object woule be applied in place, 
+invoking the same functions from the _hdlib.arithmetic_ module would initialize new _Vector_ objects."""
 
 import numpy as np
 
@@ -28,10 +32,10 @@ def bind(vector1: Vector, vector2: Vector) -> Vector:
     Notes
     -----
     The bind operator has the following properties:
-    - invertible (unbind);
-    - it distributes over bundling;
-    - it preserves the distance;
-    - the resulting vector is dissimilar to the input vectors.
+    (i) invertible (unbind);
+    (ii) it distributes over bundling;
+    (iii) it preserves the distance;
+    (iv) the resulting vector is dissimilar to the input vectors.
 
     Examples
     --------
@@ -97,10 +101,10 @@ def bundle(vector1: Vector, vector2: Vector) -> Vector:
     Notes
     -----
     The bundle operator has the following properties:
-    - the resulting vector is similar to the input vectors;
-    - the more vectors are involved in bundling, the harder it is to determine the component vectors;
-    - if several copies of any vector are included in bundling, the resulting vector is closer to the 
-      dominant vector than to the other components.
+    (i) the resulting vector is similar to the input vectors;
+    (ii) the more vectors are involved in bundling, the harder it is to determine the component vectors;
+    (iii) if several copies of any vector are included in bundling, the resulting vector is closer to the 
+    dominant vector than to the other components.
 
     Examples
     --------
@@ -161,10 +165,10 @@ def permute(vector: Vector, rotate_by: int=1) -> Vector:
     Notes
     -----
     The permute operator has the following properties:
-    - invertible;
-    - it distributes over bundling and any elementwise operation;
-    - it preserves the distance;
-    - tThe resulting vector is dissimilar to the input vectors.
+    (i) invertible;
+    (ii) it distributes over bundling and any elementwise operation;
+    (iii) it preserves the distance;
+    (iv) the resulting vector is dissimilar to the input vectors.
 
     Examples
     --------

@@ -1,4 +1,7 @@
-"""Implementation of hyperdimensional Vector and Space."""
+"""Implementation of hyperdimensional Vector and Space.
+
+__hdlib__ provides the _Space_ and _Vector_ classes under _hdlib.space_ for building the abstract 
+representation of a hyperdimensional space which acts as a container for a multitude of vectors."""
 
 import errno
 import os

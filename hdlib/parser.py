@@ -1,4 +1,7 @@
-"""Utility to parse input files."""
+"""Utility to parse input files.
+
+This module provides a set of utilities to parse input tables and split the dataset 
+into training and test sets as a simple percentage split or cross validation."""
 
 import errno
 import os
