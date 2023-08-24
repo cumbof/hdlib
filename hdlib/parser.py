@@ -15,7 +15,7 @@ def load_dataset(
     filepath: os.path.abspath,
     sep: str="\t"
 ) -> Tuple[List[str], List[List[float]], List[str]]:
-    """Load the input dataset.
+    """Load the input numerical dataset.
 
     Parameters
     ----------
@@ -29,6 +29,13 @@ def load_dataset(
     tuple
         A tuple with a list of sample IDs, a list of features, a list of lists with the
         actual numerical data (floats), and a list with class labels.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the input file does not exist.
+    ValueError
+        If the input dataset does not contain number only.
     """
 
     if not os.path.isfile(filepath):
@@ -38,26 +45,30 @@ def load_dataset(
     content = list()
     classes = list()
 
-    with open(filepath) as infile:
-        # Trip the first and last column out
-        features = infile.readline().rstrip().split(sep)[1:-1]
+    try:
+        with open(filepath) as infile:
+            # Trip the first and last column out
+            features = infile.readline().rstrip().split(sep)[1:-1]
 
-        for line in infile:
-            line = line.strip()
+            for line in infile:
+                line = line.strip()
 
-            if line and not line.startswith("#"):
-                line_split = line.split(sep)
+                if line and not line.startswith("#"):
+                    line_split = line.split(sep)
 
-                # Add sample ID
-                samples.append(line_split[0])
+                    # Add sample ID
+                    samples.append(line_split[0])
 
-                row_data = [float(value) for value in line_split[1:-1]]
+                    row_data = [float(value) for value in line_split[1:-1]]
 
-                # Add row
-                content.append(row_data)
+                    # Add row
+                    content.append(row_data)
 
-                # Take track of the class
-                classes.append(line_split[-1])
+                    # Take track of the class
+                    classes.append(line_split[-1])
+
+    except ValueError as e:
+        raise Exception("The input dataset must contain numbers only!").with_traceback(e.__traceback__)
 
     return samples, features, content, classes
 
