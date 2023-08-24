@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unit tests for hdlib
-"""
+"""Unit tests for hdlib."""
 
 import errno
 import os
@@ -13,30 +11,25 @@ import numpy as np
 from sklearn import datasets
 from sklearn.metrics import accuracy_score
 
-# Define the test root directory
-TESTS_DIR = os.path.dirname(os.path.realpath(__file__))
-
 # Define the hdlib root directory
-HDLIB_DIR = os.path.join(os.path.dirname(TESTS_DIR), "hdlib")
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+print(ROOT_DIR)
 
 # This is required to import the functions we need to test
-sys.path.append(HDLIB_DIR)
+sys.path.append(ROOT_DIR)
 
-# Finally import the space, vector, and arithmetic operators
-from space import Space, Vector
-from arithmetic import bundle, bind, permute
-from model import Model
+# Finally import the space, vector, arithmetic operators, model, and parser utilities
+from hdlib.space import Space, Vector
+from hdlib.arithmetic import bundle, bind, permute
+from hdlib.model import Model
+from hdlib.parser import kfolds_split, percentage_split
 
 
 class TestHDLib(unittest.TestCase):
-    """
-    Unit tests for hdlib
-    """
+    """Unit tests for hdlib"""
 
     def test_vector(self):
-        """
-        Unit tests for hdlib/space.py:Vector class
-        """
+        """Unit tests for hdlib/space.py:Vector class"""
 
         # Create a random binary numpy.ndarray
         ndarray = np.random.randint(2, size=10000)
@@ -75,9 +68,7 @@ class TestHDLib(unittest.TestCase):
                 self.assertTrue(np.array_equal(bipolar_vector.vector, pickle_vector.vector))
 
     def test_space(self):
-        """
-        Unit tests for hdlib/space.py:Space class
-        """
+        """Unit tests for hdlib/space.py:Space class"""
 
         # Create a Space object
         space = Space(vtype="bipolar")
@@ -136,13 +127,34 @@ class TestHDLib(unittest.TestCase):
             with self.subTest():
                 self.assertEqual(len(space), len(pickle_space))
 
-    def test_model(self):
-        """
-        Unit tests for hdlib/model.py:Model class
-        """
+    def test_arithmetic(self):
+        """Unit tests for hdlib/arithmetic.py"""
 
-        # Create a model with vector dimensionality 10000, vector type bipolar, and 10 levels
-        model = Model(size=10000, levels=10, vtype="bipolar")
+        # Create two vectors to test the arithmetic functions
+        vector1, vector2 = Vector(), Vector()
+
+        # Element-wise multiplication of vector1 and vector2
+        bind_vector = bind(vector1, vector2)
+
+        with self.subTest():
+            self.assertFalse(all(bind_vector.vector == vector1.vector) and all(bind_vector.vector == vector2.vector))
+
+        # Element-wise sum of vector1 and bind_vector
+        bundle_vector = bundle(vector1, bind_vector)
+
+        with self.subTest():
+            self.assertFalse(all(bundle_vector.vector == vector1.vector) and all(bundle_vector.vector == bind_vector.vector))
+
+        # Rotate bundle_vector by 1 position
+        permute_vector = permute(bundle_vector, rotate_by=1)
+
+        with self.subTest():
+            # The permute function is invertible
+            # Rotating permute_vector by -1 positions will produce bundle_vector again
+            self.assertTrue(all(bundle_vector.vector == permute(permute_vector, rotate_by=-1).vector))
+
+    def test_model(self):
+        """Unit tests for hdlib/model.py:Model class"""
 
         # Use the IRIS dataset from sklearn
         iris = datasets.load_iris()
@@ -151,12 +163,33 @@ class TestHDLib(unittest.TestCase):
         points = iris.data.tolist()
         classes = iris.target.tolist()
 
+        # Create a model with bipolar vectors
+        model = Model(vtype="bipolar")
+
+        # Run the auto-tune to establish the best dimensionality and the best number of level vectors
+        best_size, best_levels, _ = model.auto_tune(
+            points,
+            classes,
+            size_range=range(10000, 10010),
+            levels_range=range(10, 15)
+        )
+
+        with self.subTest():
+            self.assertTrue(best_size in range(10000, 10010))
+
+        with self.subTest():
+            self.assertTrue(best_levels in range(10, 15))
+
+        # Redefine the model using the best size and the best number of level vectors
+        model.size = best_size
+        model.levels = best_levels
+
         # Fit the model
         model.fit(points, classes)
 
         with self.subTest():
-            # There should be N data points plus 10 level vectors in the space
-            self.assertEqual(len(model.space.memory()), len(points) + 10)
+            # There should be N data points plus a number of level vectors in the space
+            self.assertEqual(len(model.space.memory()), len(points) + best_levels)
 
         # 5-folds cross-validation
         # 10 retraining iterations
@@ -176,9 +209,55 @@ class TestHDLib(unittest.TestCase):
             with self.subTest():
                 self.assertTrue(accuracy > 0.0)
 
+            scores.append(accuracy)
+
+        with self.subTest():
+            self.assertTrue((sum(scores) / len(scores)) > 0.0)
+
+        # Get the set of features
+        features = iris.feature_names
+
+        # Run the feature selection in backward mode,
+        # 5-folds cross-validation, and 10 retraining iterations
+        importance, scores, top_importance = model.stepwise_regression(
+            points,
+            features,
+            classes,
+            method="backward",
+            cv=5,
+            retrain=10,
+            threshold=0.0
+        )
+
+        with self.subTest():
+            self.assertTrue(len(importance) == len(features))
+
+    def test_parser(self):
+        """Unit tests for hdlib/parser.py"""
+
+        # Considering a dataset with 10 data points,
+        # report the indices of a selected 20% of points
+        test_indices = percentage_split(10, 20)
+
+        with self.subTest():
+            # 20% of 10 is 2
+            self.assertTrue(len(test_indices) == 2)
+
+        # Considering a dataset with 100 data points,
+        # split the dataset into 5 folds and report the indices of points for each fold
+        folds = kfolds_split(100, 5)
+
+        with self.subTest():
+            # There must be 5 folds here
+            self.assertTrue(len(folds) == 5)
+
+        for fold in folds:
+            with self.subTest():
+                # Each fold must contain 20 data points
+                self.assertTrue(len(fold) == 20)
+
     def test_dollar_of_mexico(self):
-        """
-        Reproduce the "What is the Dollar of Mexico?"
+        """Reproduce the "What is the Dollar of Mexico?"
 
         Credits:
         Kanerva, P., 2010, November. 
