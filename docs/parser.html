@@ -46,7 +46,7 @@ def load_dataset(
     filepath: os.path.abspath,
     sep: str=&#34;\t&#34;
 ) -&gt; Tuple[List[str], List[List[float]], List[str]]:
-    &#34;&#34;&#34;Load the input dataset.
+    &#34;&#34;&#34;Load the input numerical dataset.
 
     Parameters
     ----------
@@ -60,6 +60,13 @@ def load_dataset(
     tuple
         A tuple with a list of sample IDs, a list of features, a list of lists with the
         actual numerical data (floats), and a list with class labels.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the input file does not exist.
+    ValueError
+        If the input dataset does not contain number only.
     &#34;&#34;&#34;
 
     if not os.path.isfile(filepath):
@@ -69,26 +76,30 @@ def load_dataset(
     content = list()
     classes = list()
 
-    with open(filepath) as infile:
-        # Trip the first and last column out
-        features = infile.readline().rstrip().split(sep)[1:-1]
+    try:
+        with open(filepath) as infile:
+            # Trip the first and last column out
+            features = infile.readline().rstrip().split(sep)[1:-1]
 
-        for line in infile:
-            line = line.strip()
+            for line in infile:
+                line = line.strip()
 
-            if line and not line.startswith(&#34;#&#34;):
-                line_split = line.split(sep)
+                if line and not line.startswith(&#34;#&#34;):
+                    line_split = line.split(sep)
 
-                # Add sample ID
-                samples.append(line_split[0])
+                    # Add sample ID
+                    samples.append(line_split[0])
 
-                row_data = [float(value) for value in line_split[1:-1]]
+                    row_data = [float(value) for value in line_split[1:-1]]
 
-                # Add row
-                content.append(row_data)
+                    # Add row
+                    content.append(row_data)
 
-                # Take track of the class
-                classes.append(line_split[-1])
+                    # Take track of the class
+                    classes.append(line_split[-1])
+
+    except ValueError as e:
+        raise Exception(&#34;The input dataset must contain numbers only!&#34;).with_traceback(e.__traceback__)
 
     return samples, features, content, classes
 
@@ -253,10 +264,10 @@ def percentage_split(points: int, percentage: float, seed: int=0) -&gt; List[int
 </details>
 </dd>
 <dt id="hdlib.parser.load_dataset"><code class="name flex">
-<span>def <span class="ident">load_dataset</span></span>(<span>filepath: <function abspath at 0x7f9c83200830>, sep: str = '\t') ‑> Tuple[List[str], List[List[float]], List[str]]</span>
+<span>def <span class="ident">load_dataset</span></span>(<span>filepath: <function abspath at 0x7ff680a00830>, sep: str = '\t') ‑> Tuple[List[str], List[List[float]], List[str]]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Load the input dataset.</p>
+<div class="desc"><p>Load the input numerical dataset.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>filepath</code></strong> :&ensp;<code>str</code></dt>
@@ -269,6 +280,13 @@ def percentage_split(points: int, percentage: float, seed: int=0) -&gt; List[int
 <dt><code>tuple</code></dt>
 <dd>A tuple with a list of sample IDs, a list of features, a list of lists with the
 actual numerical data (floats), and a list with class labels.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>FileNotFoundError</code></dt>
+<dd>If the input file does not exist.</dd>
+<dt><code>ValueError</code></dt>
+<dd>If the input dataset does not contain number only.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -278,7 +296,7 @@ actual numerical data (floats), and a list with class labels.</dd>
     filepath: os.path.abspath,
     sep: str=&#34;\t&#34;
 ) -&gt; Tuple[List[str], List[List[float]], List[str]]:
-    &#34;&#34;&#34;Load the input dataset.
+    &#34;&#34;&#34;Load the input numerical dataset.
 
     Parameters
     ----------
@@ -292,6 +310,13 @@ actual numerical data (floats), and a list with class labels.</dd>
     tuple
         A tuple with a list of sample IDs, a list of features, a list of lists with the
         actual numerical data (floats), and a list with class labels.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the input file does not exist.
+    ValueError
+        If the input dataset does not contain number only.
     &#34;&#34;&#34;
 
     if not os.path.isfile(filepath):
@@ -301,26 +326,30 @@ actual numerical data (floats), and a list with class labels.</dd>
     content = list()
     classes = list()
 
-    with open(filepath) as infile:
-        # Trip the first and last column out
-        features = infile.readline().rstrip().split(sep)[1:-1]
+    try:
+        with open(filepath) as infile:
+            # Trip the first and last column out
+            features = infile.readline().rstrip().split(sep)[1:-1]
 
-        for line in infile:
-            line = line.strip()
+            for line in infile:
+                line = line.strip()
 
-            if line and not line.startswith(&#34;#&#34;):
-                line_split = line.split(sep)
+                if line and not line.startswith(&#34;#&#34;):
+                    line_split = line.split(sep)
 
-                # Add sample ID
-                samples.append(line_split[0])
+                    # Add sample ID
+                    samples.append(line_split[0])
 
-                row_data = [float(value) for value in line_split[1:-1]]
+                    row_data = [float(value) for value in line_split[1:-1]]
 
-                # Add row
-                content.append(row_data)
+                    # Add row
+                    content.append(row_data)
 
-                # Take track of the class
-                classes.append(line_split[-1])
+                    # Take track of the class
+                    classes.append(line_split[-1])
+
+    except ValueError as e:
+        raise Exception(&#34;The input dataset must contain numbers only!&#34;).with_traceback(e.__traceback__)
 
     return samples, features, content, classes</code></pre>
 </details>
