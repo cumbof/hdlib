@@ -852,7 +852,7 @@ class Space(object):
         if tags and len(names) != len(tags):
             raise Exception("The number of vector IDs must match the size of the tags list")
 
-        names = list(set(names))
+        names = set(names)
 
         for pos, name in enumerate(names):
             try:
@@ -872,13 +872,7 @@ class Space(object):
 
             vector = Vector(name=name, size=self.size, tags=vector_tags, vtype=self.vtype)
 
-            self.space[vector.name] = vector
-
-            for tag in vector_tags:
-                if tag not in self.tags:
-                    self.tags[tag] = set()
-
-                self.tags[tag].add(name)
+            self.insert(vector)
 
     def remove(self, name: str) -> Vector:
         """Remove a vector from the space by its name.
