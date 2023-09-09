@@ -1,5 +1,20 @@
 # Changelog
 
+## Version 0.1.15
+
+[@cumbof/hdlib@0.1.15](https://github.com/cumbof/hdlib/releases/tag/0.1.15)
+
+### New features
+
+- Add [examples/chopin2_iris.sh](https://github.com/cumbof/hdlib/blob/main/examples/chopin2_iris.sh) as a test case for [examples/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2_iris.sh);
+- Add new unit tests to [test/test.py](https://github.com/cumbof/hdlib/blob/main/test/test.py).
+
+### Fixes
+
+- `space.Space.bulk_insert` has been refactored to make use of `space.Space.insert`;
+- `parser.load_dataset` now throws a `ValueError` in case of non-numerical datasets;
+- Add missing `import os` in `space.Model`.
+
 ## Version 0.1.14
 
 [@cumbof/hdlib@0.1.14](https://github.com/cumbof/hdlib/releases/tag/0.1.14)
