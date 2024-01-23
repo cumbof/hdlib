@@ -15,7 +15,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, matthews
 from tabulate import tabulate
 
 from hdlib.parser import load_dataset, percentage_split
-from hdlib.model import Model
+from hdlib.model import MLModel
 
 
 def read_params():
@@ -155,7 +155,7 @@ def chopin2():
     # Initialise the model
     print("Building the HD model")
     
-    model = Model(size=args.dimensionality, levels=args.levels, vtype="bipolar")
+    model = MLModel(size=args.dimensionality, levels=args.levels, vtype="bipolar")
 
     if args.feature_selection:
         print("Selecting features.. This may take a while\n")
@@ -240,7 +240,7 @@ def chopin2():
         # Predict with a percentage-split
         print("Percentage-split: training={}% test={}%\n".format(100.0 - args.test_percentage, args.test_percentage))
 
-        test_indices = percentage_split(len(content), args.test_percentage)
+        test_indices = percentage_split(classes, args.test_percentage)
 
         predictions = [
             model.predict(
