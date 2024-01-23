@@ -275,6 +275,74 @@ class Vector(object):
             self.vector
         )
 
+    def __add__(self, vector: "Vector") -> "Vector":
+        """Implement the addition operator between two Vector objects as bundle.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the bundle operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        >>> from hdlib.space import Vector
+        >>> vector1 = Vector()
+        >>> vector2 = Vector()
+        >>> vector3 = vector1 + vector2
+        >>> type(vector3)
+        <class 'hdlib.space.Vector'>
+
+        The bundle function returns a new Vector object whose content is computed as the element-wise sum 
+        of the two input vectors.
+        """
+
+        if not isinstance(vector, Vector):
+            raise TypeError("Cannot apply the bundle operator to non-Vector objects")
+
+        # Import arithmetic.bundle here to avoid circular imports
+        from hdlib.arithmetic import bundle as bundle_operator
+
+        return bundle_operator(self, vector)
+
+    def __mul__(self, vector: "Vector") -> "Vector":
+        """Implement the multiplication operator between two Vector objects as bind.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the bind operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        >>> from hdlib.space import Vector
+        >>> vector1 = Vector()
+        >>> vector2 = Vector()
+        >>> vector3 = vector1 * vector2
+        >>> type(vector3)
+        <class 'hdlib.space.Vector'>
+
+        The bind function returns a new Vector object whose content is computed as the element-wise 
+        multiplication of the two input vectors.
+        """
+
+        if not isinstance(vector, Vector):
+            raise TypeError("Cannot apply the bind operator to non-Vector objects")
+
+        # Import arithmetic.bind here to avoid circular imports
+        from hdlib.arithmetic import bind as bind_operator
+
+        return bind_operator(self, vector)
+
     def dist(self, vector: "Vector", method: str="cosine") -> float:
         """Compute distance between vectors.
 
