@@ -1,10 +1,12 @@
-"""Classification Model with Hyperdimensional Computing.
+"""Modelling with hdlib.
 
-It implements the __hdlib.Model__ class object which allows to generate, fit, and test a classification model
+It implements the __hdlib.MLModel__ class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
 
 It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
-relevant features in a dataset according to the same HDC paradigm."""
+relevant features in a dataset according to the same HDC paradigm.
+
+Furthermore, it implements the __hdlib.GraphModel__ class for representing graphs as vector-symbolic architectures."""
 
 import copy
 import itertools
@@ -16,14 +18,14 @@ from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.model_selection import KFold
 
 from hdlib import __version__
 from hdlib.space import Space, Vector
 from hdlib.arithmetic import bundle, permute
-from hdlib.parser import kfolds_split
 
 
-class Model(object):
+class MLModel(object):
     """Classification Model."""
 
     def __init__(
@@ -31,8 +33,8 @@ class Model(object):
         size: int=10000,
         levels: int=2,
         vtype: str="bipolar",
-    ) -> "Model":
-        """Initialize a Model object.
+    ) -> "MLModel":
+        """Initialize a MLModel object.
 
         Parameters
         ----------
@@ -52,10 +54,10 @@ class Model(object):
 
         Examples
         --------
-        >>> from hdlib.model import Model
-        >>> model = Model(size=10000, levels=100, vtype='bipolar')
+        >>> from hdlib.model import MLModel
+        >>> model = MLModel(size=10000, levels=100, vtype='bipolar')
         >>> type(model)
-        <class 'hdlib.model.Model'>
+        <class 'hdlib.model.MLModel'>
 
         This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
         It also defines the number of level vectors to 100.
@@ -95,21 +97,21 @@ class Model(object):
         self.version = __version__
 
     def __str__(self) -> None:
-        """Print the Model object properties.
+        """Print the MLModel object properties.
 
         Returns
         -------
         str
-            A description of the Model object. It reports the vectors size, the vector type,
+            A description of the MLModel object. It reports the vectors size, the vector type,
             the number of level vectors, the number of data points, and the number of class labels.
 
         Examples
         --------
-        >>> from hdlib.model import Model
-        >>> model = Model()
+        >>> from hdlib.model import MLModel
+        >>> model = MLModel()
         >>> print(model)
 
-                Class:   hdlib.model.Model
+                Class:   hdlib.model.MLModel
                 Size:    10000
                 Type:    bipolar
                 Levels:  2
@@ -118,13 +120,13 @@ class Model(object):
 
                 []
 
-        Print the Model object properties. By default, the size of vectors in space is 10,000,
+        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
         their types is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         """
 
         return """
-            Class:   hdlib.model.Model
+            Class:   hdlib.model.MLModel
             Version: {}
             Size:    {}
             Type:    {}
@@ -155,7 +157,7 @@ class Model(object):
         n_jobs: int=1,
         metric: str="accuracy"
     ) -> Tuple[int, int, float]:
-        """Initialize a new Model, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
+        """Initialize a new MLModel, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
 
         Parameters
         ----------
@@ -206,7 +208,7 @@ class Model(object):
             raise ValueError("Score metric {} is not supported".format(metric))
 
         # Generate a new Model
-        model = Model(size=size, levels=levels, vtype=vtype)
+        model = MLModel(size=size, levels=levels, vtype=vtype)
 
         # Fit the model
         model.fit(points, labels=labels)
@@ -678,20 +680,20 @@ class Model(object):
         # Use all the available resources if n_job < 1
         n_jobs = os.cpu_count() if n_jobs < 1 else n_jobs
 
-        split_indices = kfolds_split(len(points), cv)
+        kf = KFold(n_splits=cv, shuffle=True, random_state=0)
 
         # Collect results from every self.predict call
         predictions = list()
 
         if n_jobs == 1:
-            for test_indices in split_indices:
+            for _, test_indices in kf.split(points):
                 _, test_predictions, retraining_iterations = self.predict(
-                    test_indices,
+                    test_indices.tolist(),
                     distance_method=distance_method,
                     retrain=retrain
                 )
 
-                predictions.append((test_indices, test_predictions, retraining_iterations))
+                predictions.append((test_indices.tolist(), test_predictions, retraining_iterations))
 
         else:
             predict_partial = partial(
@@ -705,9 +707,9 @@ class Model(object):
                 jobs = [
                     pool.apply_async(
                         predict_partial,
-                        args=(test_indices,)
+                        args=(test_indices.tolist(),)
                     )
-                    for test_indices in split_indices
+                    for _, test_indices in kf.split(points)
                 ]
 
                 # Get results from jobs
@@ -920,7 +922,7 @@ class Model(object):
         points : list
             List of lists with numerical data (floats).
         features : list
-            List of features
+            List of features.
         labels : list
             List with class labels. It has the same size of `points`.
         method : {'backward', 'forward'}, default 'backward'
