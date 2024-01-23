@@ -21,7 +21,7 @@ sys.path.append(ROOT_DIR)
 # Finally import the space, vector, arithmetic operators, model, and parser utilities
 from hdlib.space import Space, Vector
 from hdlib.arithmetic import bundle, bind, permute
-from hdlib.model import Model
+from hdlib.model import MLModel
 from hdlib.parser import kfolds_split, percentage_split
 
 
@@ -153,8 +153,8 @@ class TestHDLib(unittest.TestCase):
             # Rotating permute_vector by -1 positions will produce bundle_vector again
             self.assertTrue(all(bundle_vector.vector == permute(permute_vector, rotate_by=-1).vector))
 
-    def test_model(self):
-        """Unit tests for hdlib/model.py:Model class"""
+    def test_mlmodel(self):
+        """Unit tests for hdlib/model.py:MLModel class"""
 
         # Use the IRIS dataset from sklearn
         iris = datasets.load_iris()
@@ -164,7 +164,7 @@ class TestHDLib(unittest.TestCase):
         classes = iris.target.tolist()
 
         # Create a model with bipolar vectors
-        model = Model(vtype="bipolar")
+        model = MLModel(vtype="bipolar")
 
         # Run the auto-tune to establish the best dimensionality and the best number of level vectors
         best_size, best_levels, _ = model.auto_tune(
