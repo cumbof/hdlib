@@ -5,8 +5,9 @@ into training and test sets as a simple percentage split or cross validation."""
 
 import errno
 import os
-import random
 from typing import List, Tuple
+
+import numpy as np
 
 
 def load_dataset(
@@ -117,7 +118,7 @@ def percentage_split(labels: List[List[str]], percentage: float, seed: int=0) ->
     if len(unique_labels) < 2:
         raise ValueError("The list of class labels must contain at least two unique lables")
 
-    random.seed(seed)
+    rand = np.random.default_rng(seed=seed)
 
     selection = list()
 
@@ -129,6 +130,6 @@ def percentage_split(labels: List[List[str]], percentage: float, seed: int=0) ->
         indices = [pos for pos, val in enumerate(labels) if val == label]
 
         # Finally subsample the list of indices according to the specific percentage
-        selection.extend(random.sample(indices, int(select_points)))
+        selection.extend([indices[i] for i in rand.choice(len(indices), int(select_points), replace=False)])
 
     return selection
