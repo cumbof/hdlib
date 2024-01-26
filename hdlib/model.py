@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 
 from hdlib import __version__
 from hdlib.space import Space, Vector
@@ -242,6 +242,7 @@ class MLModel(object):
         self,
         points: List[List[float]],
         labels: Optional[List[str]]=None,
+        seed: Optional[int]=None,
     ) -> None:
         """Build a vector-symbolic architecture. Define level vectors and encode samples.
 
@@ -252,6 +253,8 @@ class MLModel(object):
         labels : list, optional
             List with class labels. It has the same size of `points`.
             Used in case of supervised learning only.
+        seed : int, optional
+            An optional seed for reproducibly generating the vectors numpy.ndarray randomly.
 
         Raises
         ------
@@ -302,16 +305,27 @@ class MLModel(object):
 
         gap = (max_value - min_value) / self.levels
 
+        if seed is None:
+            rand = np.random.default_rng()
+
+        else:
+            # Conditions on random seed for reproducibility
+            # numpy allows integers as random seeds
+            if not isinstance(seed, int):
+                raise TypeError("Seed must be an integer number")
+
+            rand = np.random.default_rng(seed=seed)
+
         # Create level vectors
         for level_count in range(self.levels):
             level = "level_{}".format(level_count)
 
             if level_count == 0:
                 base = np.full(self.size, -1 if self.vtype == "bipolar" else 0)
-                to_one = np.random.RandomState(seed=0).permutation(index_vector)[:change]
+                to_one = rand.permutation(index_vector)[:change]
 
             else:
-                to_one = np.random.RandomState(seed=0).permutation(index_vector)[:next_level]
+                to_one = rand.permutation(index_vector)[:next_level]
 
             for index in to_one:
                 base[index] = base[index] * -1 if self.vtype == "bipolar" else base[index] + 1
@@ -529,7 +543,7 @@ class MLModel(object):
 
         class_vectors = list()
 
-        for class_pos, class_label in enumerate(sorted(list(self.classes))):
+        for class_pos, class_label in enumerate(self.classes):
             # Get training vectors for the current class label
             class_points = [vector for vector in training_vectors if class_label in vector.tags]
 
@@ -680,20 +694,22 @@ class MLModel(object):
         # Use all the available resources if n_job < 1
         n_jobs = os.cpu_count() if n_jobs < 1 else n_jobs
 
-        kf = KFold(n_splits=cv, shuffle=True, random_state=0)
+        kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=0)
 
         # Collect results from every self.predict call
         predictions = list()
 
         if n_jobs == 1:
-            for _, test_indices in kf.split(points):
+            for _, test_indices in kf.split(points, labels):
+                test_indices = test_indices.tolist()
+
                 _, test_predictions, retraining_iterations = self.predict(
-                    test_indices.tolist(),
+                    test_indices,
                     distance_method=distance_method,
                     retrain=retrain
                 )
 
-                predictions.append((test_indices.tolist(), test_predictions, retraining_iterations))
+                predictions.append((test_indices, test_predictions, retraining_iterations))
 
         else:
             predict_partial = partial(
@@ -709,7 +725,7 @@ class MLModel(object):
                         predict_partial,
                         args=(test_indices.tolist(),)
                     )
-                    for _, test_indices in kf.split(points)
+                    for _, test_indices in kf.split(points, labels)
                 ]
 
                 # Get results from jobs
