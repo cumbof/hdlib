@@ -132,4 +132,4 @@ def percentage_split(labels: List[List[str]], percentage: float, seed: int=0) ->
         # Finally subsample the list of indices according to the specific percentage
         selection.extend([indices[i] for i in rand.choice(len(indices), int(select_points), replace=False)])
 
-    return selection
+    return sorted(selection)
