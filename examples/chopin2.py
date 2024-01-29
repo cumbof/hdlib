@@ -266,7 +266,7 @@ def chopin2():
         print("Fold {} ({} retrainings)".format(fold + 1, retrainings))
         retraining_iterations.append(retrainings)
 
-        y_true = [label for position, label in enumerate(classes) if position in y_indices]
+        y_true = [classes[position] for position in y_indices]
 
         fold_accuracy = accuracy_score(y_true, y_pred)
         print("\tAccuracy: {}".format("{:.4f}".format(fold_accuracy)))
