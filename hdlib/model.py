@@ -4,9 +4,7 @@ It implements the __hdlib.MLModel__ class object which allows to generate, fit, 
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
 
 It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
-relevant features in a dataset according to the same HDC paradigm.
-
-Furthermore, it implements the __hdlib.GraphModel__ class for representing graphs as vector-symbolic architectures."""
+relevant features in a dataset according to the same HDC paradigm."""
 
 import copy
 import itertools
@@ -19,7 +17,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold
-
+sssss
 from hdlib import __version__
 from hdlib.space import Space, Vector
 from hdlib.arithmetic import bundle, permute
