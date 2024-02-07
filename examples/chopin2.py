@@ -134,7 +134,7 @@ def chopin2():
     if args.kfolds == 0 and args.test_percentage == 0.0:
         raise Exception(
             (
-                "Please use --kfold if you want to cross-validate your model. "
+                "Please use --kfolds if you want to cross-validate your model. "
                 "Otherwise, use --test-percentage to specify the percentage of data points for the test set. "
                 "Use --help for other options"
             )
@@ -308,7 +308,7 @@ def chopin2():
         print()
 
     for score_label, score_values in zip(
-        ["Retrainings", "Error Rates", "Accuracy", "F1", "Precision", "Recall", "Matthews Corr. Coeff."],
+        ["Retrainings", "Error Rate", "Accuracy", "F1", "Precision", "Recall", "Matthews Corr. Coeff."],
         [retraining_iterations, error_rates, accuracy_scores, f1_scores, precision_scores, recall_scores, mcc_scores]
     ):
         print(
