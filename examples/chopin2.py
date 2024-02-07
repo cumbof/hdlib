@@ -258,13 +258,17 @@ def chopin2():
     mcc_scores = list()
 
     retraining_iterations = list()
+    error_rates = list()
 
     print("Class labels: {}\n".format(class_labels))
 
-    for fold, (y_indices, y_pred, retrainings) in enumerate(predictions):
+    for fold, (y_indices, y_pred, retrainings, error_rate) in enumerate(predictions):
         # Produce the confusion matrix for each fold
         print("Fold {} ({} retrainings)".format(fold + 1, retrainings))
         retraining_iterations.append(retrainings)
+
+        print("\tError rate: {}".format(error_rate))
+        error_rates.append(error_rate)
 
         y_true = [classes[position] for position in y_indices]
 
@@ -304,8 +308,8 @@ def chopin2():
         print()
 
     for score_label, score_values in zip(
-        ["Retrainings", "Accuracy", "F1", "Precision", "Recall", "Matthews Corr. Coeff."],
-        [retraining_iterations, accuracy_scores, f1_scores, precision_scores, recall_scores, mcc_scores]
+        ["Retrainings", "Error Rates", "Accuracy", "F1", "Precision", "Recall", "Matthews Corr. Coeff."],
+        [retraining_iterations, error_rates, accuracy_scores, f1_scores, precision_scores, recall_scores, mcc_scores]
     ):
         print(
             "{}: {:.4f}{}".format(
