@@ -224,7 +224,7 @@ class MLModel(object):
         # For each prediction, compute the score and return the average
         scores = list()
 
-        for y_indices, y_pred, _ in predictions:
+        for y_indices, y_pred, _, _ in predictions:
             y_true = [label for position, label in enumerate(labels) if position in y_indices]
 
             if metric == "accuracy":
@@ -472,7 +472,7 @@ class MLModel(object):
         test_indices: List[int],
         distance_method: str="cosine",
         retrain: int=0
-    ) -> Tuple[List[int], List[str], int]:
+    ) -> Tuple[List[int], List[str], int, float]:
         """Supervised Learning. Predict the class labels of the data points in the test set.
 
         Parameters
@@ -489,7 +489,8 @@ class MLModel(object):
         -------
         tuple
             A tuple with the input list `test_indices` in addition to a list with the predicted class labels with the 
-            same size of `test_indices` and the total number of retraining iterations used to retrain the classification model.
+            same size of `test_indices`, the total number of retraining iterations used to retrain the classification model, 
+            and the model error rate.
 
         Raises
         ------
@@ -564,17 +565,17 @@ class MLModel(object):
         # Make a copy of the vector representation of classes for retraining the model
         retraining_class_vectors = copy.deepcopy(class_vectors) if retrain > 0 else class_vectors
 
+        # Take track of the error rate in case of retraining the model
+        model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
+            training_vectors,
+            retraining_class_vectors,
+            distance_method=distance_method
+        )
+
         # Count retraining iterations
         retraining_iterations = 0
 
         if retrain > 0:
-            # Take track of the error rate while retraining the model
-            model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
-                training_vectors,
-                retraining_class_vectors,
-                distance_method=distance_method
-            )
-
             for _ in range(retrain):
                 retraining_class_vectors_iter = copy.deepcopy(retraining_class_vectors)
 
@@ -630,7 +631,7 @@ class MLModel(object):
 
             prediction.append(closest_class)
 
-        return test_indices, prediction, retraining_iterations
+        return test_indices, prediction, retraining_iterations, model_error_rate
 
     def cross_val_predict(
         self,
@@ -701,13 +702,13 @@ class MLModel(object):
             for _, test_indices in kf.split(points, labels):
                 test_indices = test_indices.tolist()
 
-                _, test_predictions, retraining_iterations = self.predict(
+                _, test_predictions, retraining_iterations, model_error_rate = self.predict(
                     test_indices,
                     distance_method=distance_method,
                     retrain=retrain
                 )
 
-                predictions.append((test_indices, test_predictions, retraining_iterations))
+                predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
         else:
             predict_partial = partial(
@@ -728,9 +729,9 @@ class MLModel(object):
 
                 # Get results from jobs
                 for job in jobs:
-                    test_indices, test_predictions, retraining_iterations = job.get()
+                    test_indices, test_predictions, retraining_iterations, model_error_rate = job.get()
 
-                    predictions.append((test_indices, test_predictions, retraining_iterations))
+                    predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
         return predictions
 
