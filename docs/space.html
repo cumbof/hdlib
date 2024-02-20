@@ -306,6 +306,74 @@ class Vector(object):
             self.vector
         )
 
+    def __add__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
+        &#34;&#34;&#34;Implement the addition operator between two Vector objects as bundle.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the bundle operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.space import Vector
+        &gt;&gt;&gt; vector1 = Vector()
+        &gt;&gt;&gt; vector2 = Vector()
+        &gt;&gt;&gt; vector3 = vector1 + vector2
+        &gt;&gt;&gt; type(vector3)
+        &lt;class &#39;hdlib.space.Vector&#39;&gt;
+
+        The bundle function returns a new Vector object whose content is computed as the element-wise sum 
+        of the two input vectors.
+        &#34;&#34;&#34;
+
+        if not isinstance(vector, Vector):
+            raise TypeError(&#34;Cannot apply the bundle operator to non-Vector objects&#34;)
+
+        # Import arithmetic.bundle here to avoid circular imports
+        from hdlib.arithmetic import bundle as bundle_operator
+
+        return bundle_operator(self, vector)
+
+    def __mul__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
+        &#34;&#34;&#34;Implement the multiplication operator between two Vector objects as bind.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the bind operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.space import Vector
+        &gt;&gt;&gt; vector1 = Vector()
+        &gt;&gt;&gt; vector2 = Vector()
+        &gt;&gt;&gt; vector3 = vector1 * vector2
+        &gt;&gt;&gt; type(vector3)
+        &lt;class &#39;hdlib.space.Vector&#39;&gt;
+
+        The bind function returns a new Vector object whose content is computed as the element-wise 
+        multiplication of the two input vectors.
+        &#34;&#34;&#34;
+
+        if not isinstance(vector, Vector):
+            raise TypeError(&#34;Cannot apply the bind operator to non-Vector objects&#34;)
+
+        # Import arithmetic.bind here to avoid circular imports
+        from hdlib.arithmetic import bind as bind_operator
+
+        return bind_operator(self, vector)
+
     def dist(self, vector: &#34;Vector&#34;, method: str=&#34;cosine&#34;) -&gt; float:
         &#34;&#34;&#34;Compute distance between vectors.
 
@@ -1315,7 +1383,7 @@ class Space(object):
 <dl>
 <dt id="hdlib.space.Space"><code class="flex name class">
 <span>class <span class="ident">Space</span></span>
-<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0x7f9c83200830>] = None)</span>
+<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0xffff9e37f0a0>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Vectors space.</p>
@@ -2379,7 +2447,7 @@ Both 'my_vector_3' and 'my_vector_4' contain 'tag1' in their set of tags.</p></d
 </details>
 </dd>
 <dt id="hdlib.space.Space.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7f9c83200830>] = None) ‑> None</span>
+<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0xffff9e37f0a0>] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Dump the Space object to a pickle file.</p>
@@ -3243,7 +3311,7 @@ set 'vector1' as root. Finally, print the name of the nodes linked to the root.<
 </dd>
 <dt id="hdlib.space.Vector"><code class="flex name class">
 <span>class <span class="ident">Vector</span></span>
-<span>(</span><span>name: Optional[str] = None, size: int = 10000, vector: Optional[numpy.ndarray] = None, vtype: str = 'bipolar', tags: Optional[Set[Union[str, int, float]]] = None, seed: Optional[int] = None, warning: bool = False, from_file: Optional[<function abspath at 0x7f9c83200830>] = None)</span>
+<span>(</span><span>name: Optional[str] = None, size: int = 10000, vector: Optional[numpy.ndarray] = None, vtype: str = 'bipolar', tags: Optional[Set[Union[str, int, float]]] = None, seed: Optional[int] = None, warning: bool = False, from_file: Optional[<function abspath at 0xffff9e37f0a0>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Vector object.</p>
@@ -3576,6 +3644,74 @@ and finally create a new vector object <code>vector2</code> from the pickle file
             np.array(list(self.tags)),
             self.vector
         )
+
+    def __add__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
+        &#34;&#34;&#34;Implement the addition operator between two Vector objects as bundle.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the bundle operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.space import Vector
+        &gt;&gt;&gt; vector1 = Vector()
+        &gt;&gt;&gt; vector2 = Vector()
+        &gt;&gt;&gt; vector3 = vector1 + vector2
+        &gt;&gt;&gt; type(vector3)
+        &lt;class &#39;hdlib.space.Vector&#39;&gt;
+
+        The bundle function returns a new Vector object whose content is computed as the element-wise sum 
+        of the two input vectors.
+        &#34;&#34;&#34;
+
+        if not isinstance(vector, Vector):
+            raise TypeError(&#34;Cannot apply the bundle operator to non-Vector objects&#34;)
+
+        # Import arithmetic.bundle here to avoid circular imports
+        from hdlib.arithmetic import bundle as bundle_operator
+
+        return bundle_operator(self, vector)
+
+    def __mul__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
+        &#34;&#34;&#34;Implement the multiplication operator between two Vector objects as bind.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the bind operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.space import Vector
+        &gt;&gt;&gt; vector1 = Vector()
+        &gt;&gt;&gt; vector2 = Vector()
+        &gt;&gt;&gt; vector3 = vector1 * vector2
+        &gt;&gt;&gt; type(vector3)
+        &lt;class &#39;hdlib.space.Vector&#39;&gt;
+
+        The bind function returns a new Vector object whose content is computed as the element-wise 
+        multiplication of the two input vectors.
+        &#34;&#34;&#34;
+
+        if not isinstance(vector, Vector):
+            raise TypeError(&#34;Cannot apply the bind operator to non-Vector objects&#34;)
+
+        # Import arithmetic.bind here to avoid circular imports
+        from hdlib.arithmetic import bind as bind_operator
+
+        return bind_operator(self, vector)
 
     def dist(self, vector: &#34;Vector&#34;, method: str=&#34;cosine&#34;) -&gt; float:
         &#34;&#34;&#34;Compute distance between vectors.
@@ -3966,7 +4102,7 @@ Refers to hdlib.arithmetic.bundle for additional information.</p></div>
 </details>
 </dd>
 <dt id="hdlib.space.Vector.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7f9c83200830>] = None) ‑> None</span>
+<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0xffff9e37f0a0>] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Dump the Vector object to a pickle file.</p>
@@ -4182,16 +4318,6 @@ Refers to hdlib.arithmetic.permute for additional information.</p></div>
 </ul>
 </li>
 </ul>
-
-<ul>
-<li><h2>Resources</h2>
-<ul>
-<li><a title="GitHub" href="https://github.com/cumbof/hdlib" target="_blank">GitHub</a></li>
-<li><a title="Wiki" href="https://github.com/cumbof/hdlib/wiki" target="_blank">Wiki</a></li>
-</ul>
-</li>
-</ul>
-
 </nav>
 </main>
 <footer id="footer">

@@ -36,7 +36,6 @@ into training and test sets as a simple percentage split or cross validation.&#3
 
 import errno
 import os
-import random
 from typing import List, Tuple
 
 import numpy as np
@@ -104,50 +103,14 @@ def load_dataset(
     return samples, features, content, classes
 
 
-def kfolds_split(points: int, folds: int) -&gt; List[List[int]]:
-    &#34;&#34;&#34;Given a number of data points and the number of folds, split a dataset into different folds.
+def percentage_split(labels: List[List[str]], percentage: float, seed: int=0) -&gt; List[int]:
+    &#34;&#34;&#34;Given list of classes as appear in the original dataset and a percentage number, split a dataset and 
+    report the indices of the selected data points.
 
     Parameters
     ----------
-    points : int
-        Number of data points in the input dataset.
-    folds : int
-        Number of folds.
-
-    Returns
-    -------
-    list
-        A list of lists. Every list is a fold with the indices of data points in the original dataset.
-
-    Raises
-    ------
-    ValueError
-        If the number of folds is greater than the number of data points.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.parser import kfolds_split
-    &gt;&gt;&gt; kfolds_split(10, 3)
-    [[0, 3, 6, 9], [1, 4, 7], [2, 5, 8]]
-
-    Considering a dataset with 10 data points, split them into 3 folds.
-    &#34;&#34;&#34;
-
-    if folds &gt; points:
-        raise ValueError(&#34;The number of folds cannot exceed the number of data points&#34;)
-
-    data_points = list(range(points))
-
-    return [data_points[i::folds] for i in range(folds)]
-
-
-def percentage_split(points: int, percentage: float, seed: int=0) -&gt; List[int]:
-    &#34;&#34;&#34;Given a number of data points and a percentage number, split a dataset and report the indices of the of data points.
-
-    Parameters
-    ----------
-    points : int
-        Number of data points in the input dataset.
+    labels : list
+        List of class labels as they appear in the original dataset.
     percentage : float
         Percentage of points to split out of the original dataset.
     seed : int
@@ -167,7 +130,8 @@ def percentage_split(points: int, percentage: float, seed: int=0) -&gt; List[int
     Examples
     --------
     &gt;&gt;&gt; from hdlib.parser import percentage_split
-    &gt;&gt;&gt; percentage_split(10, 20.0, seed=0)
+    &gt;&gt;&gt; labels = [1, 2, 2, 2, 1, 1, 1, 1, 2, 2]
+    &gt;&gt;&gt; percentage_split(labels, 20.0, seed=0)
     [6, 9]
 
     Consider a dataset with 10 data points, select 20% of the points (2 points in this case),
@@ -180,11 +144,26 @@ def percentage_split(points: int, percentage: float, seed: int=0) -&gt; List[int
     if not isinstance(seed, int):
         raise ValueError(&#34;The input seed must be an integer number&#34;)
 
-    select_points = percentage * points / 100.0
+    unique_labels = list(set(labels))
 
-    random.seed(seed)
+    if len(unique_labels) &lt; 2:
+        raise ValueError(&#34;The list of class labels must contain at least two unique lables&#34;)
 
-    return random.sample(list(range(points)), int(select_points))</code></pre>
+    rand = np.random.default_rng(seed=seed)
+
+    selection = list()
+
+    for label in unique_labels:
+        # Get a specific percentage of the data points for a specific class
+        select_points = percentage * labels.count(label) / 100.0
+
+        # Retrieve the indices of the samples under a specific class in the original dataset
+        indices = [pos for pos, val in enumerate(labels) if val == label]
+
+        # Finally subsample the list of indices according to the specific percentage
+        selection.extend([indices[i] for i in rand.choice(len(indices), int(select_points), replace=False)])
+
+    return sorted(selection)</code></pre>
 </details>
 </section>
 <section>
@@ -194,77 +173,8 @@ def percentage_split(points: int, percentage: float, seed: int=0) -&gt; List[int
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="hdlib.parser.kfolds_split"><code class="name flex">
-<span>def <span class="ident">kfolds_split</span></span>(<span>points: int, folds: int) ‑> List[List[int]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Given a number of data points and the number of folds, split a dataset into different folds.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>points</code></strong> :&ensp;<code>int</code></dt>
-<dd>Number of data points in the input dataset.</dd>
-<dt><strong><code>folds</code></strong> :&ensp;<code>int</code></dt>
-<dd>Number of folds.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>list</code></dt>
-<dd>A list of lists. Every list is a fold with the indices of data points in the original dataset.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>ValueError</code></dt>
-<dd>If the number of folds is greater than the number of data points.</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.parser import kfolds_split
-&gt;&gt;&gt; kfolds_split(10, 3)
-[[0, 3, 6, 9], [1, 4, 7], [2, 5, 8]]
-</code></pre>
-<p>Considering a dataset with 10 data points, split them into 3 folds.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def kfolds_split(points: int, folds: int) -&gt; List[List[int]]:
-    &#34;&#34;&#34;Given a number of data points and the number of folds, split a dataset into different folds.
-
-    Parameters
-    ----------
-    points : int
-        Number of data points in the input dataset.
-    folds : int
-        Number of folds.
-
-    Returns
-    -------
-    list
-        A list of lists. Every list is a fold with the indices of data points in the original dataset.
-
-    Raises
-    ------
-    ValueError
-        If the number of folds is greater than the number of data points.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.parser import kfolds_split
-    &gt;&gt;&gt; kfolds_split(10, 3)
-    [[0, 3, 6, 9], [1, 4, 7], [2, 5, 8]]
-
-    Considering a dataset with 10 data points, split them into 3 folds.
-    &#34;&#34;&#34;
-
-    if folds &gt; points:
-        raise ValueError(&#34;The number of folds cannot exceed the number of data points&#34;)
-
-    data_points = list(range(points))
-
-    return [data_points[i::folds] for i in range(folds)]</code></pre>
-</details>
-</dd>
 <dt id="hdlib.parser.load_dataset"><code class="name flex">
-<span>def <span class="ident">load_dataset</span></span>(<span>filepath: <function abspath at 0x7ff680a00830>, sep: str = '\t') ‑> Tuple[List[str], List[List[float]], List[str]]</span>
+<span>def <span class="ident">load_dataset</span></span>(<span>filepath: <function abspath at 0xffff9e37f0a0>, sep: str = '\t') ‑> Tuple[List[str], List[List[float]], List[str]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Load the input numerical dataset.</p>
@@ -355,14 +265,15 @@ actual numerical data (floats), and a list with class labels.</dd>
 </details>
 </dd>
 <dt id="hdlib.parser.percentage_split"><code class="name flex">
-<span>def <span class="ident">percentage_split</span></span>(<span>points: int, percentage: float, seed: int = 0) ‑> List[int]</span>
+<span>def <span class="ident">percentage_split</span></span>(<span>labels: List[List[str]], percentage: float, seed: int = 0) ‑> List[int]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Given a number of data points and a percentage number, split a dataset and report the indices of the of data points.</p>
+<div class="desc"><p>Given list of classes as appear in the original dataset and a percentage number, split a dataset and
+report the indices of the selected data points.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>points</code></strong> :&ensp;<code>int</code></dt>
-<dd>Number of data points in the input dataset.</dd>
+<dt><strong><code>labels</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of class labels as they appear in the original dataset.</dd>
 <dt><strong><code>percentage</code></strong> :&ensp;<code>float</code></dt>
 <dd>Percentage of points to split out of the original dataset.</dd>
 <dt><strong><code>seed</code></strong> :&ensp;<code>int</code></dt>
@@ -385,7 +296,8 @@ actual numerical data (floats), and a list with class labels.</dd>
 </dl>
 <h2 id="examples">Examples</h2>
 <pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.parser import percentage_split
-&gt;&gt;&gt; percentage_split(10, 20.0, seed=0)
+&gt;&gt;&gt; labels = [1, 2, 2, 2, 1, 1, 1, 1, 2, 2]
+&gt;&gt;&gt; percentage_split(labels, 20.0, seed=0)
 [6, 9]
 </code></pre>
 <p>Consider a dataset with 10 data points, select 20% of the points (2 points in this case),
@@ -394,13 +306,14 @@ and report their indices in the original dataset.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def percentage_split(points: int, percentage: float, seed: int=0) -&gt; List[int]:
-    &#34;&#34;&#34;Given a number of data points and a percentage number, split a dataset and report the indices of the of data points.
+<pre><code class="python">def percentage_split(labels: List[List[str]], percentage: float, seed: int=0) -&gt; List[int]:
+    &#34;&#34;&#34;Given list of classes as appear in the original dataset and a percentage number, split a dataset and 
+    report the indices of the selected data points.
 
     Parameters
     ----------
-    points : int
-        Number of data points in the input dataset.
+    labels : list
+        List of class labels as they appear in the original dataset.
     percentage : float
         Percentage of points to split out of the original dataset.
     seed : int
@@ -420,7 +333,8 @@ and report their indices in the original dataset.</p></div>
     Examples
     --------
     &gt;&gt;&gt; from hdlib.parser import percentage_split
-    &gt;&gt;&gt; percentage_split(10, 20.0, seed=0)
+    &gt;&gt;&gt; labels = [1, 2, 2, 2, 1, 1, 1, 1, 2, 2]
+    &gt;&gt;&gt; percentage_split(labels, 20.0, seed=0)
     [6, 9]
 
     Consider a dataset with 10 data points, select 20% of the points (2 points in this case),
@@ -433,11 +347,26 @@ and report their indices in the original dataset.</p></div>
     if not isinstance(seed, int):
         raise ValueError(&#34;The input seed must be an integer number&#34;)
 
-    select_points = percentage * points / 100.0
+    unique_labels = list(set(labels))
 
-    random.seed(seed)
+    if len(unique_labels) &lt; 2:
+        raise ValueError(&#34;The list of class labels must contain at least two unique lables&#34;)
 
-    return random.sample(list(range(points)), int(select_points))</code></pre>
+    rand = np.random.default_rng(seed=seed)
+
+    selection = list()
+
+    for label in unique_labels:
+        # Get a specific percentage of the data points for a specific class
+        select_points = percentage * labels.count(label) / 100.0
+
+        # Retrieve the indices of the samples under a specific class in the original dataset
+        indices = [pos for pos, val in enumerate(labels) if val == label]
+
+        # Finally subsample the list of indices according to the specific percentage
+        selection.extend([indices[i] for i in rand.choice(len(indices), int(select_points), replace=False)])
+
+    return sorted(selection)</code></pre>
 </details>
 </dd>
 </dl>
@@ -458,22 +387,11 @@ and report their indices in the original dataset.</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="hdlib.parser.kfolds_split" href="#hdlib.parser.kfolds_split">kfolds_split</a></code></li>
 <li><code><a title="hdlib.parser.load_dataset" href="#hdlib.parser.load_dataset">load_dataset</a></code></li>
 <li><code><a title="hdlib.parser.percentage_split" href="#hdlib.parser.percentage_split">percentage_split</a></code></li>
 </ul>
 </li>
 </ul>
-
-<ul>
-<li><h2>Resources</h2>
-<ul>
-<li><a title="GitHub" href="https://github.com/cumbof/hdlib" target="_blank">GitHub</a></li>
-<li><a title="Wiki" href="https://github.com/cumbof/hdlib/wiki" target="_blank">Wiki</a></li>
-</ul>
-</li>
-</ul>
-
 </nav>
 </main>
 <footer id="footer">

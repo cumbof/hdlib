@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>hdlib.model API documentation</title>
-<meta name="description" content="Classification Model with Hyperdimensional Computing …" />
+<meta name="description" content="Modelling with hdlib …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,8 +22,8 @@
 <h1 class="title">Module <code>hdlib.model</code></h1>
 </header>
 <section id="section-intro">
-<p>Classification Model with Hyperdimensional Computing.</p>
-<p>It implements the <strong>hdlib.Model</strong> class object which allows to generate, fit, and test a classification model
+<p>Modelling with hdlib.</p>
+<p>It implements the <strong>hdlib.MLModel</strong> class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in <em>Cumbo et al. 2020</em> <a href="https://doi.org/10.3390/a13090233.">https://doi.org/10.3390/a13090233.</a></p>
 <p>It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
 relevant features in a dataset according to the same HDC paradigm.</p>
@@ -31,9 +31,9 @@ relevant features in a dataset according to the same HDC paradigm.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">&#34;&#34;&#34;Classification Model with Hyperdimensional Computing.
+<pre><code class="python">&#34;&#34;&#34;Modelling with hdlib.
 
-It implements the __hdlib.Model__ class object which allows to generate, fit, and test a classification model
+It implements the __hdlib.MLModel__ class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
 
 It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
@@ -49,14 +49,14 @@ from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.model_selection import StratifiedKFold
 
 from hdlib import __version__
 from hdlib.space import Space, Vector
 from hdlib.arithmetic import bundle, permute
-from hdlib.parser import kfolds_split
 
 
-class Model(object):
+class MLModel(object):
     &#34;&#34;&#34;Classification Model.&#34;&#34;&#34;
 
     def __init__(
@@ -64,8 +64,8 @@ class Model(object):
         size: int=10000,
         levels: int=2,
         vtype: str=&#34;bipolar&#34;,
-    ) -&gt; &#34;Model&#34;:
-        &#34;&#34;&#34;Initialize a Model object.
+    ) -&gt; &#34;MLModel&#34;:
+        &#34;&#34;&#34;Initialize a MLModel object.
 
         Parameters
         ----------
@@ -85,10 +85,10 @@ class Model(object):
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.model import Model
-        &gt;&gt;&gt; model = Model(size=10000, levels=100, vtype=&#39;bipolar&#39;)
+        &gt;&gt;&gt; from hdlib.model import MLModel
+        &gt;&gt;&gt; model = MLModel(size=10000, levels=100, vtype=&#39;bipolar&#39;)
         &gt;&gt;&gt; type(model)
-        &lt;class &#39;hdlib.model.Model&#39;&gt;
+        &lt;class &#39;hdlib.model.MLModel&#39;&gt;
 
         This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
         It also defines the number of level vectors to 100.
@@ -128,21 +128,21 @@ class Model(object):
         self.version = __version__
 
     def __str__(self) -&gt; None:
-        &#34;&#34;&#34;Print the Model object properties.
+        &#34;&#34;&#34;Print the MLModel object properties.
 
         Returns
         -------
         str
-            A description of the Model object. It reports the vectors size, the vector type,
+            A description of the MLModel object. It reports the vectors size, the vector type,
             the number of level vectors, the number of data points, and the number of class labels.
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.model import Model
-        &gt;&gt;&gt; model = Model()
+        &gt;&gt;&gt; from hdlib.model import MLModel
+        &gt;&gt;&gt; model = MLModel()
         &gt;&gt;&gt; print(model)
 
-                Class:   hdlib.model.Model
+                Class:   hdlib.model.MLModel
                 Size:    10000
                 Type:    bipolar
                 Levels:  2
@@ -151,13 +151,13 @@ class Model(object):
 
                 []
 
-        Print the Model object properties. By default, the size of vectors in space is 10,000,
+        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
         their types is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         &#34;&#34;&#34;
 
         return &#34;&#34;&#34;
-            Class:   hdlib.model.Model
+            Class:   hdlib.model.MLModel
             Version: {}
             Size:    {}
             Type:    {}
@@ -188,7 +188,7 @@ class Model(object):
         n_jobs: int=1,
         metric: str=&#34;accuracy&#34;
     ) -&gt; Tuple[int, int, float]:
-        &#34;&#34;&#34;Initialize a new Model, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
+        &#34;&#34;&#34;Initialize a new MLModel, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
 
         Parameters
         ----------
@@ -239,7 +239,7 @@ class Model(object):
             raise ValueError(&#34;Score metric {} is not supported&#34;.format(metric))
 
         # Generate a new Model
-        model = Model(size=size, levels=levels, vtype=vtype)
+        model = MLModel(size=size, levels=levels, vtype=vtype)
 
         # Fit the model
         model.fit(points, labels=labels)
@@ -257,7 +257,7 @@ class Model(object):
         # For each prediction, compute the score and return the average
         scores = list()
 
-        for y_indices, y_pred, _ in predictions:
+        for y_indices, y_pred, _, _ in predictions:
             y_true = [label for position, label in enumerate(labels) if position in y_indices]
 
             if metric == &#34;accuracy&#34;:
@@ -273,6 +273,7 @@ class Model(object):
         self,
         points: List[List[float]],
         labels: Optional[List[str]]=None,
+        seed: Optional[int]=None,
     ) -&gt; None:
         &#34;&#34;&#34;Build a vector-symbolic architecture. Define level vectors and encode samples.
 
@@ -283,6 +284,8 @@ class Model(object):
         labels : list, optional
             List with class labels. It has the same size of `points`.
             Used in case of supervised learning only.
+        seed : int, optional
+            An optional seed for reproducibly generating the vectors numpy.ndarray randomly.
 
         Raises
         ------
@@ -333,16 +336,27 @@ class Model(object):
 
         gap = (max_value - min_value) / self.levels
 
+        if seed is None:
+            rand = np.random.default_rng()
+
+        else:
+            # Conditions on random seed for reproducibility
+            # numpy allows integers as random seeds
+            if not isinstance(seed, int):
+                raise TypeError(&#34;Seed must be an integer number&#34;)
+
+            rand = np.random.default_rng(seed=seed)
+
         # Create level vectors
         for level_count in range(self.levels):
             level = &#34;level_{}&#34;.format(level_count)
 
             if level_count == 0:
                 base = np.full(self.size, -1 if self.vtype == &#34;bipolar&#34; else 0)
-                to_one = np.random.RandomState(seed=0).permutation(index_vector)[:change]
+                to_one = rand.permutation(index_vector)[:change]
 
             else:
-                to_one = np.random.RandomState(seed=0).permutation(index_vector)[:next_level]
+                to_one = rand.permutation(index_vector)[:next_level]
 
             for index in to_one:
                 base[index] = base[index] * -1 if self.vtype == &#34;bipolar&#34; else base[index] + 1
@@ -491,7 +505,7 @@ class Model(object):
         test_indices: List[int],
         distance_method: str=&#34;cosine&#34;,
         retrain: int=0
-    ) -&gt; Tuple[List[int], List[str], int]:
+    ) -&gt; Tuple[List[int], List[str], int, float]:
         &#34;&#34;&#34;Supervised Learning. Predict the class labels of the data points in the test set.
 
         Parameters
@@ -508,7 +522,8 @@ class Model(object):
         -------
         tuple
             A tuple with the input list `test_indices` in addition to a list with the predicted class labels with the 
-            same size of `test_indices` and the total number of retraining iterations used to retrain the classification model.
+            same size of `test_indices`, the total number of retraining iterations used to retrain the classification model, 
+            and the model error rate.
 
         Raises
         ------
@@ -560,7 +575,7 @@ class Model(object):
 
         class_vectors = list()
 
-        for class_pos, class_label in enumerate(sorted(list(self.classes))):
+        for class_pos, class_label in enumerate(self.classes):
             # Get training vectors for the current class label
             class_points = [vector for vector in training_vectors if class_label in vector.tags]
 
@@ -583,17 +598,17 @@ class Model(object):
         # Make a copy of the vector representation of classes for retraining the model
         retraining_class_vectors = copy.deepcopy(class_vectors) if retrain &gt; 0 else class_vectors
 
+        # Take track of the error rate in case of retraining the model
+        model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
+            training_vectors,
+            retraining_class_vectors,
+            distance_method=distance_method
+        )
+
         # Count retraining iterations
         retraining_iterations = 0
 
         if retrain &gt; 0:
-            # Take track of the error rate while retraining the model
-            model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
-                training_vectors,
-                retraining_class_vectors,
-                distance_method=distance_method
-            )
-
             for _ in range(retrain):
                 retraining_class_vectors_iter = copy.deepcopy(retraining_class_vectors)
 
@@ -649,7 +664,7 @@ class Model(object):
 
             prediction.append(closest_class)
 
-        return test_indices, prediction, retraining_iterations
+        return test_indices, prediction, retraining_iterations, model_error_rate
 
     def cross_val_predict(
         self,
@@ -711,20 +726,22 @@ class Model(object):
         # Use all the available resources if n_job &lt; 1
         n_jobs = os.cpu_count() if n_jobs &lt; 1 else n_jobs
 
-        split_indices = kfolds_split(len(points), cv)
+        kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=0)
 
         # Collect results from every self.predict call
         predictions = list()
 
         if n_jobs == 1:
-            for test_indices in split_indices:
-                _, test_predictions, retraining_iterations = self.predict(
+            for _, test_indices in kf.split(points, labels):
+                test_indices = test_indices.tolist()
+
+                _, test_predictions, retraining_iterations, model_error_rate = self.predict(
                     test_indices,
                     distance_method=distance_method,
                     retrain=retrain
                 )
 
-                predictions.append((test_indices, test_predictions, retraining_iterations))
+                predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
         else:
             predict_partial = partial(
@@ -738,16 +755,16 @@ class Model(object):
                 jobs = [
                     pool.apply_async(
                         predict_partial,
-                        args=(test_indices,)
+                        args=(test_indices.tolist(),)
                     )
-                    for test_indices in split_indices
+                    for _, test_indices in kf.split(points, labels)
                 ]
 
                 # Get results from jobs
                 for job in jobs:
-                    test_indices, test_predictions, retraining_iterations = job.get()
+                    test_indices, test_predictions, retraining_iterations, model_error_rate = job.get()
 
-                    predictions.append((test_indices, test_predictions, retraining_iterations))
+                    predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
         return predictions
 
@@ -953,7 +970,7 @@ class Model(object):
         points : list
             List of lists with numerical data (floats).
         features : list
-            List of features
+            List of features.
         labels : list
             List with class labels. It has the same size of `points`.
         method : {&#39;backward&#39;, &#39;forward&#39;}, default &#39;backward&#39;
@@ -1169,13 +1186,13 @@ class Model(object):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="hdlib.model.Model"><code class="flex name class">
-<span>class <span class="ident">Model</span></span>
+<dt id="hdlib.model.MLModel"><code class="flex name class">
+<span>class <span class="ident">MLModel</span></span>
 <span>(</span><span>size: int = 10000, levels: int = 2, vtype: str = 'bipolar')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Classification Model.</p>
-<p>Initialize a Model object.</p>
+<p>Initialize a MLModel object.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>size</code></strong> :&ensp;<code>int</code>, default <code>10000</code></dt>
@@ -1193,10 +1210,10 @@ class Model(object):
 <dd>If the vector size is lower than 10,000 or the number of level vectors is lower than 2.</dd>
 </dl>
 <h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.model import Model
-&gt;&gt;&gt; model = Model(size=10000, levels=100, vtype='bipolar')
+<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.model import MLModel
+&gt;&gt;&gt; model = MLModel(size=10000, levels=100, vtype='bipolar')
 &gt;&gt;&gt; type(model)
-&lt;class 'hdlib.model.Model'&gt;
+&lt;class 'hdlib.model.MLModel'&gt;
 </code></pre>
 <p>This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
 It also defines the number of level vectors to 100.</p></div>
@@ -1204,7 +1221,7 @@ It also defines the number of level vectors to 100.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Model(object):
+<pre><code class="python">class MLModel(object):
     &#34;&#34;&#34;Classification Model.&#34;&#34;&#34;
 
     def __init__(
@@ -1212,8 +1229,8 @@ It also defines the number of level vectors to 100.</p></div>
         size: int=10000,
         levels: int=2,
         vtype: str=&#34;bipolar&#34;,
-    ) -&gt; &#34;Model&#34;:
-        &#34;&#34;&#34;Initialize a Model object.
+    ) -&gt; &#34;MLModel&#34;:
+        &#34;&#34;&#34;Initialize a MLModel object.
 
         Parameters
         ----------
@@ -1233,10 +1250,10 @@ It also defines the number of level vectors to 100.</p></div>
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.model import Model
-        &gt;&gt;&gt; model = Model(size=10000, levels=100, vtype=&#39;bipolar&#39;)
+        &gt;&gt;&gt; from hdlib.model import MLModel
+        &gt;&gt;&gt; model = MLModel(size=10000, levels=100, vtype=&#39;bipolar&#39;)
         &gt;&gt;&gt; type(model)
-        &lt;class &#39;hdlib.model.Model&#39;&gt;
+        &lt;class &#39;hdlib.model.MLModel&#39;&gt;
 
         This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
         It also defines the number of level vectors to 100.
@@ -1276,21 +1293,21 @@ It also defines the number of level vectors to 100.</p></div>
         self.version = __version__
 
     def __str__(self) -&gt; None:
-        &#34;&#34;&#34;Print the Model object properties.
+        &#34;&#34;&#34;Print the MLModel object properties.
 
         Returns
         -------
         str
-            A description of the Model object. It reports the vectors size, the vector type,
+            A description of the MLModel object. It reports the vectors size, the vector type,
             the number of level vectors, the number of data points, and the number of class labels.
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.model import Model
-        &gt;&gt;&gt; model = Model()
+        &gt;&gt;&gt; from hdlib.model import MLModel
+        &gt;&gt;&gt; model = MLModel()
         &gt;&gt;&gt; print(model)
 
-                Class:   hdlib.model.Model
+                Class:   hdlib.model.MLModel
                 Size:    10000
                 Type:    bipolar
                 Levels:  2
@@ -1299,13 +1316,13 @@ It also defines the number of level vectors to 100.</p></div>
 
                 []
 
-        Print the Model object properties. By default, the size of vectors in space is 10,000,
+        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
         their types is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         &#34;&#34;&#34;
 
         return &#34;&#34;&#34;
-            Class:   hdlib.model.Model
+            Class:   hdlib.model.MLModel
             Version: {}
             Size:    {}
             Type:    {}
@@ -1336,7 +1353,7 @@ It also defines the number of level vectors to 100.</p></div>
         n_jobs: int=1,
         metric: str=&#34;accuracy&#34;
     ) -&gt; Tuple[int, int, float]:
-        &#34;&#34;&#34;Initialize a new Model, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
+        &#34;&#34;&#34;Initialize a new MLModel, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
 
         Parameters
         ----------
@@ -1387,7 +1404,7 @@ It also defines the number of level vectors to 100.</p></div>
             raise ValueError(&#34;Score metric {} is not supported&#34;.format(metric))
 
         # Generate a new Model
-        model = Model(size=size, levels=levels, vtype=vtype)
+        model = MLModel(size=size, levels=levels, vtype=vtype)
 
         # Fit the model
         model.fit(points, labels=labels)
@@ -1405,7 +1422,7 @@ It also defines the number of level vectors to 100.</p></div>
         # For each prediction, compute the score and return the average
         scores = list()
 
-        for y_indices, y_pred, _ in predictions:
+        for y_indices, y_pred, _, _ in predictions:
             y_true = [label for position, label in enumerate(labels) if position in y_indices]
 
             if metric == &#34;accuracy&#34;:
@@ -1421,6 +1438,7 @@ It also defines the number of level vectors to 100.</p></div>
         self,
         points: List[List[float]],
         labels: Optional[List[str]]=None,
+        seed: Optional[int]=None,
     ) -&gt; None:
         &#34;&#34;&#34;Build a vector-symbolic architecture. Define level vectors and encode samples.
 
@@ -1431,6 +1449,8 @@ It also defines the number of level vectors to 100.</p></div>
         labels : list, optional
             List with class labels. It has the same size of `points`.
             Used in case of supervised learning only.
+        seed : int, optional
+            An optional seed for reproducibly generating the vectors numpy.ndarray randomly.
 
         Raises
         ------
@@ -1481,16 +1501,27 @@ It also defines the number of level vectors to 100.</p></div>
 
         gap = (max_value - min_value) / self.levels
 
+        if seed is None:
+            rand = np.random.default_rng()
+
+        else:
+            # Conditions on random seed for reproducibility
+            # numpy allows integers as random seeds
+            if not isinstance(seed, int):
+                raise TypeError(&#34;Seed must be an integer number&#34;)
+
+            rand = np.random.default_rng(seed=seed)
+
         # Create level vectors
         for level_count in range(self.levels):
             level = &#34;level_{}&#34;.format(level_count)
 
             if level_count == 0:
                 base = np.full(self.size, -1 if self.vtype == &#34;bipolar&#34; else 0)
-                to_one = np.random.RandomState(seed=0).permutation(index_vector)[:change]
+                to_one = rand.permutation(index_vector)[:change]
 
             else:
-                to_one = np.random.RandomState(seed=0).permutation(index_vector)[:next_level]
+                to_one = rand.permutation(index_vector)[:next_level]
 
             for index in to_one:
                 base[index] = base[index] * -1 if self.vtype == &#34;bipolar&#34; else base[index] + 1
@@ -1639,7 +1670,7 @@ It also defines the number of level vectors to 100.</p></div>
         test_indices: List[int],
         distance_method: str=&#34;cosine&#34;,
         retrain: int=0
-    ) -&gt; Tuple[List[int], List[str], int]:
+    ) -&gt; Tuple[List[int], List[str], int, float]:
         &#34;&#34;&#34;Supervised Learning. Predict the class labels of the data points in the test set.
 
         Parameters
@@ -1656,7 +1687,8 @@ It also defines the number of level vectors to 100.</p></div>
         -------
         tuple
             A tuple with the input list `test_indices` in addition to a list with the predicted class labels with the 
-            same size of `test_indices` and the total number of retraining iterations used to retrain the classification model.
+            same size of `test_indices`, the total number of retraining iterations used to retrain the classification model, 
+            and the model error rate.
 
         Raises
         ------
@@ -1708,7 +1740,7 @@ It also defines the number of level vectors to 100.</p></div>
 
         class_vectors = list()
 
-        for class_pos, class_label in enumerate(sorted(list(self.classes))):
+        for class_pos, class_label in enumerate(self.classes):
             # Get training vectors for the current class label
             class_points = [vector for vector in training_vectors if class_label in vector.tags]
 
@@ -1731,17 +1763,17 @@ It also defines the number of level vectors to 100.</p></div>
         # Make a copy of the vector representation of classes for retraining the model
         retraining_class_vectors = copy.deepcopy(class_vectors) if retrain &gt; 0 else class_vectors
 
+        # Take track of the error rate in case of retraining the model
+        model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
+            training_vectors,
+            retraining_class_vectors,
+            distance_method=distance_method
+        )
+
         # Count retraining iterations
         retraining_iterations = 0
 
         if retrain &gt; 0:
-            # Take track of the error rate while retraining the model
-            model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
-                training_vectors,
-                retraining_class_vectors,
-                distance_method=distance_method
-            )
-
             for _ in range(retrain):
                 retraining_class_vectors_iter = copy.deepcopy(retraining_class_vectors)
 
@@ -1797,7 +1829,7 @@ It also defines the number of level vectors to 100.</p></div>
 
             prediction.append(closest_class)
 
-        return test_indices, prediction, retraining_iterations
+        return test_indices, prediction, retraining_iterations, model_error_rate
 
     def cross_val_predict(
         self,
@@ -1859,20 +1891,22 @@ It also defines the number of level vectors to 100.</p></div>
         # Use all the available resources if n_job &lt; 1
         n_jobs = os.cpu_count() if n_jobs &lt; 1 else n_jobs
 
-        split_indices = kfolds_split(len(points), cv)
+        kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=0)
 
         # Collect results from every self.predict call
         predictions = list()
 
         if n_jobs == 1:
-            for test_indices in split_indices:
-                _, test_predictions, retraining_iterations = self.predict(
+            for _, test_indices in kf.split(points, labels):
+                test_indices = test_indices.tolist()
+
+                _, test_predictions, retraining_iterations, model_error_rate = self.predict(
                     test_indices,
                     distance_method=distance_method,
                     retrain=retrain
                 )
 
-                predictions.append((test_indices, test_predictions, retraining_iterations))
+                predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
         else:
             predict_partial = partial(
@@ -1886,16 +1920,16 @@ It also defines the number of level vectors to 100.</p></div>
                 jobs = [
                     pool.apply_async(
                         predict_partial,
-                        args=(test_indices,)
+                        args=(test_indices.tolist(),)
                     )
-                    for test_indices in split_indices
+                    for _, test_indices in kf.split(points, labels)
                 ]
 
                 # Get results from jobs
                 for job in jobs:
-                    test_indices, test_predictions, retraining_iterations = job.get()
+                    test_indices, test_predictions, retraining_iterations, model_error_rate = job.get()
 
-                    predictions.append((test_indices, test_predictions, retraining_iterations))
+                    predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
         return predictions
 
@@ -2101,7 +2135,7 @@ It also defines the number of level vectors to 100.</p></div>
         points : list
             List of lists with numerical data (floats).
         features : list
-            List of features
+            List of features.
         labels : list
             List with class labels. It has the same size of `points`.
         method : {&#39;backward&#39;, &#39;forward&#39;}, default &#39;backward&#39;
@@ -2309,7 +2343,7 @@ It also defines the number of level vectors to 100.</p></div>
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="hdlib.model.Model.auto_tune"><code class="name flex">
+<dt id="hdlib.model.MLModel.auto_tune"><code class="name flex">
 <span>def <span class="ident">auto_tune</span></span>(<span>self, points: List[List[float]], labels: List[str], size_range: range, levels_range: range, cv: int = 5, distance_method: str = 'cosine', retrain: int = 0, n_jobs: int = 1, metric: str = 'accuracy') ‑> Tuple[int, int, float]</span>
 </code></dt>
 <dd>
@@ -2492,7 +2526,7 @@ It also defines the number of level vectors to 100.</p></div>
     return best_size, best_levels, best_metric</code></pre>
 </details>
 </dd>
-<dt id="hdlib.model.Model.cross_val_predict"><code class="name flex">
+<dt id="hdlib.model.MLModel.cross_val_predict"><code class="name flex">
 <span>def <span class="ident">cross_val_predict</span></span>(<span>self, points: List[List[float]], labels: List[str], cv: int = 5, distance_method: str = 'cosine', retrain: int = 0, n_jobs: int = 1) ‑> List[Tuple[List[int], List[str], int]]</span>
 </code></dt>
 <dd>
@@ -2599,20 +2633,22 @@ It also defines the number of level vectors to 100.</p></div>
     # Use all the available resources if n_job &lt; 1
     n_jobs = os.cpu_count() if n_jobs &lt; 1 else n_jobs
 
-    split_indices = kfolds_split(len(points), cv)
+    kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=0)
 
     # Collect results from every self.predict call
     predictions = list()
 
     if n_jobs == 1:
-        for test_indices in split_indices:
-            _, test_predictions, retraining_iterations = self.predict(
+        for _, test_indices in kf.split(points, labels):
+            test_indices = test_indices.tolist()
+
+            _, test_predictions, retraining_iterations, model_error_rate = self.predict(
                 test_indices,
                 distance_method=distance_method,
                 retrain=retrain
             )
 
-            predictions.append((test_indices, test_predictions, retraining_iterations))
+            predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
     else:
         predict_partial = partial(
@@ -2626,21 +2662,21 @@ It also defines the number of level vectors to 100.</p></div>
             jobs = [
                 pool.apply_async(
                     predict_partial,
-                    args=(test_indices,)
+                    args=(test_indices.tolist(),)
                 )
-                for test_indices in split_indices
+                for _, test_indices in kf.split(points, labels)
             ]
 
             # Get results from jobs
             for job in jobs:
-                test_indices, test_predictions, retraining_iterations = job.get()
+                test_indices, test_predictions, retraining_iterations, model_error_rate = job.get()
 
-                predictions.append((test_indices, test_predictions, retraining_iterations))
+                predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
 
     return predictions</code></pre>
 </details>
 </dd>
-<dt id="hdlib.model.Model.error_rate"><code class="name flex">
+<dt id="hdlib.model.MLModel.error_rate"><code class="name flex">
 <span>def <span class="ident">error_rate</span></span>(<span>self, training_vectors: List[<a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>], class_vectors: List[<a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>], distance_method: str = 'cosine') ‑> Tuple[float, List[<a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>], List[str]]</span>
 </code></dt>
 <dd>
@@ -2763,8 +2799,8 @@ of wrong predictions with the same length of the list with wrongly predicted Vec
     return model_error_rate, wrongly_predicted_training_vectors, wrong_predictions</code></pre>
 </details>
 </dd>
-<dt id="hdlib.model.Model.fit"><code class="name flex">
-<span>def <span class="ident">fit</span></span>(<span>self, points: List[List[float]], labels: Optional[List[str]] = None) ‑> None</span>
+<dt id="hdlib.model.MLModel.fit"><code class="name flex">
+<span>def <span class="ident">fit</span></span>(<span>self, points: List[List[float]], labels: Optional[List[str]] = None, seed: Optional[int] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Build a vector-symbolic architecture. Define level vectors and encode samples.</p>
@@ -2775,6 +2811,8 @@ of wrong predictions with the same length of the list with wrongly predicted Vec
 <dt><strong><code>labels</code></strong> :&ensp;<code>list</code>, optional</dt>
 <dd>List with class labels. It has the same size of <code>points</code>.
 Used in case of supervised learning only.</dd>
+<dt><strong><code>seed</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>An optional seed for reproducibly generating the vectors numpy.ndarray randomly.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -2795,6 +2833,7 @@ Used in case of supervised learning only.</dd>
     self,
     points: List[List[float]],
     labels: Optional[List[str]]=None,
+    seed: Optional[int]=None,
 ) -&gt; None:
     &#34;&#34;&#34;Build a vector-symbolic architecture. Define level vectors and encode samples.
 
@@ -2805,6 +2844,8 @@ Used in case of supervised learning only.</dd>
     labels : list, optional
         List with class labels. It has the same size of `points`.
         Used in case of supervised learning only.
+    seed : int, optional
+        An optional seed for reproducibly generating the vectors numpy.ndarray randomly.
 
     Raises
     ------
@@ -2855,16 +2896,27 @@ Used in case of supervised learning only.</dd>
 
     gap = (max_value - min_value) / self.levels
 
+    if seed is None:
+        rand = np.random.default_rng()
+
+    else:
+        # Conditions on random seed for reproducibility
+        # numpy allows integers as random seeds
+        if not isinstance(seed, int):
+            raise TypeError(&#34;Seed must be an integer number&#34;)
+
+        rand = np.random.default_rng(seed=seed)
+
     # Create level vectors
     for level_count in range(self.levels):
         level = &#34;level_{}&#34;.format(level_count)
 
         if level_count == 0:
             base = np.full(self.size, -1 if self.vtype == &#34;bipolar&#34; else 0)
-            to_one = np.random.RandomState(seed=0).permutation(index_vector)[:change]
+            to_one = rand.permutation(index_vector)[:change]
 
         else:
-            to_one = np.random.RandomState(seed=0).permutation(index_vector)[:next_level]
+            to_one = rand.permutation(index_vector)[:next_level]
 
         for index in to_one:
             base[index] = base[index] * -1 if self.vtype == &#34;bipolar&#34; else base[index] + 1
@@ -2928,8 +2980,8 @@ Used in case of supervised learning only.</dd>
             self.space.add_tag(name=sum_vector.name, tag=labels[point_position])</code></pre>
 </details>
 </dd>
-<dt id="hdlib.model.Model.predict"><code class="name flex">
-<span>def <span class="ident">predict</span></span>(<span>self, test_indices: List[int], distance_method: str = 'cosine', retrain: int = 0) ‑> Tuple[List[int], List[str], int]</span>
+<dt id="hdlib.model.MLModel.predict"><code class="name flex">
+<span>def <span class="ident">predict</span></span>(<span>self, test_indices: List[int], distance_method: str = 'cosine', retrain: int = 0) ‑> Tuple[List[int], List[str], int, float]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Supervised Learning. Predict the class labels of the data points in the test set.</p>
@@ -2947,7 +2999,8 @@ Note that all the other points will be used for training the model.</dd>
 <dl>
 <dt><code>tuple</code></dt>
 <dd>A tuple with the input list <code>test_indices</code> in addition to a list with the predicted class labels with the
-same size of <code>test_indices</code> and the total number of retraining iterations used to retrain the classification model.</dd>
+same size of <code>test_indices</code>, the total number of retraining iterations used to retrain the classification model,
+and the model error rate.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -2975,7 +3028,7 @@ for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020):
     test_indices: List[int],
     distance_method: str=&#34;cosine&#34;,
     retrain: int=0
-) -&gt; Tuple[List[int], List[str], int]:
+) -&gt; Tuple[List[int], List[str], int, float]:
     &#34;&#34;&#34;Supervised Learning. Predict the class labels of the data points in the test set.
 
     Parameters
@@ -2992,7 +3045,8 @@ for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020):
     -------
     tuple
         A tuple with the input list `test_indices` in addition to a list with the predicted class labels with the 
-        same size of `test_indices` and the total number of retraining iterations used to retrain the classification model.
+        same size of `test_indices`, the total number of retraining iterations used to retrain the classification model, 
+        and the model error rate.
 
     Raises
     ------
@@ -3044,7 +3098,7 @@ for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020):
 
     class_vectors = list()
 
-    for class_pos, class_label in enumerate(sorted(list(self.classes))):
+    for class_pos, class_label in enumerate(self.classes):
         # Get training vectors for the current class label
         class_points = [vector for vector in training_vectors if class_label in vector.tags]
 
@@ -3067,17 +3121,17 @@ for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020):
     # Make a copy of the vector representation of classes for retraining the model
     retraining_class_vectors = copy.deepcopy(class_vectors) if retrain &gt; 0 else class_vectors
 
+    # Take track of the error rate in case of retraining the model
+    model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
+        training_vectors,
+        retraining_class_vectors,
+        distance_method=distance_method
+    )
+
     # Count retraining iterations
     retraining_iterations = 0
 
     if retrain &gt; 0:
-        # Take track of the error rate while retraining the model
-        model_error_rate, wrongly_predicted_training_vectors, wrong_predictions = self.error_rate(
-            training_vectors,
-            retraining_class_vectors,
-            distance_method=distance_method
-        )
-
         for _ in range(retrain):
             retraining_class_vectors_iter = copy.deepcopy(retraining_class_vectors)
 
@@ -3133,10 +3187,10 @@ for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020):
 
         prediction.append(closest_class)
 
-    return test_indices, prediction, retraining_iterations</code></pre>
+    return test_indices, prediction, retraining_iterations, model_error_rate</code></pre>
 </details>
 </dd>
-<dt id="hdlib.model.Model.stepwise_regression"><code class="name flex">
+<dt id="hdlib.model.MLModel.stepwise_regression"><code class="name flex">
 <span>def <span class="ident">stepwise_regression</span></span>(<span>self, points: List[List[float]], features: List[str], labels: List[str], method: str = 'backward', cv: int = 5, distance_method: str = 'cosine', retrain: int = 0, n_jobs: int = 1, metric: str = 'accuracy', threshold: float = 0.6, uncertainty: float = 5.0, stop_if_worse: bool = False) ‑> Tuple[Dict[str, int], Dict[int, float], int]</span>
 </code></dt>
 <dd>
@@ -3146,7 +3200,7 @@ for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020):
 <dt><strong><code>points</code></strong> :&ensp;<code>list</code></dt>
 <dd>List of lists with numerical data (floats).</dd>
 <dt><strong><code>features</code></strong> :&ensp;<code>list</code></dt>
-<dd>List of features</dd>
+<dd>List of features.</dd>
 <dt><strong><code>labels</code></strong> :&ensp;<code>list</code></dt>
 <dd>List with class labels. It has the same size of <code>points</code>.</dd>
 <dt><strong><code>method</code></strong> :&ensp;<code>{'backward', 'forward'}</code>, default <code>'backward'</code></dt>
@@ -3224,7 +3278,7 @@ and the best importance. In case of backward, the lower the better. In case of f
     points : list
         List of lists with numerical data (floats).
     features : list
-        List of features
+        List of features.
     labels : list
         List with class labels. It has the same size of `points`.
     method : {&#39;backward&#39;, &#39;forward&#39;}, default &#39;backward&#39;
@@ -3450,29 +3504,19 @@ and the best importance. In case of backward, the lower the better. In case of f
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="hdlib.model.Model" href="#hdlib.model.Model">Model</a></code></h4>
+<h4><code><a title="hdlib.model.MLModel" href="#hdlib.model.MLModel">MLModel</a></code></h4>
 <ul class="two-column">
-<li><code><a title="hdlib.model.Model.auto_tune" href="#hdlib.model.Model.auto_tune">auto_tune</a></code></li>
-<li><code><a title="hdlib.model.Model.cross_val_predict" href="#hdlib.model.Model.cross_val_predict">cross_val_predict</a></code></li>
-<li><code><a title="hdlib.model.Model.error_rate" href="#hdlib.model.Model.error_rate">error_rate</a></code></li>
-<li><code><a title="hdlib.model.Model.fit" href="#hdlib.model.Model.fit">fit</a></code></li>
-<li><code><a title="hdlib.model.Model.predict" href="#hdlib.model.Model.predict">predict</a></code></li>
-<li><code><a title="hdlib.model.Model.stepwise_regression" href="#hdlib.model.Model.stepwise_regression">stepwise_regression</a></code></li>
+<li><code><a title="hdlib.model.MLModel.auto_tune" href="#hdlib.model.MLModel.auto_tune">auto_tune</a></code></li>
+<li><code><a title="hdlib.model.MLModel.cross_val_predict" href="#hdlib.model.MLModel.cross_val_predict">cross_val_predict</a></code></li>
+<li><code><a title="hdlib.model.MLModel.error_rate" href="#hdlib.model.MLModel.error_rate">error_rate</a></code></li>
+<li><code><a title="hdlib.model.MLModel.fit" href="#hdlib.model.MLModel.fit">fit</a></code></li>
+<li><code><a title="hdlib.model.MLModel.predict" href="#hdlib.model.MLModel.predict">predict</a></code></li>
+<li><code><a title="hdlib.model.MLModel.stepwise_regression" href="#hdlib.model.MLModel.stepwise_regression">stepwise_regression</a></code></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
-
-<ul>
-<li><h2>Resources</h2>
-<ul>
-<li><a title="GitHub" href="https://github.com/cumbof/hdlib" target="_blank">GitHub</a></li>
-<li><a title="Wiki" href="https://github.com/cumbof/hdlib/wiki" target="_blank">Wiki</a></li>
-</ul>
-</li>
-</ul>
-
 </nav>
 </main>
 <footer id="footer">
