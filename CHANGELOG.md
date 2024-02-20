@@ -1,12 +1,28 @@
 # Changelog
 
+## Version 0.1.16
+
+[@cumbof/hdlib@0.1.16](https://github.com/cumbof/hdlib/releases/tag/0.1.16)
+
+### New features
+
+- Add `__add__` and `__mul__` to `space.Vector`;
+- `model.MLModel.predict` now returns the model error rate.
+
+### Fixes
+
+- `model.Model` is now `model.MLModel`;
+- `parser.kfolds_split` has been deprecated and removed;
+- `model.MLModel.cross_val_predict` now uses `sklearn.model_selection.StratifiedKFold` for the generation of balanced folds;
+- Fix the order of the test real labels before computing the model metrics in [examples/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2.py).
+
 ## Version 0.1.15
 
 [@cumbof/hdlib@0.1.15](https://github.com/cumbof/hdlib/releases/tag/0.1.15)
 
 ### New features
 
-- Add [examples/chopin2_iris.sh](https://github.com/cumbof/hdlib/blob/main/examples/chopin2_iris.sh) as a test case for [examples/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2_iris.sh);
+- Add [examples/chopin2_iris.sh](https://github.com/cumbof/hdlib/blob/main/examples/chopin2_iris.sh) as a test case for [examples/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2.py);
 - Add new unit tests to [test/test.py](https://github.com/cumbof/hdlib/blob/main/test/test.py).
 
 ### Fixes
