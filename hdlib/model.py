@@ -1,6 +1,6 @@
 """Modelling with hdlib.
 
-It implements the __hdlib.MLModel__ class object which allows to generate, fit, and test a classification model
+It implements the __hdlib.model.MLModel__ class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
 
 It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
@@ -963,8 +963,9 @@ class MLModel(object):
         Returns
         -------
         tuple
-            A tuple with a dictionary with features and their importance in addition to the best score for each importance rank 
-            and the best importance. In case of backward, the lower the better. In case of forward, the higher the better.
+            A tuple with a dictionary with features and their importance in addition to the best score for each importance rank, 
+            the best importance, and the total mount of ML models built and evaluated. For what concerns the importance, in case of 
+            `method='backward'`, the lower the better. In case of `method='forward'`, the higher the better.
 
         Raises
         ------
@@ -1030,6 +1031,9 @@ class MLModel(object):
 
         count_iter = 1
 
+        # Count the total amount of ML models built and evaluated
+        count_models = 0
+
         while features_indices:
             if method == "backward":
                 features_set_size = len(features_indices) - 1
@@ -1076,6 +1080,8 @@ class MLModel(object):
                             best_score = job_score
 
                         classification_results.append((job_features_set, job_score))
+
+                        count_models += 1
 
                 selection = set()
 
@@ -1141,4 +1147,4 @@ class MLModel(object):
 
         best_importance = sorted(scores.keys(), key=lambda imp: scores[imp])[-1]
 
-        return importances, scores, best_importance
+        return importances, scores, best_importance, count_models

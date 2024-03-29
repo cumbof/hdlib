@@ -161,7 +161,7 @@ def chopin2():
         print("Selecting features.. This may take a while\n")
 
         # Run the feature selection
-        importances, scores, best_importance = model.stepwise_regression(
+        importances, scores, best_importance, count_models = model.stepwise_regression(
             content,
             features,
             classes,
@@ -211,6 +211,8 @@ def chopin2():
             table.append([feature])
 
         print(tabulate(table, headers="firstrow", tablefmt="simple"))
+
+        print("\nTotal ML models: {}".format(count_models))
 
         # Replace features with their positions in the original list of features
         selected_features = [features.index(feature) for feature in selected_features]
