@@ -13,7 +13,6 @@ from sklearn.metrics import accuracy_score
 
 # Define the hdlib root directory
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-print(ROOT_DIR)
 
 # This is required to import the functions we need to test
 sys.path.append(ROOT_DIR)
@@ -22,7 +21,8 @@ sys.path.append(ROOT_DIR)
 from hdlib.space import Space, Vector
 from hdlib.arithmetic import bundle, bind, permute
 from hdlib.model import MLModel
-from hdlib.parser import kfolds_split, percentage_split
+from hdlib.parser import percentage_split
+from hdlib.graph import Graph
 
 
 class TestHDLib(unittest.TestCase):
@@ -164,32 +164,14 @@ class TestHDLib(unittest.TestCase):
         classes = iris.target.tolist()
 
         # Create a model with bipolar vectors
-        model = MLModel(vtype="bipolar")
-
-        # Run the auto-tune to establish the best dimensionality and the best number of level vectors
-        best_size, best_levels, _ = model.auto_tune(
-            points,
-            classes,
-            size_range=range(10000, 10010),
-            levels_range=range(10, 15)
-        )
-
-        with self.subTest():
-            self.assertTrue(best_size in range(10000, 10010))
-
-        with self.subTest():
-            self.assertTrue(best_levels in range(10, 15))
-
-        # Redefine the model using the best size and the best number of level vectors
-        model.size = best_size
-        model.levels = best_levels
+        model = MLModel(size=10000, levels=10, vtype="bipolar")
 
         # Fit the model
         model.fit(points, classes)
 
         with self.subTest():
             # There should be N data points plus a number of level vectors in the space
-            self.assertEqual(len(model.space.memory()), len(points) + best_levels)
+            self.assertEqual(len(model.space.memory()), len(points) + 10)
 
         # 5-folds cross-validation
         # 10 retraining iterations
@@ -202,10 +184,10 @@ class TestHDLib(unittest.TestCase):
         # Collect the accuracy scores computed on each fold
         scores = list()
 
-        for y_indices, y_pred, _ in predictions:
+        for y_indices, y_pred, _, _ in predictions:
             y_true = [label for position, label in enumerate(classes) if position in y_indices]
             accuracy = accuracy_score(y_true, y_pred)
-        
+
             with self.subTest():
                 self.assertTrue(accuracy > 0.0)
 
@@ -219,7 +201,7 @@ class TestHDLib(unittest.TestCase):
 
         # Run the feature selection in backward mode,
         # 5-folds cross-validation, and 10 retraining iterations
-        importance, scores, top_importance = model.stepwise_regression(
+        importance, scores, top_importance, count_models = model.stepwise_regression(
             points,
             features,
             classes,
@@ -232,29 +214,53 @@ class TestHDLib(unittest.TestCase):
         with self.subTest():
             self.assertTrue(len(importance) == len(features))
 
+    def test_graph(self):
+        """Unit tests for hdlib/graph.py"""
+
+        # Define a directed, unweighted graph as a list of tuples representing its edges
+        edges = set([
+            ("1", "2"),
+            ("2", "1"),
+            ("2", "3"),
+            ("3", "1"),
+            ("3", "4"),
+            ("3", "5"),
+            ("4", "5")
+        ])
+
+        # Initialize the graph object
+        graph = Graph(size=10000, directed=True, weighted=False)
+
+        # Populate the graph with its nodes and edges
+        graph.fit(edges)
+
+        # Define the distance threshold to establish whether an edge exists in the graph model
+        # This is also used to mitigate the error rate while checking for false positives and false negatives
+        threshold = 0.7
+
+        # Compute the error rate of the graph model based on its set of edge
+        error_rate, _, _ = graph.error_rate(edges, threshold=threshold)
+
+        # Mitigate the error rate, up to 10 iterations
+        graph.error_mitigation(edges, threshold=threshold, max_iter=10)
+
+        # Check whether the edge <2, 3> exists
+        edge_exists, dist = graph.edge_exists("2", "3", weight=None, threshold=threshold)
+
+        self.assertTrue(edge_exists)
+
     def test_parser(self):
         """Unit tests for hdlib/parser.py"""
 
-        # Considering a dataset with 10 data points,
-        # report the indices of a selected 20% of points
-        test_indices = percentage_split(10, 20)
+        # Consider a dataset with 10 data points
+        classes = ["1", "2", "2", "2", "1", "1", "2", "1", "1", "2"]
+
+        # Report the indices of a selected 20% of the 10 points in the dataset
+        test_indices = percentage_split(classes, 20)
 
         with self.subTest():
             # 20% of 10 is 2
             self.assertTrue(len(test_indices) == 2)
-
-        # Considering a dataset with 100 data points,
-        # split the dataset into 5 folds and report the indices of points for each fold
-        folds = kfolds_split(100, 5)
-
-        with self.subTest():
-            # There must be 5 folds here
-            self.assertTrue(len(folds) == 5)
-
-        for fold in folds:
-            with self.subTest():
-                # Each fold must contain 20 data points
-                self.assertTrue(len(fold) == 20)
 
     def test_dollar_of_mexico(self):
         """Reproduce the "What is the Dollar of Mexico?"
