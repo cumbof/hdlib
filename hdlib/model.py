@@ -132,7 +132,7 @@ class MLModel(object):
             Levels:  {}
             Points:  {}
             Classes:
-            
+
             {}
         """.format(
             self.version,
@@ -394,7 +394,7 @@ class MLModel(object):
         distance_method: str="cosine"
     ) -> Tuple[float, List[Vector], List[str]]:
         """Compute the error rate.
-        
+
         Parameters
         ----------
         training_vectors : list

@@ -539,7 +539,7 @@ class Graph(object):
             self._weight_memory(0.0, 1.0, 0.01)
 
         graph = None
-        
+
         for node in self.space.space:
             # Check whether the current node is not the actual graph memory
             # Also, check whether the current node is not a weight vector
