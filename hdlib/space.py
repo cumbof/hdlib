@@ -140,15 +140,17 @@ class Vector(object):
             self.vtype = vtype
 
             # Try to infer the vector type from the content of the vector itself
-            if ((self.vector == 0) | (self.vector == 1)).all():
-                self.vtype = "binary"
+            # only in the case where the elements are not all 1s
+            if not (self.vector == 1).all():
+                if ((self.vector == 0) | (self.vector == 1)).all():
+                    self.vtype = "binary"
 
-            elif ((self.vector == -1) | (self.vector == 1)).all():
-                self.vtype = "bipolar"
+                elif ((self.vector == -1) | (self.vector == 1)).all():
+                    self.vtype = "bipolar"
 
-            else:
-                if warning:
-                    print("Vector type can be binary or bipolar only")
+                else:
+                    if warning:
+                        print("Vector type can be binary or bipolar only")
 
         elif from_file:
             if not os.path.isfile(from_file):
@@ -234,6 +236,7 @@ class Vector(object):
         >>> print(vector)
 
                 Class:   hdlib.space.Vector
+                Version: 0.1.17
                 Name:    89ea628b-3d29-47e1-9d10-34bdbfce8d40
                 Seed:    None
                 Size:    10000
@@ -301,13 +304,47 @@ class Vector(object):
         of the two input vectors.
         """
 
-        if not isinstance(vector, Vector):
+        if not isinstance(vector, type(self)):
             raise TypeError("Cannot apply the bundle operator to non-Vector objects")
 
         # Import arithmetic.bundle here to avoid circular imports
         from hdlib.arithmetic import bundle as bundle_operator
 
         return bundle_operator(self, vector)
+
+    def __sub__(self, vector: "Vector") -> "Vector":
+        """Implement the subtraction operator between two Vector objects.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the subtraction operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        >>> from hdlib.space import Vector
+        >>> vector1 = Vector()
+        >>> vector2 = Vector()
+        >>> vector3 = vector1 - vector2
+        >>> type(vector3)
+        <class 'hdlib.space.Vector'>
+
+        The subtraction operation returns a new Vector object whose content is computed as the element-wise 
+        subtraction of the two input vectors.
+        """
+
+        if not isinstance(vector, type(self)):
+            raise TypeError("Cannot apply the subtraction operator to non-Vector objects")
+
+        # Import arithmetic.bind here to avoid circular imports
+        from hdlib.arithmetic import subtraction as subtraction_operator
+
+        return subtraction_operator(self, vector)
 
     def __mul__(self, vector: "Vector") -> "Vector":
         """Implement the multiplication operator between two Vector objects as bind.
@@ -335,7 +372,7 @@ class Vector(object):
         multiplication of the two input vectors.
         """
 
-        if not isinstance(vector, Vector):
+        if not isinstance(vector, type(self)):
             raise TypeError("Cannot apply the bind operator to non-Vector objects")
 
         # Import arithmetic.bind here to avoid circular imports
@@ -508,7 +545,7 @@ class Vector(object):
         self.seed = vector.seed
         self.tags = vector.tags
 
-        self.parent = vector.parent
+        self.parents = vector.parents
         self.children = vector.children
 
         self.vtype = vector.vtype
@@ -683,6 +720,7 @@ class Space(object):
         >>> print(space)
 
                 Class:   hdlib.space.Space
+                Version: 0.1.17
                 Size:    10000
                 Type:    bipolar
                 Vectors: 1

@@ -147,6 +147,65 @@ def bundle(vector1: Vector, vector2: Vector) -> Vector:
     return Vector(size=vector1.size, vector=vector, tags=tags, vtype=vector1.vtype, seed=vector1.seed)
 
 
+def subtraction(vector1: Vector, vector2: Vector) -> Vector:
+    """Subtract two vectors.
+
+    Parameters
+    ----------
+    vector1 : Vector
+        The first vector object.
+    vector2: Vector
+        The second vector object.
+
+    Returns
+    -------
+    Vector
+        A new vector object as the result of the subtraction operator on the two input vectors.
+
+    Raises
+    ------
+    Exception
+        If vectors have different sizes or different vector types.
+
+    Examples
+    --------
+    >>> from hdlib.space import Vector
+    >>> from hdlib.arithmetic import subtraction
+    >>> vector1 = Vector(size=10000, vtype="binary")
+    >>> vector2 = Vector(size=10000, vtype="binary")
+    >>> vector3 = subtraction(vector1, vector2)
+    >>> type(vector3)
+    <class 'hdlib.space.Vector'>
+
+    The subtraction function returns a new Vector object whose content is computed as the element-wise 
+    subtraction of the two input vectors.
+
+    >>> vector1 = Vector(size=10000, vtype="binary")
+    >>> vector2 = Vector(size=10000, vtype="bipolar")
+    >>> vector3 = subtraction(vector1, vector2)
+    Exception: Vector types are not compatible
+
+    The vector type of the two input vector is different and thus the subtraction cannot be performed.
+
+    >>> vector1 = Vector(size=10000, vtype="bipolar")
+    >>> vector2 = Vector(size=15000, vtype="bipolar")
+    >>> vector3 = subtraction(vector1, vector2)
+    Exception: Vectors must have the same size
+
+    It also throws an exception in case the size of the two input vectors is not the same.
+    """
+
+    if vector1.size != vector2.size:
+        raise Exception("Vectors must have the same size")
+
+    if vector1.vtype != vector2.vtype:
+        raise Exception("Vector types are not compatible")
+
+    vector = vector1.vector - vector2.vector
+
+    return Vector(size=vector1.size, vector=vector, tags=vector1.tags, vtype=vector1.vtype, seed=vector1.seed)
+
+
 def permute(vector: Vector, rotate_by: int=1) -> Vector:
     """Permute a vector
 
