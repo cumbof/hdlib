@@ -72,7 +72,7 @@ def load_dataset(
     return samples, features, content, classes
 
 
-def percentage_split(labels: List[List[str]], percentage: float, seed: int=0) -> List[int]:
+def percentage_split(labels: List[str], percentage: float, seed: int=0) -> List[int]:
     """Given list of classes as appear in the original dataset and a percentage number, split a dataset and 
     report the indices of the selected data points.
 
