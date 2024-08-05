@@ -262,9 +262,9 @@ class Vector(object):
             Size:    {}
             Type:    {}
             Tags:
-            
+
             {}
-            
+
             Vector:
 
             {}
@@ -507,7 +507,31 @@ class Vector(object):
         from hdlib.arithmetic import bundle as bundle_operator
 
         self.__override_object(bundle_operator(self, vector))
-    
+
+    def subtraction(self, vector: "Vector") -> None:
+        """Subtract a vector from the current vector object inplace.
+
+        Parameters
+        ----------
+        vector : Vector
+            The input Vector object.
+
+        Examples
+        --------
+        >>> from hdlib.space import Vector
+        >>> vector1 = Vector()
+        >>> vector2 = Vector()
+        >>> vector1.subtract(vector2)
+
+        It overrides the actual vector content of `vector1` with the result of the subtraction with `vector2`.
+        Refers to hdlib.arithmetic.subtraction for additional information.
+        """
+
+        # Import arithmetic.subtraction here to avoid circular imports
+        from hdlib.arithmetic import subtraction as subtraction_operator
+
+        self.__override_object(subtraction_operator(self, vector))
+
     def permute(self, rotate_by: int=1) -> None:
         """Permute the current vector inplace.
 
@@ -743,9 +767,9 @@ class Space(object):
             Type:    {}
             Vectors: {}
             Tags:
-            
+
             {}
-            
+
             IDs:
 
             {}
