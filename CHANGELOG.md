@@ -8,6 +8,7 @@
 
 - Add the `subtraction` operator to the `arithmetic` module;
 - Add `__sub__` to `space.Vector` that makes use of `arithmetic.subtraction` to element-wise subtract two Vector objects;
+- Add `space.Vector.subtraction` to element-wise subtract a vector from a Vector object inplace;
 - Add `graph.Graph` to build vector-symbolic representations of directed and undirected, weighted and unweighted graphs;
 - Extend [test/test.py](https://github.com/cumbof/hdlib/blob/main/test/test.py) with new unit tests.
 
