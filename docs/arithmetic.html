@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
 <title>hdlib.arithmetic API documentation</title>
-<meta name="description" content="Implementation of the arithmetic operators …" />
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
-<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
-<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<meta name="description" content="Implementation of the arithmetic operators …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
-<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
 </head>
 <body>
 <main>
@@ -26,199 +29,6 @@
 <p>This library also provides the same set of arithmetic functions also accessible as <em>Vector</em>'s class methods.
 However, while the result of calling these functions from a <em>Vector</em> object woule be applied in place,
 invoking the same functions from the <em>hdlib.arithmetic</em> module would initialize new <em>Vector</em> objects.</p>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">&#34;&#34;&#34;Implementation of the arithmetic operators.
-
-This library also provides the same set of arithmetic functions also accessible as _Vector_&#39;s class methods. 
-However, while the result of calling these functions from a _Vector_ object woule be applied in place, 
-invoking the same functions from the _hdlib.arithmetic_ module would initialize new _Vector_ objects.&#34;&#34;&#34;
-
-import numpy as np
-
-from hdlib.space import Vector
-
-
-def bind(vector1: Vector, vector2: Vector) -&gt; Vector:
-    &#34;&#34;&#34;Bind vectors.
-
-    Parameters
-    ----------
-    vector1 : Vector
-        The first vector object.
-    vector2: Vector
-        The second vector object.
-
-    Returns
-    -------
-    Vector
-        A new vector object as the result of the bind operator on the two input vectors.
-
-    Raises
-    ------
-    Exception
-        If vectors have different sizes or different vector types.
-
-    Notes
-    -----
-    The bind operator has the following properties:
-    (i) invertible (unbind);
-    (ii) it distributes over bundling;
-    (iii) it preserves the distance;
-    (iv) the resulting vector is dissimilar to the input vectors.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; from hdlib.arithmetic import bind
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-    &gt;&gt;&gt; type(vector3)
-    &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-    The bind function returns a new Vector object whose content is computed as the element-wise 
-    multiplication of the two input vectors.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-    Exception: Vector types are not compatible
-
-    The vector type of the two input vector is different and thus the binding cannot be performed.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=15000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-    Exception: Vectors must have the same size
-
-    It also throws an exception in case the size of the two input vectors is not the same.
-    &#34;&#34;&#34;
-
-    if vector1.size != vector2.size:
-        raise Exception(&#34;Vectors must have the same size&#34;)
-
-    if vector1.vtype != vector2.vtype:
-        raise Exception(&#34;Vector types are not compatible&#34;)
-
-    vector = vector1.vector * vector2.vector
-
-    tags = set(vector1.tags).union(set(vector2.tags))
-
-    return Vector(size=vector1.size, vector=vector, tags=tags, vtype=vector1.vtype, seed=vector1.seed)
-
-
-def bundle(vector1: Vector, vector2: Vector) -&gt; Vector:
-    &#34;&#34;&#34;Bundle vectors.
-
-    Parameters
-    ----------
-    vector1 : Vector
-        The first vector object.
-    vector2: Vector
-        The second vector object.
-
-    Returns
-    -------
-    Vector
-        A new vector object as the result of the bundle operator on the two input vectors.
-
-    Raises
-    ------
-    Exception
-        If vectors have different sizes or different vector types.
-
-    Notes
-    -----
-    The bundle operator has the following properties:
-    (i) the resulting vector is similar to the input vectors;
-    (ii) the more vectors are involved in bundling, the harder it is to determine the component vectors;
-    (iii) if several copies of any vector are included in bundling, the resulting vector is closer to the 
-    dominant vector than to the other components.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; from hdlib.arithmetic import bundle
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector3 = budle(vector1, vector2)
-    &gt;&gt;&gt; type(vector3)
-    &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-    The bundle function returns a new Vector object whose content is computed as the element-wise sum 
-    of the two input vectors.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = budle(vector1, vector2)
-    Exception: Vector types are not compatible
-
-    The vector type of the two input vector is different and thus the bundling cannot be performed.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=15000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = budle(vector1, vector2)
-    Exception: Vectors must have the same size
-
-    It also throws an exception in case the size of the two input vectors is not the same.
-    &#34;&#34;&#34;
-
-    if vector1.size != vector2.size:
-        raise Exception(&#34;Vectors must have the same size&#34;)
-
-    if vector1.vtype != vector2.vtype:
-        raise Exception(&#34;Vector types are not compatible&#34;)
-
-    vector = vector1.vector + vector2.vector
-
-    tags = set(vector1.tags).union(set(vector2.tags))
-
-    return Vector(size=vector1.size, vector=vector, tags=tags, vtype=vector1.vtype, seed=vector1.seed)
-
-
-def permute(vector: Vector, rotate_by: int=1) -&gt; Vector:
-    &#34;&#34;&#34;Permute a vector
-
-    Parameters
-    ----------
-    vector : Vector
-        The input vector object.
-    rotate_by: int
-        Rotate the input vector by `rotate_by` positions (the default is 1).
-
-    Returns
-    -------
-    Vector
-        A new vector object as the result of the permute operator on the input vector.
-
-    Notes
-    -----
-    The permute operator has the following properties:
-    (i) invertible;
-    (ii) it distributes over bundling and any elementwise operation;
-    (iii) it preserves the distance;
-    (iv) the resulting vector is dissimilar to the input vectors.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; from hdlib.arithmetic import permute
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = permute(vector1, rotate_by=2)
-    &gt;&gt;&gt; type(vector2)
-    &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-    The permute function returns a new Vector object whose content is the same of the input 
-    vector rotated by 2 positions.
-    &#34;&#34;&#34;
-
-    rolled = np.roll(vector.vector, rotate_by, axis=0)
-
-    return Vector(size=vector.size, vector=rolled, tags=vector.tags, vtype=vector.vtype, seed=vector.seed)</code></pre>
-</details>
 </section>
 <section>
 </section>
@@ -278,78 +88,6 @@ Exception: Vector types are not compatible
 Exception: Vectors must have the same size
 </code></pre>
 <p>It also throws an exception in case the size of the two input vectors is not the same.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bind(vector1: Vector, vector2: Vector) -&gt; Vector:
-    &#34;&#34;&#34;Bind vectors.
-
-    Parameters
-    ----------
-    vector1 : Vector
-        The first vector object.
-    vector2: Vector
-        The second vector object.
-
-    Returns
-    -------
-    Vector
-        A new vector object as the result of the bind operator on the two input vectors.
-
-    Raises
-    ------
-    Exception
-        If vectors have different sizes or different vector types.
-
-    Notes
-    -----
-    The bind operator has the following properties:
-    (i) invertible (unbind);
-    (ii) it distributes over bundling;
-    (iii) it preserves the distance;
-    (iv) the resulting vector is dissimilar to the input vectors.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; from hdlib.arithmetic import bind
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-    &gt;&gt;&gt; type(vector3)
-    &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-    The bind function returns a new Vector object whose content is computed as the element-wise 
-    multiplication of the two input vectors.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-    Exception: Vector types are not compatible
-
-    The vector type of the two input vector is different and thus the binding cannot be performed.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=15000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-    Exception: Vectors must have the same size
-
-    It also throws an exception in case the size of the two input vectors is not the same.
-    &#34;&#34;&#34;
-
-    if vector1.size != vector2.size:
-        raise Exception(&#34;Vectors must have the same size&#34;)
-
-    if vector1.vtype != vector2.vtype:
-        raise Exception(&#34;Vector types are not compatible&#34;)
-
-    vector = vector1.vector * vector2.vector
-
-    tags = set(vector1.tags).union(set(vector2.tags))
-
-    return Vector(size=vector1.size, vector=vector, tags=tags, vtype=vector1.vtype, seed=vector1.seed)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.arithmetic.bundle"><code class="name flex">
 <span>def <span class="ident">bundle</span></span>(<span>vector1: <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>, vector2: <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>) ‑> <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a></span>
@@ -402,78 +140,6 @@ Exception: Vector types are not compatible
 Exception: Vectors must have the same size
 </code></pre>
 <p>It also throws an exception in case the size of the two input vectors is not the same.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bundle(vector1: Vector, vector2: Vector) -&gt; Vector:
-    &#34;&#34;&#34;Bundle vectors.
-
-    Parameters
-    ----------
-    vector1 : Vector
-        The first vector object.
-    vector2: Vector
-        The second vector object.
-
-    Returns
-    -------
-    Vector
-        A new vector object as the result of the bundle operator on the two input vectors.
-
-    Raises
-    ------
-    Exception
-        If vectors have different sizes or different vector types.
-
-    Notes
-    -----
-    The bundle operator has the following properties:
-    (i) the resulting vector is similar to the input vectors;
-    (ii) the more vectors are involved in bundling, the harder it is to determine the component vectors;
-    (iii) if several copies of any vector are included in bundling, the resulting vector is closer to the 
-    dominant vector than to the other components.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; from hdlib.arithmetic import bundle
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector3 = budle(vector1, vector2)
-    &gt;&gt;&gt; type(vector3)
-    &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-    The bundle function returns a new Vector object whose content is computed as the element-wise sum 
-    of the two input vectors.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = budle(vector1, vector2)
-    Exception: Vector types are not compatible
-
-    The vector type of the two input vector is different and thus the bundling cannot be performed.
-
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector2 = Vector(size=15000, vtype=&#34;bipolar&#34;)
-    &gt;&gt;&gt; vector3 = budle(vector1, vector2)
-    Exception: Vectors must have the same size
-
-    It also throws an exception in case the size of the two input vectors is not the same.
-    &#34;&#34;&#34;
-
-    if vector1.size != vector2.size:
-        raise Exception(&#34;Vectors must have the same size&#34;)
-
-    if vector1.vtype != vector2.vtype:
-        raise Exception(&#34;Vector types are not compatible&#34;)
-
-    vector = vector1.vector + vector2.vector
-
-    tags = set(vector1.tags).union(set(vector2.tags))
-
-    return Vector(size=vector1.size, vector=vector, tags=tags, vtype=vector1.vtype, seed=vector1.seed)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.arithmetic.permute"><code class="name flex">
 <span>def <span class="ident">permute</span></span>(<span>vector: <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>, rotate_by: int = 1) ‑> <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a></span>
@@ -508,50 +174,52 @@ Exception: Vectors must have the same size
 </code></pre>
 <p>The permute function returns a new Vector object whose content is the same of the input
 vector rotated by 2 positions.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def permute(vector: Vector, rotate_by: int=1) -&gt; Vector:
-    &#34;&#34;&#34;Permute a vector
-
-    Parameters
-    ----------
-    vector : Vector
-        The input vector object.
-    rotate_by: int
-        Rotate the input vector by `rotate_by` positions (the default is 1).
-
-    Returns
-    -------
-    Vector
-        A new vector object as the result of the permute operator on the input vector.
-
-    Notes
-    -----
-    The permute operator has the following properties:
-    (i) invertible;
-    (ii) it distributes over bundling and any elementwise operation;
-    (iii) it preserves the distance;
-    (iv) the resulting vector is dissimilar to the input vectors.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; from hdlib.arithmetic import permute
-    &gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&#34;binary&#34;)
-    &gt;&gt;&gt; vector2 = permute(vector1, rotate_by=2)
-    &gt;&gt;&gt; type(vector2)
-    &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-    The permute function returns a new Vector object whose content is the same of the input 
-    vector rotated by 2 positions.
-    &#34;&#34;&#34;
-
-    rolled = np.roll(vector.vector, rotate_by, axis=0)
-
-    return Vector(size=vector.size, vector=rolled, tags=vector.tags, vtype=vector.vtype, seed=vector.seed)</code></pre>
-</details>
+</dd>
+<dt id="hdlib.arithmetic.subtraction"><code class="name flex">
+<span>def <span class="ident">subtraction</span></span>(<span>vector1: <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>, vector2: <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>) ‑> <a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Subtract two vectors.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>vector1</code></strong> :&ensp;<code>Vector</code></dt>
+<dd>The first vector object.</dd>
+<dt><strong><code>vector2</code></strong> :&ensp;<code>Vector</code></dt>
+<dd>The second vector object.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Vector</code></dt>
+<dd>A new vector object as the result of the subtraction operator on the two input vectors.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>If vectors have different sizes or different vector types.</dd>
+</dl>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
+&gt;&gt;&gt; from hdlib.arithmetic import subtraction
+&gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&quot;binary&quot;)
+&gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&quot;binary&quot;)
+&gt;&gt;&gt; vector3 = subtraction(vector1, vector2)
+&gt;&gt;&gt; type(vector3)
+&lt;class 'hdlib.space.Vector'&gt;
+</code></pre>
+<p>The subtraction function returns a new Vector object whose content is computed as the element-wise
+subtraction of the two input vectors.</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&quot;binary&quot;)
+&gt;&gt;&gt; vector2 = Vector(size=10000, vtype=&quot;bipolar&quot;)
+&gt;&gt;&gt; vector3 = subtraction(vector1, vector2)
+Exception: Vector types are not compatible
+</code></pre>
+<p>The vector type of the two input vector is different and thus the subtraction cannot be performed.</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; vector1 = Vector(size=10000, vtype=&quot;bipolar&quot;)
+&gt;&gt;&gt; vector2 = Vector(size=15000, vtype=&quot;bipolar&quot;)
+&gt;&gt;&gt; vector3 = subtraction(vector1, vector2)
+Exception: Vectors must have the same size
+</code></pre>
+<p>It also throws an exception in case the size of the two input vectors is not the same.</p></div>
 </dd>
 </dl>
 </section>
@@ -559,7 +227,6 @@ vector rotated by 2 positions.</p></div>
 </section>
 </article>
 <nav id="sidebar">
-<h1>Index</h1>
 <div class="toc">
 <ul></ul>
 </div>
@@ -574,13 +241,14 @@ vector rotated by 2 positions.</p></div>
 <li><code><a title="hdlib.arithmetic.bind" href="#hdlib.arithmetic.bind">bind</a></code></li>
 <li><code><a title="hdlib.arithmetic.bundle" href="#hdlib.arithmetic.bundle">bundle</a></code></li>
 <li><code><a title="hdlib.arithmetic.permute" href="#hdlib.arithmetic.permute">permute</a></code></li>
+<li><code><a title="hdlib.arithmetic.subtraction" href="#hdlib.arithmetic.subtraction">subtraction</a></code></li>
 </ul>
 </li>
 </ul>
 </nav>
 </main>
 <footer id="footer">
-<p>Copyright &copy; 2022 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+    <p>Copyright &copy; 2024 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
 </footer>
 </body>
 </html>

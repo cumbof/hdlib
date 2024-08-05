@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
 <title>hdlib.space API documentation</title>
-<meta name="description" content="Implementation of hyperdimensional Vector and Space …" />
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
-<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
-<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<meta name="description" content="Implementation of hyperdimensional Vector and Space …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
-<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
 </head>
 <body>
 <main>
@@ -25,1352 +28,6 @@
 <p>Implementation of hyperdimensional Vector and Space.</p>
 <p><strong>hdlib</strong> provides the <em>Space</em> and <em>Vector</em> classes under <em>hdlib.space</em> for building the abstract
 representation of a hyperdimensional space which acts as a container for a multitude of vectors.</p>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">&#34;&#34;&#34;Implementation of hyperdimensional Vector and Space.
-
-__hdlib__ provides the _Space_ and _Vector_ classes under _hdlib.space_ for building the abstract 
-representation of a hyperdimensional space which acts as a container for a multitude of vectors.&#34;&#34;&#34;
-
-import errno
-import os
-import pickle
-import uuid
-from typing import List, Optional, Set, Tuple, Union
-
-import numpy as np
-
-from hdlib import __version__
-
-
-class Vector(object):
-    &#34;&#34;&#34;Vector object.&#34;&#34;&#34;
-
-    def __init__(
-        self,
-        name: Optional[str]=None,
-        size: int=10000,
-        vector: Optional[np.ndarray]=None,
-        vtype: str=&#34;bipolar&#34;,
-        tags: Optional[Set[Union[str, int, float]]]=None,
-        seed: Optional[int]=None,
-        warning: bool=False,
-        from_file: Optional[os.path.abspath]=None,
-    ) -&gt; &#34;Vector&#34;:
-        &#34;&#34;&#34;Initialize a Vector object.
-
-        Parameters
-        ----------
-        name : str, optional
-            The unique identifier of the Vector object. A random UUID v4 is generated if not specified.
-        size : int, optional, default 10000
-            The size of the vector. It is 10,000 by default and cannot be less than that.
-        vector : numpy.ndarray, optional, default None
-            The actual vector. A random vector is created if not specified.
-        vtype : {&#39;binary&#39;, &#39;bipolar&#39;}, default &#39;bipolar&#39;
-            The vector type.
-        tags : set, default None
-            An optional set of vector tags. Tags can be str, int, and float.
-        seed : int, default None
-            An optional seed for reproducibly generating the vector numpy.ndarray randomly.
-        warning : bool, default False
-            Print warning messages if True.
-        from_file : str, default None
-            Path to a pickle file. Used to load a Vector object from file.
-
-        Returns
-        -------
-        Vector
-            A new Vector object.
-
-        Raises
-        ------
-        TypeError
-            - if the vector name is not instance of a primitive;
-            - if `tags` is not an instance of set;
-            - if `vector` is not an instance of numpy.ndarray;
-            - if `size` is not an integer number.
-        ValueError
-            - if `vtype` is different than &#39;binary&#39; or &#39;bipolar&#39;;
-            - if `size` is lower than 10,000.
-        FileNotFoundError
-            If `from_file` is not None but the file does not exist.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; type(vector)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        A new bipolar vector with a size of 10,000 is created by default.
-
-        &gt;&gt;&gt; vector = Vector(size=10)
-        ValueError: Vector size must be greater than or equal to 10000
-
-        This throws a ValueError since the vector size cannot be less than 10,000.
-
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector1.dump(to_file=&#39;~/my_vector.pkl&#39;)
-        &gt;&gt;&gt; vector2 = Vector(from_file=&#39;~/my_vector.pkl&#39;)
-        &gt;&gt;&gt; type(vector2)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        This creates a random bipolar vector `vector1`, dumps the object to a pickle file under the home directory,
-        and finally create a new vector object `vector2` from the pickle file.
-        &#34;&#34;&#34;
-
-        # Conditions on vector name or ID
-        # Vector name is casted to string. For this reason, only Python primitives are allowed
-        # A random name is assigned if not specified
-        try:
-            if name is None:
-                name = str(uuid.uuid4())
-
-            else:
-                name = str(name)
-
-            self.name = name
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        # Register random seed for reproducibility
-        self.seed = seed
-
-        # Take track of the hdlib version
-        self.version = __version__
-
-        if tags and not isinstance(tags, set):
-            raise TypeError(&#34;Tags must be a set&#34;)
-
-        # Add tags
-        self.tags = tags if tags else set()
-
-        # Add links
-        # Used to link Vectors by their names or IDs
-        self.parents = set()
-        self.children = set()
-
-        # Conditions on vector
-        # It must be a numpy.ndarray
-        # A random vector is generated if not specified
-        if vector is not None:
-            if not isinstance(vector, np.ndarray):
-                raise TypeError(&#34;Vector must be instance of numpy.ndarray&#34;)
-
-            self.vector = vector
-
-            self.size = len(self.vector)
-
-            if self.size &lt; 10000:
-                raise ValueError(&#34;Vector size must be greater than or equal to 10000&#34;)
-
-            self.vtype = vtype
-
-            # Try to infer the vector type from the content of the vector itself
-            if ((self.vector == 0) | (self.vector == 1)).all():
-                self.vtype = &#34;binary&#34;
-
-            elif ((self.vector == -1) | (self.vector == 1)).all():
-                self.vtype = &#34;bipolar&#34;
-
-            else:
-                if warning:
-                    print(&#34;Vector type can be binary or bipolar only&#34;)
-
-        elif from_file:
-            if not os.path.isfile(from_file):
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), from_file)
-
-            else:
-                # Load vector from pickle file
-                with open(from_file, &#34;rb&#34;) as pkl:
-                    self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed = pickle.load(pkl)
-
-                if self.version != __version__:
-                    print(&#34;Warning: the specified Space has been created with a different version of hdlib&#34;)
-
-        else:
-            # Conditions on vector size
-            # It must be an integer number greater than or equal to 10000
-            # This size makes sure that vectors are quasi-orthogonal in space
-            if not isinstance(size, int):
-                raise TypeError(&#34;Vector size must be an integer number&#34;)
-
-            if size &lt; 10000:
-                raise ValueError(&#34;Vector size must be greater than or equal to 10000&#34;)
-
-            self.size = size
-
-            if vtype not in (&#34;bipolar&#34;, &#34;binary&#34;):
-                raise ValueError(&#34;Vector type can be binary or bipolar only&#34;)
-
-            # Add vector type
-            self.vtype = vtype.lower()
-
-            if seed is None:
-                rand = np.random.default_rng()
-
-            else:
-                # Conditions on random seed for reproducibility
-                # numpy allows integers as random seeds
-                if not isinstance(seed, int):
-                    raise TypeError(&#34;Seed must be an integer number&#34;)
-
-                rand = np.random.default_rng(seed=self.seed)
-
-            # Build a random binary vector
-            self.vector = rand.integers(2, size=size)
-
-            if vtype == &#34;bipolar&#34;:
-                # Build a random bipolar vector
-                self.vector = 2 * self.vector - 1
-
-    def __len__(self) -&gt; int:
-        &#34;&#34;&#34;Get the vector size.
-
-        Returns
-        -------
-        int
-            The vector size.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; len(vector)
-        10000
-
-        Return the vector size, which is 10,000 by default here
-        &#34;&#34;&#34;
-
-        return self.size
-
-    def __str__(self) -&gt; None:
-        &#34;&#34;&#34;Print the Vector object properties.
-
-        Returns
-        -------
-        str
-            A description of the Vector object. It reports the name, seed, size,
-            vector type, tags, and the actual vector.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; print(vector)
-
-                Class:   hdlib.space.Vector
-                Name:    89ea628b-3d29-47e1-9d10-34bdbfce8d40
-                Seed:    None
-                Size:    10000
-                Type:    bipolar
-                Tags:
-
-                []
-
-                Vector:
-
-                [ 1 -1 -1 ... -1  1 -1]
-
-        Print the Vector object properties. The name has been generated as a UUID v4, while
-        the vector size and type are 10,000 and &#39;bipolar&#39; by default. No tags have been specified.
-        Thus, the set of vector tags is empty.
-        &#34;&#34;&#34;
-
-        return &#34;&#34;&#34;
-            Class:   hdlib.space.Vector
-            Version: {}
-            Name:    {}
-            Seed:    {}
-            Size:    {}
-            Type:    {}
-            Tags:
-            
-            {}
-            
-            Vector:
-
-            {}
-        &#34;&#34;&#34;.format(
-            self.version,
-            self.name,
-            self.seed,
-            self.size,
-            self.vtype,
-            np.array(list(self.tags)),
-            self.vector
-        )
-
-    def __add__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
-        &#34;&#34;&#34;Implement the addition operator between two Vector objects as bundle.
-
-        Returns
-        -------
-        Vector
-            A new vector object as the result of the bundle operator on the two input vectors.
-
-        Raises
-        ------
-        TypeError
-            If the input `vector` is not instance of the Vector class.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector3 = vector1 + vector2
-        &gt;&gt;&gt; type(vector3)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        The bundle function returns a new Vector object whose content is computed as the element-wise sum 
-        of the two input vectors.
-        &#34;&#34;&#34;
-
-        if not isinstance(vector, Vector):
-            raise TypeError(&#34;Cannot apply the bundle operator to non-Vector objects&#34;)
-
-        # Import arithmetic.bundle here to avoid circular imports
-        from hdlib.arithmetic import bundle as bundle_operator
-
-        return bundle_operator(self, vector)
-
-    def __mul__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
-        &#34;&#34;&#34;Implement the multiplication operator between two Vector objects as bind.
-
-        Returns
-        -------
-        Vector
-            A new vector object as the result of the bind operator on the two input vectors.
-
-        Raises
-        ------
-        TypeError
-            If the input `vector` is not instance of the Vector class.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector3 = vector1 * vector2
-        &gt;&gt;&gt; type(vector3)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        The bind function returns a new Vector object whose content is computed as the element-wise 
-        multiplication of the two input vectors.
-        &#34;&#34;&#34;
-
-        if not isinstance(vector, Vector):
-            raise TypeError(&#34;Cannot apply the bind operator to non-Vector objects&#34;)
-
-        # Import arithmetic.bind here to avoid circular imports
-        from hdlib.arithmetic import bind as bind_operator
-
-        return bind_operator(self, vector)
-
-    def dist(self, vector: &#34;Vector&#34;, method: str=&#34;cosine&#34;) -&gt; float:
-        &#34;&#34;&#34;Compute distance between vectors.
-
-        Parameters
-        ----------
-        vector : Vector
-            A Vector object from which the distance must be computed.
-        method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, optional, default &#39;cosine&#39;
-            The distance method.
-
-        Returns
-        -------
-        float
-            The distance between the current Vector object and the input `vector`.
-
-        Raises
-        ------
-        Exception
-            If the current vector has a different size or vector type than the input vector.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector(seed=1)
-        &gt;&gt;&gt; vector2 = Vector(seed=2)
-        &gt;&gt;&gt; vector1.dist(vector2, method=&#39;cosine&#39;)
-        0.996
-
-        Generate two random bipolar vectors and compute the distance between them.
-        &#34;&#34;&#34;
-
-        if self.size != vector.size:
-            raise Exception(&#34;Vectors must have the same size&#34;)
-
-        if self.vtype != vector.vtype:
-            raise Exception(&#34;Vectors must be of the same type&#34;)
-
-        if method.lower() == &#34;cosine&#34;:
-            return 1 - np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
-
-        elif method.lower() == &#34;hamming&#34;:
-            return np.count_nonzero(self.vector != vector.vector)
-
-        elif method.lower() == &#34;euclidean&#34;:
-            return np.linalg.norm(self.vector - vector.vector)
-
-        else:
-            raise ValueError(&#34;Distance method \&#34;{}\&#34; is not supported&#34;.format(method))
-
-    def normalize(self) -&gt; None:
-        &#34;&#34;&#34;Normalize a vector after a binding or bundling with another vector.
-
-        Raises
-        ------
-        Exception
-            If the vector type is not supported (i.e., is different from binary and bipolar).
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; from hdlib.arithmetic import bind
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-        &gt;&gt;&gt; vector3.normalize()
-        &gt;&gt;&gt; ((vector3.vector == -1) | (vector3.vector == 1)).all()
-        True
-
-        Binding or bundling two vectors can produce a new vector whose vtype is different from the
-        one of the two input vector. This function normalizes the vector content in accordance to
-        its vector type.
-        &#34;&#34;&#34;
-
-        if self.vtype not in (&#34;bipolar&#34;, &#34;binary&#34;):
-            raise Exception(&#34;Vector type is not supported&#34;)
-
-        self.vector[self.vector &gt; 0] = 1
-
-        self.vector[self.vector &lt;= 0] = 0 if self.vtype == &#34;binary&#34; else -1
-
-    def bind(self, vector: &#34;Vector&#34;) -&gt; None:
-        &#34;&#34;&#34;Bind the current vector with another vector object inplace.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input Vector object.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector1.bind(vector2)
-
-        It overrides the actual vector content of `vector1` with the result of the binding with `vector2`.
-        Refers to hdlib.arithmetic.bind for additional information.
-        &#34;&#34;&#34;
-
-        # Import arithmetic.bind here to avoid circular imports
-        from hdlib.arithmetic import bind as bind_operator
-
-        self.__override_object(bind_operator(self, vector))
-
-    def bundle(self, vector: &#34;Vector&#34;) -&gt; None:
-        &#34;&#34;&#34;Bundle the current vector with another vector object inplace.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input Vector object.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector1.bundle(vector2)
-
-        It overrides the actual vector content of `vector1` with the result of the bundling with `vector2`.
-        Refers to hdlib.arithmetic.bundle for additional information.
-        &#34;&#34;&#34;
-
-        # Import arithmetic.bundle here to avoid circular imports
-        from hdlib.arithmetic import bundle as bundle_operator
-
-        self.__override_object(bundle_operator(self, vector))
-    
-    def permute(self, rotate_by: int=1) -&gt; None:
-        &#34;&#34;&#34;Permute the current vector inplace.
-
-        Parameters
-        ----------
-        rotate_by : int
-            Rotate the input vector by `rotate_by` positions (the default is 1).
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; vector.permute(rotate_by=2)
-
-        It overrides the actual vector content of `vector` with the result of applying the permute function inplace.
-        Refers to hdlib.arithmetic.permute for additional information.
-        &#34;&#34;&#34;
-
-        # Import arithmetic.permute here to avoid circular imports
-        from hdlib.arithmetic import permute as permute_operator
-
-        self.__override_object(permute_operator(self, rotate_by=rotate_by))
-
-    def __override_object(self, vector: &#34;Vector&#34;) -&gt; None:
-        &#34;&#34;&#34;Override the Vector object with another Vector object. This is a private method.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input vector from which properties are inherited to the current vector.
-        &#34;&#34;&#34;
-
-        self.name = vector.name
-        self.size = vector.size
-        self.seed = vector.seed
-        self.tags = vector.tags
-
-        self.parent = vector.parent
-        self.children = vector.children
-
-        self.vtype = vector.vtype
-        self.vector = vector.vector
-
-        self.version = vector.version
-
-    def dump(self, to_file: Optional[os.path.abspath]=None) -&gt; None:
-        &#34;&#34;&#34;Dump the Vector object to a pickle file.
-
-        Parameters
-        ----------
-        to_file
-            Path to the file used to dump the Vector object to.
-
-        Raises
-        ------
-        Exception
-            If the `to_file` file already exists.
-
-        Examples
-        --------
-        &gt;&gt;&gt; import os
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; vector.dump(to_file=&#39;~/my_vector.pkl&#39;)
-        &gt;&gt;&gt; os.path.isfile(&#39;~/my_vector.pkl&#39;)
-        True
-
-        Create a Vector object and dump it to a pickle file under the home directory.
-        &#34;&#34;&#34;
-
-        if not to_file:
-            # Dump the vector to a pickle file in the current working directory if not file path is provided
-            to_file = os.path.join(os.getcwd, &#34;{}.pkl&#34;.format(self.name))
-
-        if os.path.isfile(to_file):
-            raise Exception(&#34;The output file already exists!\n{}&#34;.format(to_file))
-
-        with open(to_file, &#34;wb&#34;) as pkl:
-            pickle.dump((self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed), pkl)
-
-
-class Space(object):
-    &#34;&#34;&#34;Vectors space.&#34;&#34;&#34;
-
-    def __init__(self, size: int=10000, vtype: str=&#34;bipolar&#34;, from_file: Optional[os.path.abspath]=None) -&gt; &#34;Space&#34;:
-        &#34;&#34;&#34;Initialize the vectors space as a dictionary of Vector objects.
-
-        Parameters
-        ----------
-        size : int, optional, default 10000
-            Size of vectors in the space. It is 10,000 by default and cannot be less than that.
-        vtype : {&#39;binary&#39;, &#39;bipolar&#39;}, default &#39;bipolar&#39;
-            The type of vectors in space.
-        from_file : str, default None
-            Path to a pickle file. Used to load a Space object from file.
-
-        Returns
-        -------
-        Space
-            A new Space object.
-
-        Raises
-        ------
-        ValueError
-            - if `vtype` is different than &#39;binary&#39; or &#39;bipolar&#39;;
-            - if `size` is lower than 10,000.
-        FileNotFoundError
-            If `from_file` is not None but the file does not exist.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space
-        &gt;&gt;&gt; space = Space()
-        &lt;class &#39;hdlib.space.Space&#39;&gt;
-
-        Create a Space object that can host bipolar vectors with a size of 10,000 by default.
-
-        &gt;&gt;&gt; Space(size=10)
-        ValueError: Size of vectors in space must be greater than or equal to 10000
-
-        This throws a ValueError since the vector size cannot be less than 10,000.
-
-        &gt;&gt;&gt; space1 = Space()
-        &gt;&gt;&gt; space1.dump(to_file=&#39;~/my_space.pkl&#39;)
-        &gt;&gt;&gt; space2 = Space(from_file=&#39;~/my_space.pkl&#39;)
-        &gt;&gt;&gt; type(space2)
-        &lt;class &#39;hdlib.space.Space&#39;&gt;
-
-        This creates an empty space `space1`, dumps the object to a pickle file under the home directory,
-        and finally create a new space object `space2` from the pickle file.
-        &#34;&#34;&#34;
-
-        self.space = dict()
-
-        self.version = __version__
-
-        self.size = size
-
-        if self.size &lt; 10000:
-            raise ValueError(&#34;Size of vectors in space must be greater than or equal to 10000&#34;)
-
-        self.vtype = vtype.lower()
-
-        if self.vtype not in (&#34;binary&#34;, &#34;bipolar&#34;):
-            raise ValueError(&#34;Vector type not supported&#34;)
-
-        self.tags = dict()
-
-        # Vector links can be used to define a tree structure
-        # Use this flag to mark a vector as root
-        self.root = None
-
-        if from_file:
-            if not os.path.isfile(from_file):
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), from_file)
-
-            else:
-                with open(from_file, &#34;rb&#34;) as pkl:
-                    self.version, self.size, self.vtype, self.space, self.root = pickle.load(pkl)
-
-                if self.version != __version__:
-                    print(&#34;Warning: the specified Space has been created with a different version of hdlib&#34;)
-
-                for name in self.space:
-                    if self.space[name].tags:
-                        for tag in self.space[name].tags:
-                            if tag not in self.tags:
-                                self.tags[tag] = set()
-
-                            self.tags[tag].add(name)
-
-    def __len__(self) -&gt; int:
-        &#34;&#34;&#34;Get the number of vectors in space.
-
-        Returns
-        -------
-        int
-            The number of vectors in space.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; space.insert(vector)
-        &gt;&gt;&gt; len(space)
-        1
-
-        Create a Space object, add a Vector object to the space, and check the total number
-        of Vector objects in the space.
-        &#34;&#34;&#34;
-
-        return len(self.space)
-
-    def __str__(self) -&gt; None:
-        &#34;&#34;&#34;Print the Space object properties.
-
-        Returns
-        -------
-        str
-            A description of the Space object. It reports the size, vector type,
-            the number of vectors in space, the set of vectors tags, and the set of vectors names.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; vector = Vector(name=&#39;my_vector&#39;)
-        &gt;&gt;&gt; space.insert(vector)
-        &gt;&gt;&gt; print(space)
-
-                Class:   hdlib.space.Space
-                Size:    10000
-                Type:    bipolar
-                Vectors: 1
-                Tags:
-
-                []
-
-                IDs:
-
-                [&#39;my_vector&#39;]
-
-        Print the Space object properties. It contains only one vector.
-        The vector size and type are 10,000 and &#39;bipolar&#39; by default.
-        &#34;&#34;&#34;
-
-        return &#34;&#34;&#34;
-            Class:   hdlib.space.Space
-            Version: {}
-            Size:    {}
-            Type:    {}
-            Vectors: {}
-            Tags:
-            
-            {}
-            
-            IDs:
-
-            {}
-        &#34;&#34;&#34;.format(
-            self.version,
-            self.size,
-            self.vtype,
-            len(self.space),
-            np.array(list(self.tags.keys())),
-            np.array(list(self.space.keys()))
-        )
-
-    def memory(self) -&gt; List[str]:
-        &#34;&#34;&#34;Return names or IDs of vectors in space.
-
-        Returns
-        -------
-        list
-            A list with vectors names or IDs
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; vector = Vector(name=&#39;my_vector&#39;)
-        &gt;&gt;&gt; space.insert(vector)
-        &gt;&gt;&gt; space.memory()
-        [&#39;my_vector&#39;]
-
-        Create a Space and add a Vector called &#39;my_vector&#39;. The memory function returns
-        the list of vector names. In this case a list with one element only &#39;my_vector&#39;.
-        &#34;&#34;&#34;
-
-        return list(self.space.keys())
-
-    def get(
-        self,
-        names: Optional[List[str]]=None,
-        tags: Optional[List[Union[str, int, float]]]=None
-    ) -&gt; List[Vector]:
-        &#34;&#34;&#34;Get vectors by names or tags.
-
-        Parameters
-        ----------
-        names : list, optional
-            A list with vector names. It is required in case no tags are specified.
-        tags : list, optional
-            A list with vector tags. It is required in case no names are specified.
-
-        Returns
-        -------
-        list
-            A list of Vector objects in the space according to the specified names or tags.
-
-        Raises
-        ------
-        TypeError
-            If names or tags in the input lists are not instance of primitives.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; vector1 = Vector(name=&#39;my_vector_1&#39;, tags={&#39;tag1&#39;, &#39;tag2&#39;})
-        &gt;&gt;&gt; vector2 = Vector(name=&#39;my_vector_2&#39;, tags={&#39;tag2&#39;, &#39;tag3&#39;, &#39;tag4&#39;})
-        &gt;&gt;&gt; space.insert(vector1)
-        &gt;&gt;&gt; space.insert(vector2)
-        &gt;&gt;&gt; vectors = space.get(tags=[&#39;tag2&#39;])
-        &gt;&gt;&gt; for vector in vectors:
-        ...     print(vector.name)
-        my_vector_1
-        my_vector_2
-
-        This creates two Vector objects with a few tags and add them to a Space.
-        It then retrieves a list of vectors by searching for a specific tag which is in common between
-        the two vectors in this case. It finally prints the vector names.
-        &#34;&#34;&#34;
-
-        if not names and not tags:
-            raise Exception(&#34;No names or tags provided!&#34;)            
-
-        vectors = set()
-
-        if names:
-            try:
-                names = [str(name) for name in names]
-
-            except:
-                raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-            for vector_name in names:
-                if vector_name in self.space:
-                    vectors.add(self.space[vector_name])
-
-        elif tags:
-            for tag in tags:
-                if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-                    raise TypeError(&#34;Tags must be string, integer, or float&#34;)
-
-                if tag in self.tags:
-                    for vector_name in self.tags[tag]:
-                        vectors.add(self.space[vector_name])
-
-        return list(vectors)
-
-    def insert(self, vector: Vector) -&gt; None:
-        &#34;&#34;&#34;Add a Vector object to the space.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input Vector object that must be added to the Space
-
-        Raises
-        ------
-        Exception
-            - if the vector size or type is not compatible with the space;
-            - if a vector with the same name of the input one is already in the space.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; space.insert(vector)
-
-        It creates a random bipolar vector with size 10,000 and adds it to a space that by default can host 
-        bipolar vectors with size 10,000.
-
-        &gt;&gt;&gt; vector = Vector(size=15000)
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; space.insert(vector)
-        Exception: Space and vectors with different size are not compatible
-
-        By default, the space can host bipolar vectors with size 10,000, while here we explicitly created a 
-        Vector object with size 15,000 which is not compatible with the space.
-        &#34;&#34;&#34;
-
-        if self.size != vector.size:
-            raise Exception(&#34;Space and vectors with different size are not compatible&#34;)
-
-        if self.vtype != vector.vtype:
-            raise Exception(&#34;Attempting to insert a {} vector into a {} space: failed&#34;.format(vector.vtype, self.vtype))
-
-        if vector.name in self.space:
-            raise Exception(&#34;Vector \&#34;{}\&#34; already in space&#34;.format(vector.name))
-
-        self.space[vector.name] = vector
-
-        for tag in vector.tags:
-            if tag not in self.tags:
-                self.tags[tag] = set()
-
-            self.tags[tag].add(vector.name)
-
-    def bulk_insert(
-        self,
-        names: List[str],
-        tags: Optional[List[List[Union[str, int, float]]]]=None,
-        ignore_existing: bool=True
-    ) -&gt; None:
-        &#34;&#34;&#34;Add vectors to the space in bulk.
-
-        Parameters
-        ----------
-        names : list
-            A list with vector names.
-        tags : list, optional
-            An optional list of lists with vector tags.
-        ignore_existing : bool, default True
-            Do not raise an exception in case the space contains a vector with the same name specified in `names`.
-
-        Raises
-        ------
-        TypeError
-            - if `names` or `tags` are not instance of list;
-            - if the elements of the `names` list are not instance of a primitive.
-        Exception
-            - if the number of elements in `names` doesn&#39;t match with the number of elements in `tags`;
-            - if there already a vector in the space with the same name in `names`.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; space.bulk_insert(names=[&#39;my_vector_1&#39;, &#39;my_vector_2&#39;])
-        &gt;&gt;&gt; space.memory()
-        [&#39;my_vector_1&#39;, &#39;my_vector_2&#39;]
-
-        Create two random bipolar vectors with size 10,000 just by specifying a list with vector names.
-        The vector type and size is inherited by the space that by default can host bipolar vectors with size 10,000.
-
-        &gt;&gt;&gt; space.bulk_insert(names=[&#39;my_vector_3&#39;, &#39;my_vector_4&#39;], tags=[[&#39;tag1&#39;], [&#39;tag1&#39;, &#39;tag2&#39;]])
-        &gt;&gt;&gt; vectors = space.get(tags=[&#39;tag1&#39;])
-        &gt;&gt;&gt; for vector in vectors:
-        ...     print(vector.name)
-        my_vector_3
-        my_vector_4
-
-        Add other two vectors and assigned them a few tags, then retrieve the vectors with tag &#39;tag1&#39;.
-        Both &#39;my_vector_3&#39; and &#39;my_vector_4&#39; contain &#39;tag1&#39; in their set of tags.
-        &#34;&#34;&#34;
-
-        if not isinstance(names, list):
-            raise TypeError(&#34;Input must be a list of strings&#34;)
-
-        if tags and not isinstance(tags, list):
-            raise TypeError(&#34;tags must be a list of lists of strings&#34;)
-
-        if tags and len(names) != len(tags):
-            raise Exception(&#34;The number of vector IDs must match the size of the tags list&#34;)
-
-        names = set(names)
-
-        for pos, name in enumerate(names):
-            try:
-                name = str(name)
-
-            except:
-                raise TypeError(&#34;Entries in input list must be instances of primitives&#34;)
-
-            if name in self.space:
-                if not ignore_existing:
-                    raise Exception(&#34;Vector \&#34;{}\&#34; already in space&#34;.format(name))
-
-                else:
-                    continue
-
-            vector_tags = set(tags[pos]) if tags else set()
-
-            vector = Vector(name=name, size=self.size, tags=vector_tags, vtype=self.vtype)
-
-            self.insert(vector)
-
-    def remove(self, name: str) -&gt; Vector:
-        &#34;&#34;&#34;Remove a vector from the space by its name.
-
-        Parameters
-        ----------
-        name : str
-            The name of the vector that must be removed from the space.
-
-        Returns
-        -------
-        Vector
-            Returns the Vector object.
-
-        Raises
-        ------
-        TypeError
-            If the vector name is not an instance of a primitive.
-        Exception
-            If there is not a vector with that specific name in the space.
-
-        Examples
-        --------
-        &gt;&gt;&gt; form hdlib.space import Space, Vector
-        &gt;&gt;&gt; vector = Vector(name=&#39;my_vector&#39;)
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; space.insert(vector)
-        &gt;&gt;&gt; space.remove(&#39;my_vector&#39;)
-        &gt;&gt;&gt; len(space)
-        0
-
-        Create a vector called &#39;my_vector&#39;, add it to the space and then remove it.
-        Finally check how many vectors are in the space.
-        &#34;&#34;&#34;
-
-        try:
-            name = str(name)
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        if name not in self.space:
-            raise Exception(&#34;Vector not in space&#34;)
-
-        vector = self.space[name]
-
-        del self.space[name]
-
-        for tag in vector.tags:
-            self.tags[tag].remove(vector.name)
-
-            if not self.tags[tag]:
-                del self.tags[tag]
-
-        return vector
-
-    def add_tag(self, name: str, tag: Union[str, int, float]) -&gt; None:
-        &#34;&#34;&#34;Tag a vector.
-
-        Parameters
-        ----------
-        name : str
-            The vector name or ID.
-        tag : str, int, float
-            The tag must be a primitive.
-
-        Raises
-        ------
-        TypeError
-            If the name or tag are not instance of primitives.
-        Exception
-            If there is not a vector in the space with that specific name or ID.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; my_vector = Vector(name=&#39;my_vector&#39;)
-        &gt;&gt;&gt; space.insert(my_vector)
-        &gt;&gt;&gt; space.add_tag(&#39;my_vector&#39;, &#39;tag&#39;)
-        &gt;&gt;&gt; for vector in space.get(tags[&#39;tag&#39;]):
-        ...     print(vector.name)
-        my_vector
-
-        This creates a Vector object add it to a Space. It then assigns a tag to the vector and searches
-        for vector with that specific tag within the space. It finally prints the vector names.
-        &#34;&#34;&#34;
-
-        try:
-            name = str(name)
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        if name not in self.space:
-            raise Exception(&#34;Vector not in space&#34;)
-
-        if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-            raise TypeError(&#34;Tags must be string, integer, or float&#34;)
-
-        self.space[name].tags.add(tag)
-
-        if tag not in self.tags:
-            self.tags[tag] = set()
-
-        self.tags[tag].add(name)
-
-    def remove_tag(self, name: str, tag: Union[str, int, float]) -&gt; None:
-        &#34;&#34;&#34;Untag a vector.
-
-        Parameters
-        ----------
-        name : str
-            The vector name or ID.
-        tag : str, int, float
-            The tag must be a primitive.
-
-        Raises
-        ------
-        TypeError
-            If the name or tag are not instance of primitives.
-        Exception
-            If there is not a vector in the space with that specific name or ID.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; my_vector = Vector(name=&#39;my_vector&#39;, tags={&#39;tag&#39;})
-        &gt;&gt;&gt; space.insert(my_vector)
-        &gt;&gt;&gt; space.remove_tag(&#39;my_vector&#39;, &#39;tag&#39;)
-        &gt;&gt;&gt; len(space.get(tags[&#39;tag&#39;]))
-        0
-
-        This initializes a space, inserts a vector with a tag into the space, then untags the vector, and
-        finally searches for vectors with that specific tag. No vectors are returned since there was only
-        one vector with that tag that has been untagged.
-        &#34;&#34;&#34;
-
-        try:
-            name = str(name)
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        if name not in self.space:
-            raise Exception(&#34;Vector not in space&#34;)
-
-        if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-            raise TypeError(&#34;Tags must be string, integer, or float&#34;)
-
-        if tag in self.tags:
-            self.space[name].tags.remove(tag)
-
-            self.tags[tag].remove(name)
-
-            if not self.tags[tag]:
-                del self.tags[tag]
-
-    def link(self, name1: str, name2: str) -&gt; None:
-        &#34;&#34;&#34;Link two vectors in the space through by their names. Links are directed edges.
-
-        Parameters
-        ----------
-        name1 : str
-            Name or ID of the first vector.
-        name2 : str
-            Name or ID of the second vector.
-
-        Raises
-        ------
-        TypeError
-            If vectors names are not instance of a primitive.
-        Exception
-            If there are no vectors in space named `name1` and `name2`.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; vector1 = Vector(name=&#39;vector1&#39;)
-        &gt;&gt;&gt; vector2 = Vector(name=&#39;vector2&#39;)
-        &gt;&gt;&gt; space.insert(vector1)
-        &gt;&gt;&gt; space.insert(vector2)
-        &gt;&gt;&gt; space.link(&#39;vector2&#39;, &#39;vector1&#39;)
-        &gt;&gt;&gt; vector2 = space.get(names=[&#39;vector2&#39;])[0]
-        &gt;&gt;&gt; &#39;vector1&#39; in vector2.children
-        True
-
-        Define a space with two vectors &#39;vector1&#39; and &#39;vector2&#39;. Link &#39;vector2&#39; with &#39;vector1&#39;.
-        Retrieve &#39;vector2&#39; from the space and check whether &#39;vector1&#39; is in its set of linked nodes.
-        &#34;&#34;&#34;
-
-        try:
-            name1 = str(name1)
-
-            name2 = str(name2)
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        if name1 not in self.space:
-            raise Exception(&#34;Vector \&#34;{}\&#34; not in space&#34;.format(name1))
-
-        if name2 not in self.space:
-            raise Exception(&#34;Vector \&#34;{}\&#34; not in space&#34;.format(name2))
-
-        self.space[name1].children.add(name2)
-
-        self.space[name2].parents.add(name1)
-
-    def set_root(self, name: str) -&gt; None:
-        &#34;&#34;&#34;Vector links can be used to define a tree structure. Set a specific vector as root.
-
-        Parameters
-        ----------
-        name : str
-            Name or ID of vector in space.
-
-        Raises
-        ------
-        TypeError
-            If the vector name or ID is not instance of a primitive.
-        Exception
-            If there are no vectors in the space with the specified name.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; space.bulk_insert(names=[&#39;vector1&#39;, &#39;vector2&#39;, &#39;vector3&#39;])
-        &gt;&gt;&gt; space.link(&#39;vector1&#39;, &#39;vector2&#39;)
-        &gt;&gt;&gt; space.link(&#39;vector1&#39;, &#39;vector3&#39;)
-        &gt;&gt;&gt; space.set_root(&#39;vector1&#39;)
-        &gt;&gt;&gt; vector1 = space.get(names=[&#39;vector1&#39;])[0]
-        &gt;&gt;&gt; for vector in vector1.children:
-        ...     print(vector)
-        vector2
-        vector3
-
-        Create a space and add three vectors in bulk. Link &#39;vector1&#39; to &#39;vector2&#39; and &#39;vector3&#39;, and
-        set &#39;vector1&#39; as root. Finally, print the name of the nodes linked to the root.
-        &#34;&#34;&#34;
-
-        try:
-            name = str(name)
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        if name not in self.space:
-            raise Exception(&#34;Vector \&#34;{}\&#34; not in space&#34;.format(name))
-
-        self.root = name
-
-    def find(self, vector: Vector, threshold: float=2.0, method: str=&#34;cosine&#34;) -&gt; Tuple[str, float]:
-        &#34;&#34;&#34;Search for the closest vector in space.
-
-        Parameters
-        ----------
-        vector : Vector
-            Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 2.0
-            Threshold on distance between vectors.
-        method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, default &#39;cosine&#39;
-            Distance metric.
-
-        Returns
-        -------
-        tuple
-            A tuple with the name of the closest vector in space and its distance with the input vector.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; vector1 = Vector(name=&#39;vector1&#39;)
-        &gt;&gt;&gt; vector2 = Vector(name=&#39;vector2&#39;)
-        &gt;&gt;&gt; vector3 = Vector(name=&#39;vector3&#39;)
-        &gt;&gt;&gt; space.insert(vector1)
-        &gt;&gt;&gt; space.insert(vector2)
-        &gt;&gt;&gt; space.insert(vector3)
-        &gt;&gt;&gt; space.find(vector1)
-        (&#39;vector1&#39;, 0.0)
-
-        Create a space with three vectors &#39;vector1&#39;, &#39;vector2&#39;, and &#39;vector3&#39;, and search for the closest vector to &#39;vector1&#39;.
-        The result is obviously itself, &#39;vector1&#39;, with a cosine distance of 0.0.
-        &#34;&#34;&#34;
-
-        # Exploit self.find_all() to seach for the best match
-        # It will take care of raising exceptions in case of problems with input arguments
-        distances, best = self.find_all(vector, threshold=threshold, method=method)
-
-        return best, distances[best]
-
-    def find_all(self, vector: Vector, threshold: float=2.0, method: str=&#34;cosine&#34;) -&gt; Tuple[dict, str]:
-        &#34;&#34;&#34;Compute distance of the input vector against all vectors in space.
-
-        Parameters
-        ----------
-        vector : Vector
-            Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 2.0
-            Threshold on distance between vectors.
-        method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, default &#39;cosine&#39;
-            Distance metric.
-
-        Returns
-        -------
-        dict
-            A dictionary the distances between the input vector and all the other vectors in the space,
-            in addition to the name of the closest vector.
-
-        Raises
-        ------
-        ValueError
-            If the threshold is lower than 0.0.
-        Exception
-            If the size of the input vector is not compatible with the size of vectors in the space.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Space, Vector
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; vector1 = Vector(name=&#39;vector1&#39;, seed=1)
-        &gt;&gt;&gt; vector2 = Vector(name=&#39;vector2&#39;, seed=2)
-        &gt;&gt;&gt; vector3 = Vector(name=&#39;vector3&#39;, seed=3)
-        &gt;&gt;&gt; space.insert(vector1)
-        &gt;&gt;&gt; space.insert(vector2)
-        &gt;&gt;&gt; space.insert(vector3)
-        &gt;&gt;&gt; space.find_all(vector1)
-        ({&#39;vector1&#39;: 0.0, &#39;vector2&#39;: 0.996, &#39;vector3&#39;: 0.985}, &#39;vector1&#39;)
-
-        Create a space with three vectors &#39;vector1&#39;, &#39;vector2&#39;, and &#39;vector3&#39;, and compute the cosine distance between &#39;vector1&#39;
-        and all the other vectors in space (including itseld). The closest vector is obviously itself, &#39;vector1&#39;, with a cosine 
-        distance of 0.0. Use a seed for reproducing the same distances.
-        &#34;&#34;&#34;
-
-        if self.size != vector.size:
-            raise Exception(&#34;Space and vectors with different size are not compatible&#34;)
-
-        if threshold &lt; 0.0:
-            raise ValueError(&#34;Threshold cannot be lower than 0.0&#34;)
-
-        distances = dict()
-
-        distance = 2.0
-
-        best = None
-
-        for v in self.space:
-            # Compute distance
-            dist = self.space[v].dist(vector, method=method)
-
-            if dist &lt;= threshold:
-                distances[v] = dist
-
-                if distances[v] &lt; distance:
-                    best = v
-
-                    distance = distances[v]
-
-        return distances, best
-
-    def dump(self, to_file: Optional[os.path.abspath]=None) -&gt; None:
-        &#34;&#34;&#34;Dump the Space object to a pickle file.
-
-        Parameters
-        ----------
-        to_file
-            Path to the file used to dump the Space object to.
-
-        Raises
-        ------
-        Exception
-            If the `to_file` file already exists.
-
-        Examples
-        --------
-        &gt;&gt;&gt; import os
-        &gt;&gt;&gt; from hdlib.space import Space
-        &gt;&gt;&gt; space = Space()
-        &gt;&gt;&gt; space.dump(to_file=&#39;~/my_space.pkl&#39;)
-        &gt;&gt;&gt; os.path.isfile(&#39;~/my_space.pkl&#39;)
-        True
-
-        Create a Space object and dump it to a pickle file under the home directory.
-        &#34;&#34;&#34;
-
-        if not to_file:
-            # Dump the space to a pickle file in the current working directory if not file path is provided
-            to_file = os.path.join(os.getcwd, &#34;space.pkl&#34;)
-
-        if os.path.isfile(to_file):
-            raise Exception(&#34;The output file already exists!\n{}&#34;.format(to_file))
-
-        with open(to_file, &#34;wb&#34;) as pkl:
-            pickle.dump((self.version, self.size, self.vtype, self.space, self.root), pkl)</code></pre>
-</details>
 </section>
 <section>
 </section>
@@ -1383,7 +40,7 @@ class Space(object):
 <dl>
 <dt id="hdlib.space.Space"><code class="flex name class">
 <span>class <span class="ident">Space</span></span>
-<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0xffff9e37f0a0>] = None)</span>
+<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0x7e4d8930a0>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Vectors space.</p>
@@ -1567,6 +224,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         &gt;&gt;&gt; print(space)
 
                 Class:   hdlib.space.Space
+                Version: 0.1.17
                 Size:    10000
                 Type:    bipolar
                 Vectors: 1
@@ -2257,61 +915,6 @@ my_vector
 </code></pre>
 <p>This creates a Vector object add it to a Space. It then assigns a tag to the vector and searches
 for vector with that specific tag within the space. It finally prints the vector names.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def add_tag(self, name: str, tag: Union[str, int, float]) -&gt; None:
-    &#34;&#34;&#34;Tag a vector.
-
-    Parameters
-    ----------
-    name : str
-        The vector name or ID.
-    tag : str, int, float
-        The tag must be a primitive.
-
-    Raises
-    ------
-    TypeError
-        If the name or tag are not instance of primitives.
-    Exception
-        If there is not a vector in the space with that specific name or ID.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; my_vector = Vector(name=&#39;my_vector&#39;)
-    &gt;&gt;&gt; space.insert(my_vector)
-    &gt;&gt;&gt; space.add_tag(&#39;my_vector&#39;, &#39;tag&#39;)
-    &gt;&gt;&gt; for vector in space.get(tags[&#39;tag&#39;]):
-    ...     print(vector.name)
-    my_vector
-
-    This creates a Vector object add it to a Space. It then assigns a tag to the vector and searches
-    for vector with that specific tag within the space. It finally prints the vector names.
-    &#34;&#34;&#34;
-
-    try:
-        name = str(name)
-
-    except:
-        raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-    if name not in self.space:
-        raise Exception(&#34;Vector not in space&#34;)
-
-    if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-        raise TypeError(&#34;Tags must be string, integer, or float&#34;)
-
-    self.space[name].tags.add(tag)
-
-    if tag not in self.tags:
-        self.tags[tag] = set()
-
-    self.tags[tag].add(name)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.bulk_insert"><code class="name flex">
 <span>def <span class="ident">bulk_insert</span></span>(<span>self, names: List[str], tags: Optional[List[List[Union[str, int, float]]]] = None, ignore_existing: bool = True) ‑> None</span>
@@ -2362,92 +965,9 @@ my_vector_4
 </code></pre>
 <p>Add other two vectors and assigned them a few tags, then retrieve the vectors with tag 'tag1'.
 Both 'my_vector_3' and 'my_vector_4' contain 'tag1' in their set of tags.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bulk_insert(
-    self,
-    names: List[str],
-    tags: Optional[List[List[Union[str, int, float]]]]=None,
-    ignore_existing: bool=True
-) -&gt; None:
-    &#34;&#34;&#34;Add vectors to the space in bulk.
-
-    Parameters
-    ----------
-    names : list
-        A list with vector names.
-    tags : list, optional
-        An optional list of lists with vector tags.
-    ignore_existing : bool, default True
-        Do not raise an exception in case the space contains a vector with the same name specified in `names`.
-
-    Raises
-    ------
-    TypeError
-        - if `names` or `tags` are not instance of list;
-        - if the elements of the `names` list are not instance of a primitive.
-    Exception
-        - if the number of elements in `names` doesn&#39;t match with the number of elements in `tags`;
-        - if there already a vector in the space with the same name in `names`.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; space.bulk_insert(names=[&#39;my_vector_1&#39;, &#39;my_vector_2&#39;])
-    &gt;&gt;&gt; space.memory()
-    [&#39;my_vector_1&#39;, &#39;my_vector_2&#39;]
-
-    Create two random bipolar vectors with size 10,000 just by specifying a list with vector names.
-    The vector type and size is inherited by the space that by default can host bipolar vectors with size 10,000.
-
-    &gt;&gt;&gt; space.bulk_insert(names=[&#39;my_vector_3&#39;, &#39;my_vector_4&#39;], tags=[[&#39;tag1&#39;], [&#39;tag1&#39;, &#39;tag2&#39;]])
-    &gt;&gt;&gt; vectors = space.get(tags=[&#39;tag1&#39;])
-    &gt;&gt;&gt; for vector in vectors:
-    ...     print(vector.name)
-    my_vector_3
-    my_vector_4
-
-    Add other two vectors and assigned them a few tags, then retrieve the vectors with tag &#39;tag1&#39;.
-    Both &#39;my_vector_3&#39; and &#39;my_vector_4&#39; contain &#39;tag1&#39; in their set of tags.
-    &#34;&#34;&#34;
-
-    if not isinstance(names, list):
-        raise TypeError(&#34;Input must be a list of strings&#34;)
-
-    if tags and not isinstance(tags, list):
-        raise TypeError(&#34;tags must be a list of lists of strings&#34;)
-
-    if tags and len(names) != len(tags):
-        raise Exception(&#34;The number of vector IDs must match the size of the tags list&#34;)
-
-    names = set(names)
-
-    for pos, name in enumerate(names):
-        try:
-            name = str(name)
-
-        except:
-            raise TypeError(&#34;Entries in input list must be instances of primitives&#34;)
-
-        if name in self.space:
-            if not ignore_existing:
-                raise Exception(&#34;Vector \&#34;{}\&#34; already in space&#34;.format(name))
-
-            else:
-                continue
-
-        vector_tags = set(tags[pos]) if tags else set()
-
-        vector = Vector(name=name, size=self.size, tags=vector_tags, vtype=self.vtype)
-
-        self.insert(vector)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0xffff9e37f0a0>] = None) ‑> None</span>
+<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7e4d8930a0>] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Dump the Space object to a pickle file.</p>
@@ -2470,45 +990,6 @@ Both 'my_vector_3' and 'my_vector_4' contain 'tag1' in their set of tags.</p></d
 True
 </code></pre>
 <p>Create a Space object and dump it to a pickle file under the home directory.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def dump(self, to_file: Optional[os.path.abspath]=None) -&gt; None:
-    &#34;&#34;&#34;Dump the Space object to a pickle file.
-
-    Parameters
-    ----------
-    to_file
-        Path to the file used to dump the Space object to.
-
-    Raises
-    ------
-    Exception
-        If the `to_file` file already exists.
-
-    Examples
-    --------
-    &gt;&gt;&gt; import os
-    &gt;&gt;&gt; from hdlib.space import Space
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; space.dump(to_file=&#39;~/my_space.pkl&#39;)
-    &gt;&gt;&gt; os.path.isfile(&#39;~/my_space.pkl&#39;)
-    True
-
-    Create a Space object and dump it to a pickle file under the home directory.
-    &#34;&#34;&#34;
-
-    if not to_file:
-        # Dump the space to a pickle file in the current working directory if not file path is provided
-        to_file = os.path.join(os.getcwd, &#34;space.pkl&#34;)
-
-    if os.path.isfile(to_file):
-        raise Exception(&#34;The output file already exists!\n{}&#34;.format(to_file))
-
-    with open(to_file, &#34;wb&#34;) as pkl:
-        pickle.dump((self.version, self.size, self.vtype, self.space, self.root), pkl)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.find"><code class="name flex">
 <span>def <span class="ident">find</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = 2.0, method: str = 'cosine') ‑> Tuple[str, float]</span>
@@ -2543,50 +1024,6 @@ True
 </code></pre>
 <p>Create a space with three vectors 'vector1', 'vector2', and 'vector3', and search for the closest vector to 'vector1'.
 The result is obviously itself, 'vector1', with a cosine distance of 0.0.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def find(self, vector: Vector, threshold: float=2.0, method: str=&#34;cosine&#34;) -&gt; Tuple[str, float]:
-    &#34;&#34;&#34;Search for the closest vector in space.
-
-    Parameters
-    ----------
-    vector : Vector
-        Input Vector object. Search for the closest vector to this Vector in the space.
-    threshold : float, default 2.0
-        Threshold on distance between vectors.
-    method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, default &#39;cosine&#39;
-        Distance metric.
-
-    Returns
-    -------
-    tuple
-        A tuple with the name of the closest vector in space and its distance with the input vector.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; vector1 = Vector(name=&#39;vector1&#39;)
-    &gt;&gt;&gt; vector2 = Vector(name=&#39;vector2&#39;)
-    &gt;&gt;&gt; vector3 = Vector(name=&#39;vector3&#39;)
-    &gt;&gt;&gt; space.insert(vector1)
-    &gt;&gt;&gt; space.insert(vector2)
-    &gt;&gt;&gt; space.insert(vector3)
-    &gt;&gt;&gt; space.find(vector1)
-    (&#39;vector1&#39;, 0.0)
-
-    Create a space with three vectors &#39;vector1&#39;, &#39;vector2&#39;, and &#39;vector3&#39;, and search for the closest vector to &#39;vector1&#39;.
-    The result is obviously itself, &#39;vector1&#39;, with a cosine distance of 0.0.
-    &#34;&#34;&#34;
-
-    # Exploit self.find_all() to seach for the best match
-    # It will take care of raising exceptions in case of problems with input arguments
-    distances, best = self.find_all(vector, threshold=threshold, method=method)
-
-    return best, distances[best]</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.find_all"><code class="name flex">
 <span>def <span class="ident">find_all</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = 2.0, method: str = 'cosine') ‑> Tuple[dict, str]</span>
@@ -2630,79 +1067,6 @@ in addition to the name of the closest vector.</dd>
 <p>Create a space with three vectors 'vector1', 'vector2', and 'vector3', and compute the cosine distance between 'vector1'
 and all the other vectors in space (including itseld). The closest vector is obviously itself, 'vector1', with a cosine
 distance of 0.0. Use a seed for reproducing the same distances.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def find_all(self, vector: Vector, threshold: float=2.0, method: str=&#34;cosine&#34;) -&gt; Tuple[dict, str]:
-    &#34;&#34;&#34;Compute distance of the input vector against all vectors in space.
-
-    Parameters
-    ----------
-    vector : Vector
-        Input Vector object. Search for the closest vector to this Vector in the space.
-    threshold : float, default 2.0
-        Threshold on distance between vectors.
-    method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, default &#39;cosine&#39;
-        Distance metric.
-
-    Returns
-    -------
-    dict
-        A dictionary the distances between the input vector and all the other vectors in the space,
-        in addition to the name of the closest vector.
-
-    Raises
-    ------
-    ValueError
-        If the threshold is lower than 0.0.
-    Exception
-        If the size of the input vector is not compatible with the size of vectors in the space.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; vector1 = Vector(name=&#39;vector1&#39;, seed=1)
-    &gt;&gt;&gt; vector2 = Vector(name=&#39;vector2&#39;, seed=2)
-    &gt;&gt;&gt; vector3 = Vector(name=&#39;vector3&#39;, seed=3)
-    &gt;&gt;&gt; space.insert(vector1)
-    &gt;&gt;&gt; space.insert(vector2)
-    &gt;&gt;&gt; space.insert(vector3)
-    &gt;&gt;&gt; space.find_all(vector1)
-    ({&#39;vector1&#39;: 0.0, &#39;vector2&#39;: 0.996, &#39;vector3&#39;: 0.985}, &#39;vector1&#39;)
-
-    Create a space with three vectors &#39;vector1&#39;, &#39;vector2&#39;, and &#39;vector3&#39;, and compute the cosine distance between &#39;vector1&#39;
-    and all the other vectors in space (including itseld). The closest vector is obviously itself, &#39;vector1&#39;, with a cosine 
-    distance of 0.0. Use a seed for reproducing the same distances.
-    &#34;&#34;&#34;
-
-    if self.size != vector.size:
-        raise Exception(&#34;Space and vectors with different size are not compatible&#34;)
-
-    if threshold &lt; 0.0:
-        raise ValueError(&#34;Threshold cannot be lower than 0.0&#34;)
-
-    distances = dict()
-
-    distance = 2.0
-
-    best = None
-
-    for v in self.space:
-        # Compute distance
-        dist = self.space[v].dist(vector, method=method)
-
-        if dist &lt;= threshold:
-            distances[v] = dist
-
-            if distances[v] &lt; distance:
-                best = v
-
-                distance = distances[v]
-
-    return distances, best</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.get"><code class="name flex">
 <span>def <span class="ident">get</span></span>(<span>self, names: Optional[List[str]] = None, tags: Optional[List[Union[str, int, float]]] = None) ‑> List[<a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>]</span>
@@ -2742,80 +1106,6 @@ my_vector_2
 <p>This creates two Vector objects with a few tags and add them to a Space.
 It then retrieves a list of vectors by searching for a specific tag which is in common between
 the two vectors in this case. It finally prints the vector names.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get(
-    self,
-    names: Optional[List[str]]=None,
-    tags: Optional[List[Union[str, int, float]]]=None
-) -&gt; List[Vector]:
-    &#34;&#34;&#34;Get vectors by names or tags.
-
-    Parameters
-    ----------
-    names : list, optional
-        A list with vector names. It is required in case no tags are specified.
-    tags : list, optional
-        A list with vector tags. It is required in case no names are specified.
-
-    Returns
-    -------
-    list
-        A list of Vector objects in the space according to the specified names or tags.
-
-    Raises
-    ------
-    TypeError
-        If names or tags in the input lists are not instance of primitives.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; vector1 = Vector(name=&#39;my_vector_1&#39;, tags={&#39;tag1&#39;, &#39;tag2&#39;})
-    &gt;&gt;&gt; vector2 = Vector(name=&#39;my_vector_2&#39;, tags={&#39;tag2&#39;, &#39;tag3&#39;, &#39;tag4&#39;})
-    &gt;&gt;&gt; space.insert(vector1)
-    &gt;&gt;&gt; space.insert(vector2)
-    &gt;&gt;&gt; vectors = space.get(tags=[&#39;tag2&#39;])
-    &gt;&gt;&gt; for vector in vectors:
-    ...     print(vector.name)
-    my_vector_1
-    my_vector_2
-
-    This creates two Vector objects with a few tags and add them to a Space.
-    It then retrieves a list of vectors by searching for a specific tag which is in common between
-    the two vectors in this case. It finally prints the vector names.
-    &#34;&#34;&#34;
-
-    if not names and not tags:
-        raise Exception(&#34;No names or tags provided!&#34;)            
-
-    vectors = set()
-
-    if names:
-        try:
-            names = [str(name) for name in names]
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        for vector_name in names:
-            if vector_name in self.space:
-                vectors.add(self.space[vector_name])
-
-    elif tags:
-        for tag in tags:
-            if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-                raise TypeError(&#34;Tags must be string, integer, or float&#34;)
-
-            if tag in self.tags:
-                for vector_name in self.tags[tag]:
-                    vectors.add(self.space[vector_name])
-
-    return list(vectors)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.insert"><code class="name flex">
 <span>def <span class="ident">insert</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>) ‑> None</span>
@@ -2852,60 +1142,6 @@ Exception: Space and vectors with different size are not compatible
 </code></pre>
 <p>By default, the space can host bipolar vectors with size 10,000, while here we explicitly created a
 Vector object with size 15,000 which is not compatible with the space.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def insert(self, vector: Vector) -&gt; None:
-    &#34;&#34;&#34;Add a Vector object to the space.
-
-    Parameters
-    ----------
-    vector : Vector
-        The input Vector object that must be added to the Space
-
-    Raises
-    ------
-    Exception
-        - if the vector size or type is not compatible with the space;
-        - if a vector with the same name of the input one is already in the space.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; vector = Vector()
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; space.insert(vector)
-
-    It creates a random bipolar vector with size 10,000 and adds it to a space that by default can host 
-    bipolar vectors with size 10,000.
-
-    &gt;&gt;&gt; vector = Vector(size=15000)
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; space.insert(vector)
-    Exception: Space and vectors with different size are not compatible
-
-    By default, the space can host bipolar vectors with size 10,000, while here we explicitly created a 
-    Vector object with size 15,000 which is not compatible with the space.
-    &#34;&#34;&#34;
-
-    if self.size != vector.size:
-        raise Exception(&#34;Space and vectors with different size are not compatible&#34;)
-
-    if self.vtype != vector.vtype:
-        raise Exception(&#34;Attempting to insert a {} vector into a {} space: failed&#34;.format(vector.vtype, self.vtype))
-
-    if vector.name in self.space:
-        raise Exception(&#34;Vector \&#34;{}\&#34; already in space&#34;.format(vector.name))
-
-    self.space[vector.name] = vector
-
-    for tag in vector.tags:
-        if tag not in self.tags:
-            self.tags[tag] = set()
-
-        self.tags[tag].add(vector.name)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.link"><code class="name flex">
 <span>def <span class="ident">link</span></span>(<span>self, name1: str, name2: str) ‑> None</span>
@@ -2940,62 +1176,6 @@ True
 </code></pre>
 <p>Define a space with two vectors 'vector1' and 'vector2'. Link 'vector2' with 'vector1'.
 Retrieve 'vector2' from the space and check whether 'vector1' is in its set of linked nodes.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def link(self, name1: str, name2: str) -&gt; None:
-    &#34;&#34;&#34;Link two vectors in the space through by their names. Links are directed edges.
-
-    Parameters
-    ----------
-    name1 : str
-        Name or ID of the first vector.
-    name2 : str
-        Name or ID of the second vector.
-
-    Raises
-    ------
-    TypeError
-        If vectors names are not instance of a primitive.
-    Exception
-        If there are no vectors in space named `name1` and `name2`.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; vector1 = Vector(name=&#39;vector1&#39;)
-    &gt;&gt;&gt; vector2 = Vector(name=&#39;vector2&#39;)
-    &gt;&gt;&gt; space.insert(vector1)
-    &gt;&gt;&gt; space.insert(vector2)
-    &gt;&gt;&gt; space.link(&#39;vector2&#39;, &#39;vector1&#39;)
-    &gt;&gt;&gt; vector2 = space.get(names=[&#39;vector2&#39;])[0]
-    &gt;&gt;&gt; &#39;vector1&#39; in vector2.children
-    True
-
-    Define a space with two vectors &#39;vector1&#39; and &#39;vector2&#39;. Link &#39;vector2&#39; with &#39;vector1&#39;.
-    Retrieve &#39;vector2&#39; from the space and check whether &#39;vector1&#39; is in its set of linked nodes.
-    &#34;&#34;&#34;
-
-    try:
-        name1 = str(name1)
-
-        name2 = str(name2)
-
-    except:
-        raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-    if name1 not in self.space:
-        raise Exception(&#34;Vector \&#34;{}\&#34; not in space&#34;.format(name1))
-
-    if name2 not in self.space:
-        raise Exception(&#34;Vector \&#34;{}\&#34; not in space&#34;.format(name2))
-
-    self.space[name1].children.add(name2)
-
-    self.space[name2].parents.add(name1)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.memory"><code class="name flex">
 <span>def <span class="ident">memory</span></span>(<span>self) ‑> List[str]</span>
@@ -3017,33 +1197,6 @@ Retrieve 'vector2' from the space and check whether 'vector1' is in its set of l
 </code></pre>
 <p>Create a Space and add a Vector called 'my_vector'. The memory function returns
 the list of vector names. In this case a list with one element only 'my_vector'.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def memory(self) -&gt; List[str]:
-    &#34;&#34;&#34;Return names or IDs of vectors in space.
-
-    Returns
-    -------
-    list
-        A list with vectors names or IDs
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; vector = Vector(name=&#39;my_vector&#39;)
-    &gt;&gt;&gt; space.insert(vector)
-    &gt;&gt;&gt; space.memory()
-    [&#39;my_vector&#39;]
-
-    Create a Space and add a Vector called &#39;my_vector&#39;. The memory function returns
-    the list of vector names. In this case a list with one element only &#39;my_vector&#39;.
-    &#34;&#34;&#34;
-
-    return list(self.space.keys())</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.remove"><code class="name flex">
 <span>def <span class="ident">remove</span></span>(<span>self, name: str) ‑> <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></span>
@@ -3078,65 +1231,6 @@ the list of vector names. In this case a list with one element only 'my_vector'.
 </code></pre>
 <p>Create a vector called 'my_vector', add it to the space and then remove it.
 Finally check how many vectors are in the space.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def remove(self, name: str) -&gt; Vector:
-    &#34;&#34;&#34;Remove a vector from the space by its name.
-
-    Parameters
-    ----------
-    name : str
-        The name of the vector that must be removed from the space.
-
-    Returns
-    -------
-    Vector
-        Returns the Vector object.
-
-    Raises
-    ------
-    TypeError
-        If the vector name is not an instance of a primitive.
-    Exception
-        If there is not a vector with that specific name in the space.
-
-    Examples
-    --------
-    &gt;&gt;&gt; form hdlib.space import Space, Vector
-    &gt;&gt;&gt; vector = Vector(name=&#39;my_vector&#39;)
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; space.insert(vector)
-    &gt;&gt;&gt; space.remove(&#39;my_vector&#39;)
-    &gt;&gt;&gt; len(space)
-    0
-
-    Create a vector called &#39;my_vector&#39;, add it to the space and then remove it.
-    Finally check how many vectors are in the space.
-    &#34;&#34;&#34;
-
-    try:
-        name = str(name)
-
-    except:
-        raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-    if name not in self.space:
-        raise Exception(&#34;Vector not in space&#34;)
-
-    vector = self.space[name]
-
-    del self.space[name]
-
-    for tag in vector.tags:
-        self.tags[tag].remove(vector.name)
-
-        if not self.tags[tag]:
-            del self.tags[tag]
-
-    return vector</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.remove_tag"><code class="name flex">
 <span>def <span class="ident">remove_tag</span></span>(<span>self, name: str, tag: Union[str, int, float]) ‑> None</span>
@@ -3169,62 +1263,6 @@ Finally check how many vectors are in the space.</p></div>
 <p>This initializes a space, inserts a vector with a tag into the space, then untags the vector, and
 finally searches for vectors with that specific tag. No vectors are returned since there was only
 one vector with that tag that has been untagged.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def remove_tag(self, name: str, tag: Union[str, int, float]) -&gt; None:
-    &#34;&#34;&#34;Untag a vector.
-
-    Parameters
-    ----------
-    name : str
-        The vector name or ID.
-    tag : str, int, float
-        The tag must be a primitive.
-
-    Raises
-    ------
-    TypeError
-        If the name or tag are not instance of primitives.
-    Exception
-        If there is not a vector in the space with that specific name or ID.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space, Vector
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; my_vector = Vector(name=&#39;my_vector&#39;, tags={&#39;tag&#39;})
-    &gt;&gt;&gt; space.insert(my_vector)
-    &gt;&gt;&gt; space.remove_tag(&#39;my_vector&#39;, &#39;tag&#39;)
-    &gt;&gt;&gt; len(space.get(tags[&#39;tag&#39;]))
-    0
-
-    This initializes a space, inserts a vector with a tag into the space, then untags the vector, and
-    finally searches for vectors with that specific tag. No vectors are returned since there was only
-    one vector with that tag that has been untagged.
-    &#34;&#34;&#34;
-
-    try:
-        name = str(name)
-
-    except:
-        raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-    if name not in self.space:
-        raise Exception(&#34;Vector not in space&#34;)
-
-    if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-        raise TypeError(&#34;Tags must be string, integer, or float&#34;)
-
-    if tag in self.tags:
-        self.space[name].tags.remove(tag)
-
-        self.tags[tag].remove(name)
-
-        if not self.tags[tag]:
-            del self.tags[tag]</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Space.set_root"><code class="name flex">
 <span>def <span class="ident">set_root</span></span>(<span>self, name: str) ‑> None</span>
@@ -3258,60 +1296,12 @@ vector3
 </code></pre>
 <p>Create a space and add three vectors in bulk. Link 'vector1' to 'vector2' and 'vector3', and
 set 'vector1' as root. Finally, print the name of the nodes linked to the root.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def set_root(self, name: str) -&gt; None:
-    &#34;&#34;&#34;Vector links can be used to define a tree structure. Set a specific vector as root.
-
-    Parameters
-    ----------
-    name : str
-        Name or ID of vector in space.
-
-    Raises
-    ------
-    TypeError
-        If the vector name or ID is not instance of a primitive.
-    Exception
-        If there are no vectors in the space with the specified name.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Space
-    &gt;&gt;&gt; space = Space()
-    &gt;&gt;&gt; space.bulk_insert(names=[&#39;vector1&#39;, &#39;vector2&#39;, &#39;vector3&#39;])
-    &gt;&gt;&gt; space.link(&#39;vector1&#39;, &#39;vector2&#39;)
-    &gt;&gt;&gt; space.link(&#39;vector1&#39;, &#39;vector3&#39;)
-    &gt;&gt;&gt; space.set_root(&#39;vector1&#39;)
-    &gt;&gt;&gt; vector1 = space.get(names=[&#39;vector1&#39;])[0]
-    &gt;&gt;&gt; for vector in vector1.children:
-    ...     print(vector)
-    vector2
-    vector3
-
-    Create a space and add three vectors in bulk. Link &#39;vector1&#39; to &#39;vector2&#39; and &#39;vector3&#39;, and
-    set &#39;vector1&#39; as root. Finally, print the name of the nodes linked to the root.
-    &#34;&#34;&#34;
-
-    try:
-        name = str(name)
-
-    except:
-        raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-    if name not in self.space:
-        raise Exception(&#34;Vector \&#34;{}\&#34; not in space&#34;.format(name))
-
-    self.root = name</code></pre>
-</details>
 </dd>
 </dl>
 </dd>
 <dt id="hdlib.space.Vector"><code class="flex name class">
 <span>class <span class="ident">Vector</span></span>
-<span>(</span><span>name: Optional[str] = None, size: int = 10000, vector: Optional[numpy.ndarray] = None, vtype: str = 'bipolar', tags: Optional[Set[Union[str, int, float]]] = None, seed: Optional[int] = None, warning: bool = False, from_file: Optional[<function abspath at 0xffff9e37f0a0>] = None)</span>
+<span>(</span><span>name: Optional[str] = None, size: int = 10000, vector: Optional[numpy.ndarray] = None, vtype: str = 'bipolar', tags: Optional[Set[Union[str, int, float]]] = None, seed: Optional[int] = None, warning: bool = False, from_file: Optional[<function abspath at 0x7e4d8930a0>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Vector object.</p>
@@ -3510,15 +1500,17 @@ and finally create a new vector object <code>vector2</code> from the pickle file
             self.vtype = vtype
 
             # Try to infer the vector type from the content of the vector itself
-            if ((self.vector == 0) | (self.vector == 1)).all():
-                self.vtype = &#34;binary&#34;
+            # only in the case where the elements are not all 1s
+            if not (self.vector == 1).all():
+                if ((self.vector == 0) | (self.vector == 1)).all():
+                    self.vtype = &#34;binary&#34;
 
-            elif ((self.vector == -1) | (self.vector == 1)).all():
-                self.vtype = &#34;bipolar&#34;
+                elif ((self.vector == -1) | (self.vector == 1)).all():
+                    self.vtype = &#34;bipolar&#34;
 
-            else:
-                if warning:
-                    print(&#34;Vector type can be binary or bipolar only&#34;)
+                else:
+                    if warning:
+                        print(&#34;Vector type can be binary or bipolar only&#34;)
 
         elif from_file:
             if not os.path.isfile(from_file):
@@ -3604,6 +1596,7 @@ and finally create a new vector object <code>vector2</code> from the pickle file
         &gt;&gt;&gt; print(vector)
 
                 Class:   hdlib.space.Vector
+                Version: 0.1.17
                 Name:    89ea628b-3d29-47e1-9d10-34bdbfce8d40
                 Seed:    None
                 Size:    10000
@@ -3671,13 +1664,47 @@ and finally create a new vector object <code>vector2</code> from the pickle file
         of the two input vectors.
         &#34;&#34;&#34;
 
-        if not isinstance(vector, Vector):
+        if not isinstance(vector, type(self)):
             raise TypeError(&#34;Cannot apply the bundle operator to non-Vector objects&#34;)
 
         # Import arithmetic.bundle here to avoid circular imports
         from hdlib.arithmetic import bundle as bundle_operator
 
         return bundle_operator(self, vector)
+
+    def __sub__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
+        &#34;&#34;&#34;Implement the subtraction operator between two Vector objects.
+
+        Returns
+        -------
+        Vector
+            A new vector object as the result of the subtraction operator on the two input vectors.
+
+        Raises
+        ------
+        TypeError
+            If the input `vector` is not instance of the Vector class.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.space import Vector
+        &gt;&gt;&gt; vector1 = Vector()
+        &gt;&gt;&gt; vector2 = Vector()
+        &gt;&gt;&gt; vector3 = vector1 - vector2
+        &gt;&gt;&gt; type(vector3)
+        &lt;class &#39;hdlib.space.Vector&#39;&gt;
+
+        The subtraction operation returns a new Vector object whose content is computed as the element-wise 
+        subtraction of the two input vectors.
+        &#34;&#34;&#34;
+
+        if not isinstance(vector, type(self)):
+            raise TypeError(&#34;Cannot apply the subtraction operator to non-Vector objects&#34;)
+
+        # Import arithmetic.bind here to avoid circular imports
+        from hdlib.arithmetic import subtraction as subtraction_operator
+
+        return subtraction_operator(self, vector)
 
     def __mul__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
         &#34;&#34;&#34;Implement the multiplication operator between two Vector objects as bind.
@@ -3705,7 +1732,7 @@ and finally create a new vector object <code>vector2</code> from the pickle file
         multiplication of the two input vectors.
         &#34;&#34;&#34;
 
-        if not isinstance(vector, Vector):
+        if not isinstance(vector, type(self)):
             raise TypeError(&#34;Cannot apply the bind operator to non-Vector objects&#34;)
 
         # Import arithmetic.bind here to avoid circular imports
@@ -3878,7 +1905,7 @@ and finally create a new vector object <code>vector2</code> from the pickle file
         self.seed = vector.seed
         self.tags = vector.tags
 
-        self.parent = vector.parent
+        self.parents = vector.parents
         self.children = vector.children
 
         self.vtype = vector.vtype
@@ -3941,34 +1968,6 @@ and finally create a new vector object <code>vector2</code> from the pickle file
 </code></pre>
 <p>It overrides the actual vector content of <code>vector1</code> with the result of the binding with <code>vector2</code>.
 Refers to hdlib.arithmetic.bind for additional information.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bind(self, vector: &#34;Vector&#34;) -&gt; None:
-    &#34;&#34;&#34;Bind the current vector with another vector object inplace.
-
-    Parameters
-    ----------
-    vector : Vector
-        The input Vector object.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; vector1 = Vector()
-    &gt;&gt;&gt; vector2 = Vector()
-    &gt;&gt;&gt; vector1.bind(vector2)
-
-    It overrides the actual vector content of `vector1` with the result of the binding with `vector2`.
-    Refers to hdlib.arithmetic.bind for additional information.
-    &#34;&#34;&#34;
-
-    # Import arithmetic.bind here to avoid circular imports
-    from hdlib.arithmetic import bind as bind_operator
-
-    self.__override_object(bind_operator(self, vector))</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Vector.bundle"><code class="name flex">
 <span>def <span class="ident">bundle</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>) ‑> None</span>
@@ -3988,34 +1987,6 @@ Refers to hdlib.arithmetic.bind for additional information.</p></div>
 </code></pre>
 <p>It overrides the actual vector content of <code>vector1</code> with the result of the bundling with <code>vector2</code>.
 Refers to hdlib.arithmetic.bundle for additional information.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bundle(self, vector: &#34;Vector&#34;) -&gt; None:
-    &#34;&#34;&#34;Bundle the current vector with another vector object inplace.
-
-    Parameters
-    ----------
-    vector : Vector
-        The input Vector object.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; vector1 = Vector()
-    &gt;&gt;&gt; vector2 = Vector()
-    &gt;&gt;&gt; vector1.bundle(vector2)
-
-    It overrides the actual vector content of `vector1` with the result of the bundling with `vector2`.
-    Refers to hdlib.arithmetic.bundle for additional information.
-    &#34;&#34;&#34;
-
-    # Import arithmetic.bundle here to avoid circular imports
-    from hdlib.arithmetic import bundle as bundle_operator
-
-    self.__override_object(bundle_operator(self, vector))</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Vector.dist"><code class="name flex">
 <span>def <span class="ident">dist</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, method: str = 'cosine') ‑> float</span>
@@ -4047,62 +2018,9 @@ Refers to hdlib.arithmetic.bundle for additional information.</p></div>
 0.996
 </code></pre>
 <p>Generate two random bipolar vectors and compute the distance between them.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def dist(self, vector: &#34;Vector&#34;, method: str=&#34;cosine&#34;) -&gt; float:
-    &#34;&#34;&#34;Compute distance between vectors.
-
-    Parameters
-    ----------
-    vector : Vector
-        A Vector object from which the distance must be computed.
-    method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, optional, default &#39;cosine&#39;
-        The distance method.
-
-    Returns
-    -------
-    float
-        The distance between the current Vector object and the input `vector`.
-
-    Raises
-    ------
-    Exception
-        If the current vector has a different size or vector type than the input vector.
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; vector1 = Vector(seed=1)
-    &gt;&gt;&gt; vector2 = Vector(seed=2)
-    &gt;&gt;&gt; vector1.dist(vector2, method=&#39;cosine&#39;)
-    0.996
-
-    Generate two random bipolar vectors and compute the distance between them.
-    &#34;&#34;&#34;
-
-    if self.size != vector.size:
-        raise Exception(&#34;Vectors must have the same size&#34;)
-
-    if self.vtype != vector.vtype:
-        raise Exception(&#34;Vectors must be of the same type&#34;)
-
-    if method.lower() == &#34;cosine&#34;:
-        return 1 - np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
-
-    elif method.lower() == &#34;hamming&#34;:
-        return np.count_nonzero(self.vector != vector.vector)
-
-    elif method.lower() == &#34;euclidean&#34;:
-        return np.linalg.norm(self.vector - vector.vector)
-
-    else:
-        raise ValueError(&#34;Distance method \&#34;{}\&#34; is not supported&#34;.format(method))</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Vector.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0xffff9e37f0a0>] = None) ‑> None</span>
+<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7e4d8930a0>] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Dump the Vector object to a pickle file.</p>
@@ -4125,45 +2043,6 @@ Refers to hdlib.arithmetic.bundle for additional information.</p></div>
 True
 </code></pre>
 <p>Create a Vector object and dump it to a pickle file under the home directory.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def dump(self, to_file: Optional[os.path.abspath]=None) -&gt; None:
-    &#34;&#34;&#34;Dump the Vector object to a pickle file.
-
-    Parameters
-    ----------
-    to_file
-        Path to the file used to dump the Vector object to.
-
-    Raises
-    ------
-    Exception
-        If the `to_file` file already exists.
-
-    Examples
-    --------
-    &gt;&gt;&gt; import os
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; vector = Vector()
-    &gt;&gt;&gt; vector.dump(to_file=&#39;~/my_vector.pkl&#39;)
-    &gt;&gt;&gt; os.path.isfile(&#39;~/my_vector.pkl&#39;)
-    True
-
-    Create a Vector object and dump it to a pickle file under the home directory.
-    &#34;&#34;&#34;
-
-    if not to_file:
-        # Dump the vector to a pickle file in the current working directory if not file path is provided
-        to_file = os.path.join(os.getcwd, &#34;{}.pkl&#34;.format(self.name))
-
-    if os.path.isfile(to_file):
-        raise Exception(&#34;The output file already exists!\n{}&#34;.format(to_file))
-
-    with open(to_file, &#34;wb&#34;) as pkl:
-        pickle.dump((self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed), pkl)</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Vector.normalize"><code class="name flex">
 <span>def <span class="ident">normalize</span></span>(<span>self) ‑> None</span>
@@ -4188,41 +2067,6 @@ True
 <p>Binding or bundling two vectors can produce a new vector whose vtype is different from the
 one of the two input vector. This function normalizes the vector content in accordance to
 its vector type.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def normalize(self) -&gt; None:
-    &#34;&#34;&#34;Normalize a vector after a binding or bundling with another vector.
-
-    Raises
-    ------
-    Exception
-        If the vector type is not supported (i.e., is different from binary and bipolar).
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; from hdlib.arithmetic import bind
-    &gt;&gt;&gt; vector1 = Vector()
-    &gt;&gt;&gt; vector2 = Vector()
-    &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-    &gt;&gt;&gt; vector3.normalize()
-    &gt;&gt;&gt; ((vector3.vector == -1) | (vector3.vector == 1)).all()
-    True
-
-    Binding or bundling two vectors can produce a new vector whose vtype is different from the
-    one of the two input vector. This function normalizes the vector content in accordance to
-    its vector type.
-    &#34;&#34;&#34;
-
-    if self.vtype not in (&#34;bipolar&#34;, &#34;binary&#34;):
-        raise Exception(&#34;Vector type is not supported&#34;)
-
-    self.vector[self.vector &gt; 0] = 1
-
-    self.vector[self.vector &lt;= 0] = 0 if self.vtype == &#34;binary&#34; else -1</code></pre>
-</details>
 </dd>
 <dt id="hdlib.space.Vector.permute"><code class="name flex">
 <span>def <span class="ident">permute</span></span>(<span>self, rotate_by: int = 1) ‑> None</span>
@@ -4241,33 +2085,6 @@ its vector type.</p></div>
 </code></pre>
 <p>It overrides the actual vector content of <code>vector</code> with the result of applying the permute function inplace.
 Refers to hdlib.arithmetic.permute for additional information.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def permute(self, rotate_by: int=1) -&gt; None:
-    &#34;&#34;&#34;Permute the current vector inplace.
-
-    Parameters
-    ----------
-    rotate_by : int
-        Rotate the input vector by `rotate_by` positions (the default is 1).
-
-    Examples
-    --------
-    &gt;&gt;&gt; from hdlib.space import Vector
-    &gt;&gt;&gt; vector = Vector()
-    &gt;&gt;&gt; vector.permute(rotate_by=2)
-
-    It overrides the actual vector content of `vector` with the result of applying the permute function inplace.
-    Refers to hdlib.arithmetic.permute for additional information.
-    &#34;&#34;&#34;
-
-    # Import arithmetic.permute here to avoid circular imports
-    from hdlib.arithmetic import permute as permute_operator
-
-    self.__override_object(permute_operator(self, rotate_by=rotate_by))</code></pre>
-</details>
 </dd>
 </dl>
 </dd>
@@ -4275,7 +2092,6 @@ Refers to hdlib.arithmetic.permute for additional information.</p></div>
 </section>
 </article>
 <nav id="sidebar">
-<h1>Index</h1>
 <div class="toc">
 <ul></ul>
 </div>
@@ -4321,7 +2137,7 @@ Refers to hdlib.arithmetic.permute for additional information.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Copyright &copy; 2022 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+    <p>Copyright &copy; 2024 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
 </footer>
 </body>
 </html>

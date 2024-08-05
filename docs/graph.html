@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
+<title>hdlib.graph API documentation</title>
+<meta name="description" content="Directed and undirected, weighted and unweighted graphs with hdlib …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>hdlib.graph</code></h1>
+</header>
+<section id="section-intro">
+<p>Directed and undirected, weighted and unweighted graphs with hdlib.</p>
+<p>It implements the <strong>hdlib.graph.Graph</strong> class object which allows to represent directed and undirected, weighted and unweighted graphs
+built according to the Hyperdimensional Computing (HDC) paradigm as described in <em>Poduval et al. 2022</em> <a href="https://doi.org/10.3389/fnins.2022.757125.">https://doi.org/10.3389/fnins.2022.757125.</a></p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="hdlib.graph.Graph"><code class="flex name class">
+<span>class <span class="ident">Graph</span></span>
+<span>(</span><span>size: int = 10000, directed: bool = False, weighted: bool = False, seed: Optional[int] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Hyperdimensional Graph representation.</p>
+<p>Initialize a Graph object.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code>, default <code>10000</code></dt>
+<dd>The size of vectors used to create a Space and define Vector objects.</dd>
+<dt><strong><code>directed</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
+<dd>Directed or undirected.</dd>
+<dt><strong><code>weighted</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
+<dd>Weighted or unweighted.</dd>
+<dt><strong><code>seed</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Random seed for reproducibility of results.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>TypeError</code></dt>
+<dd>If the vector size is not an integer number.</dd>
+<dt><code>ValueError</code></dt>
+<dd>If the vector size is lower than 10,000 or the number of level vectors is lower than 2.</dd>
+</dl>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.graph import Graph
+&gt;&gt;&gt; graph = Graph(size=10000, vtype='bipolar', directed=False, weighted=False)
+&gt;&gt;&gt; type(graph)
+&lt;class 'hdlib.graph.Graph'&gt;
+</code></pre>
+<p>This creates a new Graph object around a Space that can host random bipolar Vector objects with size 10,000.
+The represented graph is undirected and unweighted.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Graph(object):
+    &#34;&#34;&#34;Hyperdimensional Graph representation.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        size: int=10000,
+        directed: bool=False,
+        weighted: bool=False,
+        seed: Optional[int]=None
+    ) -&gt; &#34;Graph&#34;:
+        &#34;&#34;&#34;Initialize a Graph object.
+
+        Parameters
+        ----------
+        size : int, default 10000
+            The size of vectors used to create a Space and define Vector objects.
+        directed : bool, default False
+            Directed or undirected.
+        weighted : bool, default False
+            Weighted or unweighted.
+        seed : int, optional
+            Random seed for reproducibility of results.
+
+        Raises
+        ------
+        TypeError
+            If the vector size is not an integer number.
+        ValueError
+            If the vector size is lower than 10,000 or the number of level vectors is lower than 2.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.graph import Graph
+        &gt;&gt;&gt; graph = Graph(size=10000, vtype=&#39;bipolar&#39;, directed=False, weighted=False)
+        &gt;&gt;&gt; type(graph)
+        &lt;class &#39;hdlib.graph.Graph&#39;&gt;
+
+        This creates a new Graph object around a Space that can host random bipolar Vector objects with size 10,000.
+        The represented graph is undirected and unweighted.
+        &#34;&#34;&#34;
+
+        if not isinstance(size, int):
+            raise TypeError(&#34;Vectors size must be an integer number&#34;)
+
+        if size &lt; 10000:
+            raise ValueError(&#34;Vectors size must be greater than or equal to 10000&#34;)
+
+        # Register vectors dimensionality
+        self.size = size
+
+        # Register vectors type
+        self.vtype = &#34;bipolar&#34;
+
+        # Register whether the graph is directed or undirected
+        self.directed = directed
+
+        # Register whether the graph is weighted or unweighted
+        self.weighted = weighted
+
+        # Keep track of the number of nodes
+        self.nodes_counter = 0
+
+        # Keep track of the number of edges
+        self.edges_counter = 0
+
+        # Hyperdimensional space
+        self.space = Space(size=self.size, vtype=self.vtype)
+
+        self.seed = seed
+
+        if self.seed is None:
+            self.rand = np.random.default_rng()
+
+        else:
+            # Conditions on random seed for reproducibility
+            # numpy allows integers as random seeds
+            if not isinstance(seed, int):
+                raise TypeError(&#34;Seed must be an integer number&#34;)
+
+            self.rand = np.random.default_rng(seed=self.seed)
+
+        # Keep track of hdlib version
+        self.version = __version__
+
+    def __str__(self) -&gt; None:
+        &#34;&#34;&#34;Print the Graph object properties.
+
+        Returns
+        -------
+        str
+            A description of the Graph object. It reports the vectors size, the vector type,
+            the number of nodes, the number of edges, and whether it is directed or undirected,
+            and weighted or unweighted.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.graph import Graph
+        &gt;&gt;&gt; graph = Graph()
+        &gt;&gt;&gt; print(graph)
+
+                Class:    hdlib.graph.Graph
+                Version:  0.1.17
+                Size:     10000
+                Type:     bipolar
+                Directed: False
+                Weighted: False
+                Nodes:    0
+                Edges:    0
+                Seed:     None
+
+        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
+        their types is bipolar, and the number of level vectors is 2. The number of data points 
+        and the number of class labels are empty here since no dataset has been processed yet.
+        &#34;&#34;&#34;
+
+        return &#34;&#34;&#34;
+            Class:    hdlib.graph.Graph
+            Version:  {}
+            Size:     {}
+            Type:     {}
+            Directed: {}
+            Weighted: {}
+            Nodes:    {}
+            Edges:    {}
+            Seed:     {}
+        &#34;&#34;&#34;.format(
+            self.version,
+            self.size,
+            self.vtype,
+            self.directed,
+            self.weighted,
+            self.nodes_counter,
+            self.edges_counter,
+            self.seed
+        )
+
+    def _add_edge(
+        self,
+        node1: str,
+        node2: str,
+        weight: Optional[float]=None
+    ) -&gt; None:
+        &#34;&#34;&#34;Add an edge to the graph and automatically build nodes if they do not exist in the space.
+
+        Parameters
+        ----------
+        node1 : str
+            Node name.
+        node2 : str
+            Node name.
+        weight : float, optional
+            The edge weight as a float between 0.0 and 1.0.
+
+        Raises
+        ------
+        TypeError
+            If `weight` is not a float.
+        ValueError
+            - if `node1` or `node2` is equals to `GRAPH_ID`;
+            - if the graph is weighted but `weight` is None;
+            - if `weight` is &lt;0.0 or &gt;1.0.
+        &#34;&#34;&#34;
+
+        if node1 == GRAPH_ID or node2 == GRAPH_ID:
+            raise ValueError(&#34;Node names cannot match with the private graph ID `{}`&#34;.format(GRAPH_ID))
+
+        edge_exists = False
+
+        if node1 in self.space.space and node2 in self.space.space:
+            # Check whether an edge between node1 and node2 already exists
+            if self.directed and node2 in self.space.space[node1].children:
+                edge_exists = True
+
+            elif not self.directed and node2 in self.space.space[node1].children and node1 in self.space.space[node2].children:
+                edge_exists = True
+
+        if not edge_exists:
+            # Check whether the graph is weighted and the edge weight is a valid number
+            # In case the graph is unweighted, ignore the weight
+            if self.weighted:
+                if weight is None:
+                    raise ValueError(&#34;The edge weight cannot be None in a weighted graph&#34;)
+
+                elif not isinstance(weight, float):
+                    raise TypeError(&#34;Weight must be a float number&#34;)
+
+                elif weight &lt; 0.0 or weight &gt; 1.0:
+                    raise ValueError(&#34;Weight must be between 0.0 and 1.0&#34;)
+
+            for node in [node1, node2]:
+                # Build node if it is not in the space
+                if node not in self.space.space:
+                    # Build a random binary vector
+                    base = self.rand.integers(2, size=self.size)
+
+                    if self.vtype == &#34;bipolar&#34;:
+                        # Build a random bipolar vector
+                        base = 2 * base - 1
+
+                    vector = Vector(
+                        name=node,
+                        size=self.size,
+                        vtype=self.vtype,
+                        vector=copy.deepcopy(base)
+                    )
+
+                    # Define a new property called memory to store information
+                    # about current node neighbors
+                    setattr(vector, &#34;memory&#34;, None)
+
+                    if self.weighted:
+                        # Define a new property called weights to store
+                        # edge weights in case of a weighted graph
+                        setattr(vector, &#34;weights&#34;, dict())
+
+                    # Register the node into the space
+                    self.space.insert(vector)
+
+                    # Increment the nodes counter
+                    self.nodes_counter += 1
+
+            # Take track of the edge as a link between the two nodes
+            self.space.link(node1, node2)
+
+            # Increment the edges counter
+            self.edges_counter += 1
+
+            if not self.directed:
+                # Take track of the same edge again in case of an undirected graph
+                self.space.link(node2, node1)
+
+                # Increment the edges counter
+                self.edges_counter += 1
+
+            if self.weighted:
+                # Keep track of the edge weight
+                self.space.space[node1].weights[node2] = round(weight, 2)
+
+                if not self.directed:
+                    self.space.space[node2].weights[node1] = round(weight, 2)
+
+    def _node_memory(self, node: str) -&gt; None:
+        &#34;&#34;&#34;Build the node memory as a vector containing information about its neighbors.
+
+        Parameters
+        ----------
+        node : str
+            The node for which we want to build the memory.
+
+        Raises
+        ------
+        Exception
+            - if the input `node` is not in the graph space;
+            - if the input `node` does not have any neighbors.
+        &#34;&#34;&#34;
+
+        if node not in self.space.space:
+            raise Exception(&#34;Node `{}` is not in the graph space&#34;.format(node))
+
+        neighbors = self.space.space[node].children
+
+        node_memory = None
+
+        for neighbor in neighbors:
+            if self.weighted:
+                # Get the real weight from vector tags
+                weight = self.space.space[node].weights[neighbor]
+
+                # Retrieve the weight vector from the space
+                weight_vector = self.space.space[&#34;{}__{}&#34;.format(WEIGHT_ID, weight)]
+
+                if node_memory is None:
+                    # Initialize the node memory with the first neighbor
+                    # multiplied by its weight vector
+                    node_memory = weight_vector * self.space.space[neighbor]
+
+                else:
+                    # Multiply each neighbor with its weight vector and
+                    # bundle all the resulting vectors together to build the node memory
+                    node_memory = node_memory + (weight_vector * self.space.space[neighbor])
+
+            else:
+                if node_memory is None:
+                    # Initialize the node memory with the first neighbor
+                    node_memory = self.space.space[neighbor]
+
+                else:
+                    # Bundle all the node&#39;s neighbors together to build the node memory
+                    node_memory = node_memory + self.space.space[neighbor]
+
+        # Store the node memory into the memory property of the node vector object
+        self.space.space[node].memory = node_memory
+
+    def _weight_memory(self, start: float, end: float, step: float=0.1) -&gt; None:
+        &#34;&#34;&#34;Build the weights memory.
+
+        Parameters
+        ----------
+        start : float
+            Initial point of the weights interval.
+        end : float
+            Final point of the weight interval.
+        step : float
+            Interval step for iterating over the weight interval.
+        &#34;&#34;&#34;
+
+        index_vector = range(self.size)
+        next_level = int((self.size / 2 / len(np.arange(start, end, step))))
+        change = int(self.size / 2)
+
+        for weight in np.arange(start, end, step):
+            weight = round(weight, 2)
+
+            if weight == start:
+                base = np.full(self.size, -1 if self.vtype == &#34;bipolar&#34; else 0)
+                to_one = self.rand.permutation(index_vector)[:change]
+
+            else:
+                to_one = self.rand.permutation(index_vector)[:next_level]
+
+            for index in to_one:
+                base[index] = base[index] * -1 if self.vtype == &#34;bipolar&#34; else base[index] + 1
+
+            weight_vector = Vector(
+                name=&#34;{}__{}&#34;.format(WEIGHT_ID, weight),
+                size=self.size,
+                vtype=self.vtype,
+                vector=copy.deepcopy(base)
+            )
+
+            self.space.insert(weight_vector)
+
+    def error_rate(
+        self,
+        edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]],
+        threshold: float=0.7
+    ) -&gt; Tuple[float, Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]], Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]]]:
+        &#34;&#34;&#34;Compute the error rate defined as the number of mispredicted edges on the total number of edges.
+        Note that the error rate depends on the set of edges in input to this function which could be different
+        from the actual set of edges used to build the graph model.
+
+        Parameters
+        ----------
+        edges : set
+            The set of edges used to mitigate the graph model error rate.
+            Note that the edges in this set do not necessarily have to be present in the graph.
+        threshold : float
+            The distance threshold for establishing whether an edge exists in the graph.
+
+        Returns
+        -------
+        tuple
+            A tuple with the error rate, and the sets of flase positive and false negative edges
+            among those in the input `edges`.
+
+        Raises
+        ------
+        Exception
+            - if the graph is weighted but the input edges do not have a weight;
+            - if the graph is unweighted but the input edges have a weight;
+            - if the tuples that define the edges contain less than 2 elements or more than 3.
+        &#34;&#34;&#34;
+
+        # Compute the error rate as the number of mispredicted edges over the total number of edges
+        false_positives = set()
+        false_negatives = set()
+
+        for edge in edges:
+            weight = None
+
+            if len(edge) == 2:
+                if self.weighted:
+                    raise Exception(&#34;Graph is weghted but no weights are specified&#34;)
+
+                node1, node2 = edge
+
+            elif len(edge) == 3:
+                if not self.weighted:
+                    raise Exception(&#34;Graph is unweghted but weights are specified&#34;)
+
+                node1, node2, weight = edge
+
+            else:
+                raise Exception(&#34;Malformed edge {}&#34;.format(edge))
+
+            exists, _ = self.edge_exists(node1, node2, weight=weight, threshold=threshold)
+
+            if exists and node2 not in self.space.space[node1].children:
+                false_positives.add(edge)
+
+            elif not exists and node2 in self.space.space[node1].children:
+                false_negatives.add(edge)
+
+        return (len(false_positives) + len(false_negatives)) / len(edges), false_positives, false_negatives
+
+    def error_mitigation(
+        self,
+        edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]],
+        threshold: float=0.7,
+        max_iter: int=10,
+        prev_error_rate: Optional[float]=None
+    ) -&gt; None:
+        &#34;&#34;&#34;Mitigate the error rate of the graph model.
+
+        Parameters
+        ----------
+        edges : set
+            The set of edges used to mitigate the graph model error rate.
+            Note that the edges in this set do not necessarily have to be present in the graph.
+        threshold : float, default 0.7
+            The distance threshold for establishing whether an edge exists in the graph.
+        max_iter : int, deafult 10
+            This is an iterative process that is repeated for up to `max_iter` iterations.
+        prev_error_rate : float, optional
+            Used to compare the error rate of the graph model with the error rate computed
+            at the previous iteration. This must be initially set to `1.0`.
+        &#34;&#34;&#34;
+
+        # Compute the graph model error rate
+        error_rate, false_positives, false_negatives = self.error_rate(edges, threshold=threshold)
+
+        if (prev_error_rate is None or error_rate &lt; prev_error_rate) and max_iter &gt; 0:
+            # Rebuild the mispredicted node memories
+            for edge in false_positives.union(false_negatives):
+                weight_vector = None
+
+                if len(edge) == 2:
+                    node1, node2 = edge
+
+                elif len(edge) == 3:
+                    node1, node2, weight = edge
+
+                    if self.weighted and weight:
+                        # Retrieve the weight vector from the space
+                        weight_vector = self.space.space[&#34;{}__{}&#34;.format(WEIGHT_ID, weight)]
+
+                if self.space.space[node1].memory:
+                    if edge in false_positives:
+                        # Reduce the signal of node2 in the memory of node1
+                        if weight_vector is not None:
+                            self.space.space[node1].memory -= (weight_vector * self.space.space[node2])
+
+                        else:
+                            self.space.space[node1].memory -= self.space.space[node2]
+
+                    elif edge in false_negatives:
+                        if weight_vector is not None:
+                            self.space.space[node1].memory += (weight_vector * self.space.space[node2])
+
+                        else:
+                            # Increase the signal of node2 in the memory of node1
+                            self.space.space[node1].memory += self.space.space[node2]
+
+            # Rebuild the graph model
+            # Do not rebuild the nodes memory since they have been overwritten earlier
+            self.fit(self.edges, build_nodes_memory=False)
+
+            # Recursively mitigate the error rate
+            self.error_mitigation(edges, threshold=threshold, max_iter=max_iter-1, prev_error_rate=error_rate)
+
+    def fit(
+        self,
+        edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]],
+        build_nodes_memory: bool=True
+    ) -&gt; None:
+        &#34;&#34;&#34;Build the graph memory and store it into the space.
+
+        Parameters
+        ----------
+        edges : set
+            The set of edges defined as tuples `&lt;source, target, weight&gt;`.
+            Note that `weight` is optional in case of unweighted graphs.
+        build_nodes_memory : bool, default True
+            Build nodes and weight memories by default.
+            This must be set to False in case this is invoked to mitigate the error rate.
+
+        Raises
+        ------
+        ValueError
+            If no edges are provided in input.
+        Exception
+            - if the tuple contains two elements but the graph is weighted;
+            - if the tuple contains three elements but the graph is unweighted;
+            - if the tuple representing the edge contain less than 2 elements or more than 3.
+        &#34;&#34;&#34;
+
+        if not edges:
+            raise ValueError(&#34;Must provide at least one edge&#34;)
+
+        for edge in edges:
+            if len(edge) == 2:
+                if self.weighted:
+                    raise Exception(&#34;Graph is weghted but no weights are specified&#34;)
+
+                node1, node2 = edge
+
+                # This edge is unweighted
+                self._add_edge(node1, node2)
+
+            elif len(edge) == 3:
+                if not self.weighted:
+                    raise Exception(&#34;Graph is unweighted but weights are specified&#34;)
+
+                node1, node2, weight = edge
+
+                # This edge is weighted
+                self._add_edge(node1, node2, weight=weight)
+
+            else:
+                raise Exception(&#34;Malformed edge {}&#34;.format(edge))
+
+        if self.weighted and build_nodes_memory:
+            # Build the vector representation of the edges weight
+            # Weights are float numbers between 0.0 and 1.0, here limited to the second decimal point
+            # This limits the total number of vectors required to represent weiths to 100
+            self._weight_memory(0.0, 1.0, 0.01)
+
+        graph = None
+        
+        for node in self.space.space:
+            # Check whether the current node is not the actual graph memory
+            # Also, check whether the current node is not a weight vector
+            # This is required because this function can be run multiple times
+            if node != GRAPH_ID and not node.startswith(WEIGHT_ID):
+                if build_nodes_memory:
+                    # Build the node memory
+                    self._node_memory(node)
+
+                if self.directed:
+                    if graph is None:
+                        if self.space.space[node].memory:
+                            graph = self.space.space[node] * permute(self.space.space[node].memory, rotate_by=1)
+
+                        else:
+                            graph = self.space.space[node]
+
+                    else:
+                        if self.space.space[node].memory:
+                            # Build the graph memory as the bundle of all the node memories rotated by 1 position
+                            graph = graph + (self.space.space[node] * permute(self.space.space[node].memory, rotate_by=1))
+
+                        else:
+                            graph = graph + self.space.space[node]
+
+                else:
+                    if graph is None:
+                        if self.space.space[node].memory:
+                            graph = self.space.space[node] * self.space.space[node].memory
+
+                        else:
+                            graph = self.space.space[node]
+
+                    else:
+                        if self.space.space[node].memory:
+                            # Build the graph memory as the bundle of all the node memories
+                            graph = graph + (self.space.space[node] * self.space.space[node].memory)
+
+                        else:
+                            graph = graph + self.space.space[node]
+
+        if not self.directed:
+            # Introduce a factor 1/2 because if we expand the node memory, then
+            # H(i)*H(j) and H(j)*H(i) will be counted twice
+            graph.vector = graph.vector / 2
+
+        # Check whether a graph is already present in the space
+        if GRAPH_ID in self.space.space:
+            self.space.remove(GRAPH_ID)
+
+        # Rename the graph vector
+        graph.name = GRAPH_ID
+
+        # Store the graph vector into the space
+        self.space.insert(graph)
+
+        # Also keep track of the edges
+        # This is used in case of the error_mitigation()
+        self.edges = edges
+
+    def edge_exists(
+        self,
+        node1: str,
+        node2: str,
+        weight: Optional[float]=None,
+        threshold: float=0.7
+    ) -&gt; Tuple[bool, float]:
+        &#34;&#34;&#34;Check whether an edge exists between `node1` and `node2` according to a specified distance `threshold`.
+
+        node1 : str
+            The source node name or ID.
+        node2 : str
+            The target node name or ID.
+        weight : float, optional
+            The edge weight.
+        threshold : float, default 0.7
+            The distance threshold on vectors to establish the presence of the edge.
+
+        Returns
+        -------
+        Tuple
+            True in case an edge between `node1` and `node2` exists in the graph space,
+            otherwise False. It also returns the actual distance between the two vectors.
+
+        Raises
+        ------
+        Exception
+            - if there is no graph vector in the space;
+            - if `node1` and `node2` are not in the graph space.
+        TypeError
+            If `weight` is not a float.
+        ValueError
+            - if the graph is weighted but `weight` is None;
+            - if `weight` is &lt;0.0 or &gt;1.0.
+        &#34;&#34;&#34;
+
+        if GRAPH_ID not in self.space.space:
+            raise Exception(&#34;There is no graph in the space&#34;)
+
+        for node in [node1, node2]:
+            if node not in self.space.space:
+                raise Exception(&#34;Node &#39;{}&#39; is not in the space&#34;.format(node))
+
+        # Check whether the graph is weighted and the edge weight is a valid number
+        # In case the graph is unweighted, ignore the weight
+        if self.weighted:
+            if weight is None:
+                raise ValueError(&#34;The edge weight cannot be None in a weighted graph&#34;)
+
+            elif not isinstance(weight, float):
+                raise TypeError(&#34;Weight must be a float number&#34;)
+
+            elif weight &lt; 0.0 or weight &gt; 1.0:
+                raise ValueError(&#34;Weight must be between 0.0 and 1.0&#34;)
+
+        # Retrieve the vector representation of the graph
+        graph = self.space.space[GRAPH_ID]
+
+        # Also retrieve the vector representations of the two input nodes
+        node1_vector = self.space.space[node1]
+        node2_vector = self.space.space[node2]
+
+        # Retrieve the node1 memory by binding the vector representation of
+        # node1 with the vector representation of the graph
+        # The resulting vector equals to the actual node1 memory plus noise
+        node1_memory = bind(node1_vector, graph)
+
+        if self.directed:
+            # In case of directed graphs, nodes memory are rotated by 1 position
+            # Thus, it must be ratated back in order to preserve the similarity
+            node1_memory = permute(node1_memory, rotate_by=-1)
+
+        # Check whether there is a edge between node1 and node2 by computing the
+        # distance between node2 and node1 memory
+        # A distance close to 0 means the edge exists
+        # A distance close to 1 means the edge does not exist
+        if self.weighted:
+            # Retrieve the weight vector from the space
+            weight_vector = self.space.space[&#34;{}__{}&#34;.format(WEIGHT_ID, weight)]
+
+            distance = (weight_vector * node2_vector).dist(node1_memory, method=&#34;cosine&#34;)
+
+        else:
+            distance = node2_vector.dist(node1_memory, method=&#34;cosine&#34;)
+
+        if distance &lt; threshold:
+            return True, distance
+
+        return False, distance</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="hdlib.graph.Graph.edge_exists"><code class="name flex">
+<span>def <span class="ident">edge_exists</span></span>(<span>self, node1: str, node2: str, weight: Optional[float] = None, threshold: float = 0.7) ‑> Tuple[bool, float]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check whether an edge exists between <code>node1</code> and <code>node2</code> according to a specified distance <code>threshold</code>.</p>
+<p>node1 : str
+The source node name or ID.
+node2 : str
+The target node name or ID.
+weight : float, optional
+The edge weight.
+threshold : float, default 0.7
+The distance threshold on vectors to establish the presence of the edge.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Tuple</code></dt>
+<dd>True in case an edge between <code>node1</code> and <code>node2</code> exists in the graph space,
+otherwise False. It also returns the actual distance between the two vectors.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>
+<ul>
+<li>if there is no graph vector in the space;</li>
+<li>if <code>node1</code> and <code>node2</code> are not in the graph space.</li>
+</ul>
+</dd>
+<dt><code>TypeError</code></dt>
+<dd>If <code>weight</code> is not a float.</dd>
+<dt><code>ValueError</code></dt>
+<dd>
+<ul>
+<li>if the graph is weighted but <code>weight</code> is None;</li>
+<li>if <code>weight</code> is &lt;0.0 or &gt;1.0.</li>
+</ul>
+</dd>
+</dl></div>
+</dd>
+<dt id="hdlib.graph.Graph.error_mitigation"><code class="name flex">
+<span>def <span class="ident">error_mitigation</span></span>(<span>self, edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]], threshold: float = 0.7, max_iter: int = 10, prev_error_rate: Optional[float] = None) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Mitigate the error rate of the graph model.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>edges</code></strong> :&ensp;<code>set</code></dt>
+<dd>The set of edges used to mitigate the graph model error rate.
+Note that the edges in this set do not necessarily have to be present in the graph.</dd>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code>, default <code>0.7</code></dt>
+<dd>The distance threshold for establishing whether an edge exists in the graph.</dd>
+<dt><strong><code>max_iter</code></strong> :&ensp;<code>int, deafult 10</code></dt>
+<dd>This is an iterative process that is repeated for up to <code>max_iter</code> iterations.</dd>
+<dt><strong><code>prev_error_rate</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Used to compare the error rate of the graph model with the error rate computed
+at the previous iteration. This must be initially set to <code>1.0</code>.</dd>
+</dl></div>
+</dd>
+<dt id="hdlib.graph.Graph.error_rate"><code class="name flex">
+<span>def <span class="ident">error_rate</span></span>(<span>self, edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]], threshold: float = 0.7) ‑> Tuple[float, Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]], Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compute the error rate defined as the number of mispredicted edges on the total number of edges.
+Note that the error rate depends on the set of edges in input to this function which could be different
+from the actual set of edges used to build the graph model.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>edges</code></strong> :&ensp;<code>set</code></dt>
+<dd>The set of edges used to mitigate the graph model error rate.
+Note that the edges in this set do not necessarily have to be present in the graph.</dd>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code></dt>
+<dd>The distance threshold for establishing whether an edge exists in the graph.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>tuple</code></dt>
+<dd>A tuple with the error rate, and the sets of flase positive and false negative edges
+among those in the input <code>edges</code>.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>
+<ul>
+<li>if the graph is weighted but the input edges do not have a weight;</li>
+<li>if the graph is unweighted but the input edges have a weight;</li>
+<li>if the tuples that define the edges contain less than 2 elements or more than 3.</li>
+</ul>
+</dd>
+</dl></div>
+</dd>
+<dt id="hdlib.graph.Graph.fit"><code class="name flex">
+<span>def <span class="ident">fit</span></span>(<span>self, edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]], build_nodes_memory: bool = True) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Build the graph memory and store it into the space.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>edges</code></strong> :&ensp;<code>set</code></dt>
+<dd>The set of edges defined as tuples <code>&lt;source, target, weight&gt;</code>.
+Note that <code>weight</code> is optional in case of unweighted graphs.</dd>
+<dt><strong><code>build_nodes_memory</code></strong> :&ensp;<code>bool</code>, default <code>True</code></dt>
+<dd>Build nodes and weight memories by default.
+This must be set to False in case this is invoked to mitigate the error rate.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>If no edges are provided in input.</dd>
+<dt><code>Exception</code></dt>
+<dd>
+<ul>
+<li>if the tuple contains two elements but the graph is weighted;</li>
+<li>if the tuple contains three elements but the graph is unweighted;</li>
+<li>if the tuple representing the edge contain less than 2 elements or more than 3.</li>
+</ul>
+</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="hdlib" href="index.html">hdlib</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="hdlib.graph.Graph" href="#hdlib.graph.Graph">Graph</a></code></h4>
+<ul class="">
+<li><code><a title="hdlib.graph.Graph.edge_exists" href="#hdlib.graph.Graph.edge_exists">edge_exists</a></code></li>
+<li><code><a title="hdlib.graph.Graph.error_mitigation" href="#hdlib.graph.Graph.error_mitigation">error_mitigation</a></code></li>
+<li><code><a title="hdlib.graph.Graph.error_rate" href="#hdlib.graph.Graph.error_rate">error_rate</a></code></li>
+<li><code><a title="hdlib.graph.Graph.fit" href="#hdlib.graph.Graph.fit">fit</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+    <p>Copyright &copy; 2024 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+</footer>
+</body>
+</html>
