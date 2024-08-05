@@ -1,4 +1,4 @@
-"""Modelling with hdlib.
+"""Machine learning with hdlib.
 
 It implements the __hdlib.model.MLModel__ class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
@@ -110,6 +110,7 @@ class MLModel(object):
         >>> print(model)
 
                 Class:   hdlib.model.MLModel
+                Version: 0.1.17
                 Size:    10000
                 Type:    bipolar
                 Levels:  2
