@@ -1,5 +1,20 @@
 # Changelog
 
+## Version 0.1.18
+
+[@cumbof/hdlib@0.1.18](https://github.com/cumbof/hdlib/releases/tag/0.1.18)
+
+### New features
+
+- The space dictionary as part of a `Space` object is now an `OrderedDict`, making `Space` objects iterable over their set of vectors;
+- Python examples under the `examples` folder are now available as part of the `hdlib` package.
+
+### Fixes
+
+- Fix dumping and loading `Vector` and `Space` objects to and from pickle files;
+- `space.Space.bulk_insert` function now checks whether the names of the input vectors are instances of `bool`, `int`, `float`, `str`, and `None` before creating and inserting vectors into the space;
+- Distance thresholds in `space.Space.find` and `space.Space.find_all` are now set to `numpy.Inf` by default.
+
 ## Version 0.1.17
 
 [@cumbof/hdlib@0.1.17](https://github.com/cumbof/hdlib/releases/tag/0.1.17)
