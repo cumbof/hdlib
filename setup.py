@@ -1,3 +1,4 @@
+import os
 import setuptools
 import sys
 
@@ -6,6 +7,11 @@ from hdlib import __version__
 if sys.version_info[0] < 3:
     sys.stdout.write("hdlib requires Python 3 or higher. Your Python your current Python version is {}.{}.{}"
                      .format(sys.version_info[0], sys.version_info[1], sys.version_info[2]))
+
+REQUIREMENTS = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
+
+if not os.path.isfile(REQUIREMENTS):
+    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), REQUIREMENTS)
 
 setuptools.setup(
     author="Fabio Cumbo",
@@ -20,9 +26,7 @@ setuptools.setup(
     ],
     description="Hyperdimensional Computing Library for building Vector Symbolic Architectures in Python",
     install_requires=[
-        "numpy>=1.22.3",
-        "scikit-learn>=1.2.2",
-        "tabulate>=0.9.0"
+        requirement.strip() for requirement in open(REQUIREMENTS).readlines() if requirement.strip()
     ],
     license="MIT",
     license_files=["LICENSE"],
@@ -36,6 +40,9 @@ setuptools.setup(
         "Wiki": "https://github.com/cumbof/hdlib/wiki",
     },
     python_requires=">=3",
+    scripts=[
+        "examples/chopin2.py",
+    ],
     url="http://github.com/cumbof/hdlib",
     version=__version__,
     zip_safe=False
