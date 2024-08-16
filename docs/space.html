@@ -40,7 +40,7 @@ representation of a hyperdimensional space which acts as a container for a multi
 <dl>
 <dt id="hdlib.space.Space"><code class="flex name class">
 <span>class <span class="ident">Space</span></span>
-<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0x7e4d8930a0>] = None)</span>
+<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0x78622530a0>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Vectors space.</p>
@@ -61,6 +61,10 @@ representation of a hyperdimensional space which acts as a container for a multi
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
+<dt><code>Exception</code></dt>
+<dd>If the pickle object in <code>from_file</code> is not instance of Space.</dd>
+<dt><code>FileNotFoundError</code></dt>
+<dd>If <code>from_file</code> is not None but the file does not exist.</dd>
 <dt><code>ValueError</code></dt>
 <dd>
 <ul>
@@ -68,8 +72,6 @@ representation of a hyperdimensional space which acts as a container for a multi
 <li>if <code>size</code> is lower than 10,000.</li>
 </ul>
 </dd>
-<dt><code>FileNotFoundError</code></dt>
-<dd>If <code>from_file</code> is not None but the file does not exist.</dd>
 </dl>
 <h2 id="examples">Examples</h2>
 <pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Space
@@ -115,11 +117,13 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         Raises
         ------
+        Exception
+            If the pickle object in `from_file` is not instance of Space.
+        FileNotFoundError
+            If `from_file` is not None but the file does not exist.
         ValueError
             - if `vtype` is different than &#39;binary&#39; or &#39;bipolar&#39;;
             - if `size` is lower than 10,000.
-        FileNotFoundError
-            If `from_file` is not None but the file does not exist.
 
         Examples
         --------
@@ -144,7 +148,12 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         and finally create a new space object `space2` from the pickle file.
         &#34;&#34;&#34;
 
-        self.space = dict()
+        # We may want to iterate over the Space object
+        # Thus, we need to maintain the order of the vectors into the space dictionary
+        self.space = OrderedDict()
+
+        # Used to iterate over vectors in the space
+        self._vector_index = 0
 
         self.version = __version__
 
@@ -170,18 +179,76 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
             else:
                 with open(from_file, &#34;rb&#34;) as pkl:
-                    self.version, self.size, self.vtype, self.space, self.root = pickle.load(pkl)
+                    from_file_obj = pickle.load(pkl)
 
-                if self.version != __version__:
-                    print(&#34;Warning: the specified Space has been created with a different version of hdlib&#34;)
+                    if not isinstance(from_file_obj, type(self)):
+                        raise Exception(&#34;Pickle object is not instance of {}&#34;.format(type(self)))
 
-                for name in self.space:
-                    if self.space[name].tags:
-                        for tag in self.space[name].tags:
-                            if tag not in self.tags:
-                                self.tags[tag] = set()
+                    self.__dict__.update(from_file_obj.__dict__)
 
-                            self.tags[tag].add(name)
+                    if self.version != __version__:
+                        print(&#34;Warning: the specified Space has been created with a different version of hdlib&#34;)
+
+    def __iter__(self) -&gt; &#34;Space&#34;:
+        &#34;&#34;&#34;Required to make the Space object iterable.&#34;&#34;&#34;
+
+        return self
+
+    def __next__(self) -&gt; str:
+        &#34;&#34;&#34;Used to iterate over the vector objects into the Space.
+
+        Returns
+        -------
+        str
+            The vector name at a specific position.
+        &#34;&#34;&#34;
+
+        if self._vector_index &gt;= len(self.space):
+            # Set the vector index back to the first position.
+            # Redy to start iterating again over the vectors in the space
+            self._vector_index = 0
+
+            raise StopIteration
+
+        else:
+            # Retrieve the vector name at a specific position in the space
+            # Vectors are all ordered in the space since the space is defined as an OrderedDict
+            vector = self.memory()[self._vector_index]
+
+            # Increment the vector index for the next iteration
+            self._vector_index += 1
+
+            # This returns the vector name or ID
+            # It is enough, since the space is a hashmap and we can retrieve the Vector object in O(1)
+            return vector
+
+    def __contains__(self, vector: str) -&gt; bool:
+        &#34;&#34;&#34;Check whether a vector is in the space.
+
+        Parameters
+        ----------
+        vector : str
+            The vector name or ID.
+
+        Returns
+        -------
+        bool
+            True if `vector` is in the space, False otherwise.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.space import Space, Vector
+        &gt;&gt;&gt; space = Space()
+        &gt;&gt;&gt; vector = Vector(name=&#34;my_vector&#34;)
+        &gt;&gt;&gt; space.insert(vector)
+        &gt;&gt;&gt; &#34;my_vector&#34; in space
+        True
+
+        Create a Space object, add a Vector object into the space, and check whether the
+        vector is actually in the space by searching for its name.
+        &#34;&#34;&#34;
+
+        return True if vector in self.space else False
 
     def __len__(self) -&gt; int:
         &#34;&#34;&#34;Get the number of vectors in space.
@@ -200,7 +267,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         &gt;&gt;&gt; len(space)
         1
 
-        Create a Space object, add a Vector object to the space, and check the total number
+        Create a Space object, add a Vector object into the space, and check the total number
         of Vector objects in the space.
         &#34;&#34;&#34;
 
@@ -247,9 +314,9 @@ and finally create a new space object <code>space2</code> from the pickle file.<
             Type:    {}
             Vectors: {}
             Tags:
-            
+
             {}
-            
+
             IDs:
 
             {}
@@ -306,6 +373,9 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         Raises
         ------
+        Exception
+            - if no `names` or `tags` are provided in input;
+            - if both `names` and `tags` are provided in input.
         TypeError
             If names or tags in the input lists are not instance of primitives.
 
@@ -329,7 +399,10 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         &#34;&#34;&#34;
 
         if not names and not tags:
-            raise Exception(&#34;No names or tags provided!&#34;)            
+            raise Exception(&#34;No names or tags provided&#34;)
+
+        if names and tags:
+            raise Exception(&#34;Cannot search for vectors by their names and tags at the same time&#34;)
 
         vectors = set()
 
@@ -347,7 +420,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         elif tags:
             for tag in tags:
                 if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-                    raise TypeError(&#34;Tags must be string, integer, or float&#34;)
+                    raise TypeError(&#34;A tags must be string, integer, or float&#34;)
 
                 if tag in self.tags:
                     for vector_name in self.tags[tag]:
@@ -409,7 +482,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         self,
         names: List[str],
         tags: Optional[List[List[Union[str, int, float]]]]=None,
-        ignore_existing: bool=True
+        ignore_existing: bool=False
     ) -&gt; None:
         &#34;&#34;&#34;Add vectors to the space in bulk.
 
@@ -419,8 +492,8 @@ and finally create a new space object <code>space2</code> from the pickle file.<
             A list with vector names.
         tags : list, optional
             An optional list of lists with vector tags.
-        ignore_existing : bool, default True
-            Do not raise an exception in case the space contains a vector with the same name specified in `names`.
+        ignore_existing : bool, default False
+            If True, do not raise an exception in case the space contains a vector with the same name specified in `names`.
 
         Raises
         ------
@@ -465,15 +538,14 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         names = set(names)
 
         for pos, name in enumerate(names):
-            try:
-                name = str(name)
-
-            except:
+            if not isinstance(name, (bool, str, int, float, None)):
                 raise TypeError(&#34;Entries in input list must be instances of primitives&#34;)
+
+            name = str(name)
 
             if name in self.space:
                 if not ignore_existing:
-                    raise Exception(&#34;Vector \&#34;{}\&#34; already in space&#34;.format(name))
+                    raise Exception(&#34;Vector \&#34;{}\&#34; already exists in the space&#34;.format(name))
 
                 else:
                     continue
@@ -738,14 +810,14 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         self.root = name
 
-    def find(self, vector: Vector, threshold: float=2.0, method: str=&#34;cosine&#34;) -&gt; Tuple[str, float]:
+    def find(self, vector: Vector, threshold: float=np.Inf, method: str=&#34;cosine&#34;) -&gt; Tuple[str, float]:
         &#34;&#34;&#34;Search for the closest vector in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 2.0
+        threshold : float, default numpy.Inf
             Threshold on distance between vectors.
         method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, default &#39;cosine&#39;
             Distance metric.
@@ -778,14 +850,14 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         return best, distances[best]
 
-    def find_all(self, vector: Vector, threshold: float=2.0, method: str=&#34;cosine&#34;) -&gt; Tuple[dict, str]:
+    def find_all(self, vector: Vector, threshold: float=np.Inf, method: str=&#34;cosine&#34;) -&gt; Tuple[dict, str]:
         &#34;&#34;&#34;Compute distance of the input vector against all vectors in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 2.0
+        threshold : float, default numpy.Inf
             Threshold on distance between vectors.
         method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, default &#39;cosine&#39;
             Distance metric.
@@ -829,7 +901,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         distances = dict()
 
-        distance = 2.0
+        distance = np.Inf
 
         best = None
 
@@ -874,13 +946,13 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         if not to_file:
             # Dump the space to a pickle file in the current working directory if not file path is provided
-            to_file = os.path.join(os.getcwd, &#34;space.pkl&#34;)
+            to_file = os.path.join(os.getcwd(), &#34;space.pkl&#34;)
 
         if os.path.isfile(to_file):
             raise Exception(&#34;The output file already exists!\n{}&#34;.format(to_file))
 
         with open(to_file, &#34;wb&#34;) as pkl:
-            pickle.dump((self.version, self.size, self.vtype, self.space, self.root), pkl)</code></pre>
+            pickle.dump(self, pkl)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -917,7 +989,7 @@ my_vector
 for vector with that specific tag within the space. It finally prints the vector names.</p></div>
 </dd>
 <dt id="hdlib.space.Space.bulk_insert"><code class="name flex">
-<span>def <span class="ident">bulk_insert</span></span>(<span>self, names: List[str], tags: Optional[List[List[Union[str, int, float]]]] = None, ignore_existing: bool = True) ‑> None</span>
+<span>def <span class="ident">bulk_insert</span></span>(<span>self, names: List[str], tags: Optional[List[List[Union[str, int, float]]]] = None, ignore_existing: bool = False) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add vectors to the space in bulk.</p>
@@ -927,8 +999,8 @@ for vector with that specific tag within the space. It finally prints the vector
 <dd>A list with vector names.</dd>
 <dt><strong><code>tags</code></strong> :&ensp;<code>list</code>, optional</dt>
 <dd>An optional list of lists with vector tags.</dd>
-<dt><strong><code>ignore_existing</code></strong> :&ensp;<code>bool</code>, default <code>True</code></dt>
-<dd>Do not raise an exception in case the space contains a vector with the same name specified in <code>names</code>.</dd>
+<dt><strong><code>ignore_existing</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
+<dd>If True, do not raise an exception in case the space contains a vector with the same name specified in <code>names</code>.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -967,7 +1039,7 @@ my_vector_4
 Both 'my_vector_3' and 'my_vector_4' contain 'tag1' in their set of tags.</p></div>
 </dd>
 <dt id="hdlib.space.Space.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7e4d8930a0>] = None) ‑> None</span>
+<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x78622530a0>] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Dump the Space object to a pickle file.</p>
@@ -992,7 +1064,7 @@ True
 <p>Create a Space object and dump it to a pickle file under the home directory.</p></div>
 </dd>
 <dt id="hdlib.space.Space.find"><code class="name flex">
-<span>def <span class="ident">find</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = 2.0, method: str = 'cosine') ‑> Tuple[str, float]</span>
+<span>def <span class="ident">find</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = inf, method: str = 'cosine') ‑> Tuple[str, float]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Search for the closest vector in space.</p>
@@ -1000,7 +1072,7 @@ True
 <dl>
 <dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
 <dd>Input Vector object. Search for the closest vector to this Vector in the space.</dd>
-<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code>, default <code>2.0</code></dt>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code>, default <code>numpy.Inf</code></dt>
 <dd>Threshold on distance between vectors.</dd>
 <dt><strong><code>method</code></strong> :&ensp;<code>{'cosine', 'euclidean', 'hamming'}</code>, default <code>'cosine'</code></dt>
 <dd>Distance metric.</dd>
@@ -1026,7 +1098,7 @@ True
 The result is obviously itself, 'vector1', with a cosine distance of 0.0.</p></div>
 </dd>
 <dt id="hdlib.space.Space.find_all"><code class="name flex">
-<span>def <span class="ident">find_all</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = 2.0, method: str = 'cosine') ‑> Tuple[dict, str]</span>
+<span>def <span class="ident">find_all</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = inf, method: str = 'cosine') ‑> Tuple[dict, str]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Compute distance of the input vector against all vectors in space.</p>
@@ -1034,7 +1106,7 @@ The result is obviously itself, 'vector1', with a cosine distance of 0.0.</p></d
 <dl>
 <dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
 <dd>Input Vector object. Search for the closest vector to this Vector in the space.</dd>
-<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code>, default <code>2.0</code></dt>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code>, default <code>numpy.Inf</code></dt>
 <dd>Threshold on distance between vectors.</dd>
 <dt><strong><code>method</code></strong> :&ensp;<code>{'cosine', 'euclidean', 'hamming'}</code>, default <code>'cosine'</code></dt>
 <dd>Distance metric.</dd>
@@ -1087,6 +1159,13 @@ distance of 0.0. Use a seed for reproducing the same distances.</p></div>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
+<dt><code>Exception</code></dt>
+<dd>
+<ul>
+<li>if no <code>names</code> or <code>tags</code> are provided in input;</li>
+<li>if both <code>names</code> and <code>tags</code> are provided in input.</li>
+</ul>
+</dd>
 <dt><code>TypeError</code></dt>
 <dd>If names or tags in the input lists are not instance of primitives.</dd>
 </dl>
@@ -1301,7 +1380,7 @@ set 'vector1' as root. Finally, print the name of the nodes linked to the root.<
 </dd>
 <dt id="hdlib.space.Vector"><code class="flex name class">
 <span>class <span class="ident">Vector</span></span>
-<span>(</span><span>name: Optional[str] = None, size: int = 10000, vector: Optional[numpy.ndarray] = None, vtype: str = 'bipolar', tags: Optional[Set[Union[str, int, float]]] = None, seed: Optional[int] = None, warning: bool = False, from_file: Optional[<function abspath at 0x7e4d8930a0>] = None)</span>
+<span>(</span><span>name: Optional[str] = None, size: int = 10000, vector: Optional[numpy.ndarray] = None, vtype: str = 'bipolar', tags: Optional[Set[Union[str, int, float]]] = None, seed: Optional[int] = None, warning: bool = False, from_file: Optional[<function abspath at 0x78622530a0>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Vector object.</p>
@@ -1332,6 +1411,10 @@ set 'vector1' as root. Finally, print the name of the nodes linked to the root.<
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
+<dt><code>Exception</code></dt>
+<dd>If the pickle object in <code>from_file</code> is not instance of Vector.</dd>
+<dt><code>FileNotFoundError</code></dt>
+<dd>If <code>from_file</code> is not None but the file does not exist.</dd>
 <dt><code>TypeError</code></dt>
 <dd>
 <ul>
@@ -1348,8 +1431,6 @@ set 'vector1' as root. Finally, print the name of the nodes linked to the root.<
 <li>if <code>size</code> is lower than 10,000.</li>
 </ul>
 </dd>
-<dt><code>FileNotFoundError</code></dt>
-<dd>If <code>from_file</code> is not None but the file does not exist.</dd>
 </dl>
 <h2 id="examples">Examples</h2>
 <pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
@@ -1416,6 +1497,10 @@ and finally create a new vector object <code>vector2</code> from the pickle file
 
         Raises
         ------
+        Exception
+            If the pickle object in `from_file` is not instance of Vector.
+        FileNotFoundError
+            If `from_file` is not None but the file does not exist.
         TypeError
             - if the vector name is not instance of a primitive;
             - if `tags` is not an instance of set;
@@ -1424,8 +1509,6 @@ and finally create a new vector object <code>vector2</code> from the pickle file
         ValueError
             - if `vtype` is different than &#39;binary&#39; or &#39;bipolar&#39;;
             - if `size` is lower than 10,000.
-        FileNotFoundError
-            If `from_file` is not None but the file does not exist.
 
         Examples
         --------
@@ -1519,10 +1602,15 @@ and finally create a new vector object <code>vector2</code> from the pickle file
             else:
                 # Load vector from pickle file
                 with open(from_file, &#34;rb&#34;) as pkl:
-                    self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed = pickle.load(pkl)
+                    from_file_obj = pickle.load(pkl)
 
-                if self.version != __version__:
-                    print(&#34;Warning: the specified Space has been created with a different version of hdlib&#34;)
+                    if not isinstance(from_file_obj, type(self)):
+                        raise Exception(&#34;Pickle object is not instance of {}&#34;.format(type(self)))
+
+                    self.__dict__.update(from_file_obj.__dict__)
+
+                    if self.version != __version__:
+                        print(&#34;Warning: the specified Space has been created with a different version of hdlib&#34;)
 
         else:
             # Conditions on vector size
@@ -1622,9 +1710,9 @@ and finally create a new vector object <code>vector2</code> from the pickle file
             Size:    {}
             Type:    {}
             Tags:
-            
+
             {}
-            
+
             Vector:
 
             {}
@@ -1867,7 +1955,31 @@ and finally create a new vector object <code>vector2</code> from the pickle file
         from hdlib.arithmetic import bundle as bundle_operator
 
         self.__override_object(bundle_operator(self, vector))
-    
+
+    def subtraction(self, vector: &#34;Vector&#34;) -&gt; None:
+        &#34;&#34;&#34;Subtract a vector from the current vector object inplace.
+
+        Parameters
+        ----------
+        vector : Vector
+            The input Vector object.
+
+        Examples
+        --------
+        &gt;&gt;&gt; from hdlib.space import Vector
+        &gt;&gt;&gt; vector1 = Vector()
+        &gt;&gt;&gt; vector2 = Vector()
+        &gt;&gt;&gt; vector1.subtract(vector2)
+
+        It overrides the actual vector content of `vector1` with the result of the subtraction with `vector2`.
+        Refers to hdlib.arithmetic.subtraction for additional information.
+        &#34;&#34;&#34;
+
+        # Import arithmetic.subtraction here to avoid circular imports
+        from hdlib.arithmetic import subtraction as subtraction_operator
+
+        self.__override_object(subtraction_operator(self, vector))
+
     def permute(self, rotate_by: int=1) -&gt; None:
         &#34;&#34;&#34;Permute the current vector inplace.
 
@@ -1940,13 +2052,13 @@ and finally create a new vector object <code>vector2</code> from the pickle file
 
         if not to_file:
             # Dump the vector to a pickle file in the current working directory if not file path is provided
-            to_file = os.path.join(os.getcwd, &#34;{}.pkl&#34;.format(self.name))
+            to_file = os.path.join(os.getcwd(), &#34;{}.pkl&#34;.format(self.name))
 
         if os.path.isfile(to_file):
             raise Exception(&#34;The output file already exists!\n{}&#34;.format(to_file))
 
         with open(to_file, &#34;wb&#34;) as pkl:
-            pickle.dump((self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed), pkl)</code></pre>
+            pickle.dump(self, pkl)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -2020,7 +2132,7 @@ Refers to hdlib.arithmetic.bundle for additional information.</p></div>
 <p>Generate two random bipolar vectors and compute the distance between them.</p></div>
 </dd>
 <dt id="hdlib.space.Vector.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7e4d8930a0>] = None) ‑> None</span>
+<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x78622530a0>] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Dump the Vector object to a pickle file.</p>
@@ -2086,6 +2198,25 @@ its vector type.</p></div>
 <p>It overrides the actual vector content of <code>vector</code> with the result of applying the permute function inplace.
 Refers to hdlib.arithmetic.permute for additional information.</p></div>
 </dd>
+<dt id="hdlib.space.Vector.subtraction"><code class="name flex">
+<span>def <span class="ident">subtraction</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Subtract a vector from the current vector object inplace.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
+<dd>The input Vector object.</dd>
+</dl>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
+&gt;&gt;&gt; vector1 = Vector()
+&gt;&gt;&gt; vector2 = Vector()
+&gt;&gt;&gt; vector1.subtract(vector2)
+</code></pre>
+<p>It overrides the actual vector content of <code>vector1</code> with the result of the subtraction with <code>vector2</code>.
+Refers to hdlib.arithmetic.subtraction for additional information.</p></div>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -2129,6 +2260,7 @@ Refers to hdlib.arithmetic.permute for additional information.</p></div>
 <li><code><a title="hdlib.space.Vector.dump" href="#hdlib.space.Vector.dump">dump</a></code></li>
 <li><code><a title="hdlib.space.Vector.normalize" href="#hdlib.space.Vector.normalize">normalize</a></code></li>
 <li><code><a title="hdlib.space.Vector.permute" href="#hdlib.space.Vector.permute">permute</a></code></li>
+<li><code><a title="hdlib.space.Vector.subtraction" href="#hdlib.space.Vector.subtraction">subtraction</a></code></li>
 </ul>
 </li>
 </ul>
@@ -2137,7 +2269,7 @@ Refers to hdlib.arithmetic.permute for additional information.</p></div>
 </nav>
 </main>
 <footer id="footer">
-    <p>Copyright &copy; 2024 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+<p>Copyright &copy; 2024 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
 </footer>
 </body>
 </html>
