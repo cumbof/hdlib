@@ -7,6 +7,7 @@ import errno
 import os
 import pickle
 import uuid
+from collections import OrderedDict
 from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
@@ -56,6 +57,10 @@ class Vector(object):
 
         Raises
         ------
+        Exception
+            If the pickle object in `from_file` is not instance of Vector.
+        FileNotFoundError
+            If `from_file` is not None but the file does not exist.
         TypeError
             - if the vector name is not instance of a primitive;
             - if `tags` is not an instance of set;
@@ -64,8 +69,6 @@ class Vector(object):
         ValueError
             - if `vtype` is different than 'binary' or 'bipolar';
             - if `size` is lower than 10,000.
-        FileNotFoundError
-            If `from_file` is not None but the file does not exist.
 
         Examples
         --------
@@ -159,10 +162,15 @@ class Vector(object):
             else:
                 # Load vector from pickle file
                 with open(from_file, "rb") as pkl:
-                    self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed = pickle.load(pkl)
+                    from_file_obj = pickle.load(pkl)
 
-                if self.version != __version__:
-                    print("Warning: the specified Space has been created with a different version of hdlib")
+                    if not isinstance(from_file_obj, type(self)):
+                        raise Exception("Pickle object is not instance of {}".format(type(self)))
+
+                    self.__dict__.update(from_file_obj.__dict__)
+
+                    if self.version != __version__:
+                        print("Warning: the specified Space has been created with a different version of hdlib")
 
         else:
             # Conditions on vector size
@@ -604,13 +612,13 @@ class Vector(object):
 
         if not to_file:
             # Dump the vector to a pickle file in the current working directory if not file path is provided
-            to_file = os.path.join(os.getcwd, "{}.pkl".format(self.name))
+            to_file = os.path.join(os.getcwd(), "{}.pkl".format(self.name))
 
         if os.path.isfile(to_file):
             raise Exception("The output file already exists!\n{}".format(to_file))
 
         with open(to_file, "wb") as pkl:
-            pickle.dump((self.version, self.name, self.size, self.vector, self.vtype, self.parents, self.children, self.tags, self.seed), pkl)
+            pickle.dump(self, pkl)
 
 
 class Space(object):
@@ -635,11 +643,13 @@ class Space(object):
 
         Raises
         ------
+        Exception
+            If the pickle object in `from_file` is not instance of Space.
+        FileNotFoundError
+            If `from_file` is not None but the file does not exist.
         ValueError
             - if `vtype` is different than 'binary' or 'bipolar';
             - if `size` is lower than 10,000.
-        FileNotFoundError
-            If `from_file` is not None but the file does not exist.
 
         Examples
         --------
@@ -664,7 +674,12 @@ class Space(object):
         and finally create a new space object `space2` from the pickle file.
         """
 
-        self.space = dict()
+        # We may want to iterate over the Space object
+        # Thus, we need to maintain the order of the vectors into the space dictionary
+        self.space = OrderedDict()
+
+        # Used to iterate over vectors in the space
+        self._vector_index = 0
 
         self.version = __version__
 
@@ -690,18 +705,76 @@ class Space(object):
 
             else:
                 with open(from_file, "rb") as pkl:
-                    self.version, self.size, self.vtype, self.space, self.root = pickle.load(pkl)
+                    from_file_obj = pickle.load(pkl)
 
-                if self.version != __version__:
-                    print("Warning: the specified Space has been created with a different version of hdlib")
+                    if not isinstance(from_file_obj, type(self)):
+                        raise Exception("Pickle object is not instance of {}".format(type(self)))
 
-                for name in self.space:
-                    if self.space[name].tags:
-                        for tag in self.space[name].tags:
-                            if tag not in self.tags:
-                                self.tags[tag] = set()
+                    self.__dict__.update(from_file_obj.__dict__)
 
-                            self.tags[tag].add(name)
+                    if self.version != __version__:
+                        print("Warning: the specified Space has been created with a different version of hdlib")
+
+    def __iter__(self) -> "Space":
+        """Required to make the Space object iterable."""
+
+        return self
+
+    def __next__(self) -> str:
+        """Used to iterate over the vector objects into the Space.
+
+        Returns
+        -------
+        str
+            The vector name at a specific position.
+        """
+
+        if self._vector_index >= len(self.space):
+            # Set the vector index back to the first position.
+            # Redy to start iterating again over the vectors in the space
+            self._vector_index = 0
+
+            raise StopIteration
+
+        else:
+            # Retrieve the vector name at a specific position in the space
+            # Vectors are all ordered in the space since the space is defined as an OrderedDict
+            vector = self.memory()[self._vector_index]
+
+            # Increment the vector index for the next iteration
+            self._vector_index += 1
+
+            # This returns the vector name or ID
+            # It is enough, since the space is a hashmap and we can retrieve the Vector object in O(1)
+            return vector
+
+    def __contains__(self, vector: str) -> bool:
+        """Check whether a vector is in the space.
+
+        Parameters
+        ----------
+        vector : str
+            The vector name or ID.
+
+        Returns
+        -------
+        bool
+            True if `vector` is in the space, False otherwise.
+
+        Examples
+        --------
+        >>> from hdlib.space import Space, Vector
+        >>> space = Space()
+        >>> vector = Vector(name="my_vector")
+        >>> space.insert(vector)
+        >>> "my_vector" in space
+        True
+
+        Create a Space object, add a Vector object into the space, and check whether the
+        vector is actually in the space by searching for its name.
+        """
+
+        return True if vector in self.space else False
 
     def __len__(self) -> int:
         """Get the number of vectors in space.
@@ -720,7 +793,7 @@ class Space(object):
         >>> len(space)
         1
 
-        Create a Space object, add a Vector object to the space, and check the total number
+        Create a Space object, add a Vector object into the space, and check the total number
         of Vector objects in the space.
         """
 
@@ -826,6 +899,9 @@ class Space(object):
 
         Raises
         ------
+        Exception
+            - if no `names` or `tags` are provided in input;
+            - if both `names` and `tags` are provided in input.
         TypeError
             If names or tags in the input lists are not instance of primitives.
 
@@ -849,7 +925,10 @@ class Space(object):
         """
 
         if not names and not tags:
-            raise Exception("No names or tags provided!")            
+            raise Exception("No names or tags provided")
+
+        if names and tags:
+            raise Exception("Cannot search for vectors by their names and tags at the same time")
 
         vectors = set()
 
@@ -867,7 +946,7 @@ class Space(object):
         elif tags:
             for tag in tags:
                 if not isinstance(tag, str) and not isinstance(tag, int) and not isinstance(tag, float):
-                    raise TypeError("Tags must be string, integer, or float")
+                    raise TypeError("A tags must be string, integer, or float")
 
                 if tag in self.tags:
                     for vector_name in self.tags[tag]:
@@ -929,7 +1008,7 @@ class Space(object):
         self,
         names: List[str],
         tags: Optional[List[List[Union[str, int, float]]]]=None,
-        ignore_existing: bool=True
+        ignore_existing: bool=False
     ) -> None:
         """Add vectors to the space in bulk.
 
@@ -939,8 +1018,8 @@ class Space(object):
             A list with vector names.
         tags : list, optional
             An optional list of lists with vector tags.
-        ignore_existing : bool, default True
-            Do not raise an exception in case the space contains a vector with the same name specified in `names`.
+        ignore_existing : bool, default False
+            If True, do not raise an exception in case the space contains a vector with the same name specified in `names`.
 
         Raises
         ------
@@ -985,15 +1064,14 @@ class Space(object):
         names = set(names)
 
         for pos, name in enumerate(names):
-            try:
-                name = str(name)
-
-            except:
+            if not isinstance(name, (bool, str, int, float, None)):
                 raise TypeError("Entries in input list must be instances of primitives")
+
+            name = str(name)
 
             if name in self.space:
                 if not ignore_existing:
-                    raise Exception("Vector \"{}\" already in space".format(name))
+                    raise Exception("Vector \"{}\" already exists in the space".format(name))
 
                 else:
                     continue
@@ -1258,14 +1336,14 @@ class Space(object):
 
         self.root = name
 
-    def find(self, vector: Vector, threshold: float=2.0, method: str="cosine") -> Tuple[str, float]:
+    def find(self, vector: Vector, threshold: float=np.Inf, method: str="cosine") -> Tuple[str, float]:
         """Search for the closest vector in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 2.0
+        threshold : float, default numpy.Inf
             Threshold on distance between vectors.
         method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
             Distance metric.
@@ -1298,14 +1376,14 @@ class Space(object):
 
         return best, distances[best]
 
-    def find_all(self, vector: Vector, threshold: float=2.0, method: str="cosine") -> Tuple[dict, str]:
+    def find_all(self, vector: Vector, threshold: float=np.Inf, method: str="cosine") -> Tuple[dict, str]:
         """Compute distance of the input vector against all vectors in space.
 
         Parameters
         ----------
         vector : Vector
             Input Vector object. Search for the closest vector to this Vector in the space.
-        threshold : float, default 2.0
+        threshold : float, default numpy.Inf
             Threshold on distance between vectors.
         method : {'cosine', 'euclidean', 'hamming'}, default 'cosine'
             Distance metric.
@@ -1349,7 +1427,7 @@ class Space(object):
 
         distances = dict()
 
-        distance = 2.0
+        distance = np.Inf
 
         best = None
 
@@ -1394,10 +1472,10 @@ class Space(object):
 
         if not to_file:
             # Dump the space to a pickle file in the current working directory if not file path is provided
-            to_file = os.path.join(os.getcwd, "space.pkl")
+            to_file = os.path.join(os.getcwd(), "space.pkl")
 
         if os.path.isfile(to_file):
             raise Exception("The output file already exists!\n{}".format(to_file))
 
         with open(to_file, "wb") as pkl:
-            pickle.dump((self.version, self.size, self.vtype, self.space, self.root), pkl)
+            pickle.dump(self, pkl)
