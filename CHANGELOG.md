@@ -113,7 +113,7 @@
 
 ### Fixes
 
-- Fix the retrining process in `model.Model.predict` to avoid overfitting.
+- Fix the retraining process in `model.Model.predict` to avoid overfitting.
 
 :warning: Avoid using previous versions of `hdlib`.
 
