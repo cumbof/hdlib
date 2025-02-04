@@ -264,7 +264,7 @@ def chopin2():
 
     print("Class labels: {}\n".format(class_labels))
 
-    for fold, (y_indices, y_pred, retrainings, error_rate) in enumerate(predictions):
+    for fold, (y_indices, y_pred, retrainings, error_rate, _) in enumerate(predictions):
         # Produce the confusion matrix for each fold
         print("Fold {} ({} retrainings)".format(fold + 1, retrainings))
         retraining_iterations.append(retrainings)

@@ -79,6 +79,14 @@ class MLModel(object):
         # Register the number of levels
         self.levels = levels
 
+        # Minimum and maximum values in the input dataset
+        # This is used to define the level boundaries
+        self.min_value = None
+        self.max_value = None
+
+        # List of level boundaries
+        self.level_list = list()
+
         if vtype not in ("bipolar", "binary"):
             raise ValueError("Vectors type can be binary or bipolar only")
 
@@ -225,7 +233,7 @@ class MLModel(object):
         # For each prediction, compute the score and return the average
         scores = list()
 
-        for y_indices, y_pred, _, _ in predictions:
+        for y_indices, y_pred, _, _, _ in predictions:
             y_true = [label for position, label in enumerate(labels) if position in y_indices]
 
             if metric == "accuracy":
@@ -286,23 +294,23 @@ class MLModel(object):
         change = int(self.size / 2)
 
         # Also define the interval level list
-        level_list = list()
+        self.level_list = list()
 
         # Get the minimum and maximum value in the input dataset
-        min_value = np.inf
-        max_value = np.NINF
+        self.min_value = np.inf
+        self.max_value = np.NINF
 
         for point in points:
             min_point = min(point)
             max_point = max(point)
 
-            if min_point < min_value:
-                min_value = min_point
+            if min_point < self.min_value:
+                self.min_value = min_point
 
-            if max_point > max_value:
-                max_value = max_point
+            if max_point > self.max_value:
+                self.max_value = max_point
 
-        gap = (max_value - min_value) / self.levels
+        gap = (self.max_value - self.min_value) / self.levels
 
         if seed is None:
             rand = np.random.default_rng()
@@ -338,54 +346,71 @@ class MLModel(object):
 
             self.space.insert(vector)
 
-            right_bound = min_value + level_count * gap
+            right_bound = self.min_value + level_count * gap
 
             if level_count == 0:
                 left_bound = right_bound
 
             else:
-                left_bound = min_value + (level_count - 1) * gap
+                left_bound = self.min_value + (level_count - 1) * gap
 
-            level_list.append((left_bound, right_bound))
+            self.level_list.append((left_bound, right_bound))
 
         # Encode all data points
         for point_position, point in enumerate(points):
-            sum_vector = None
-
-            for value_position, value in enumerate(point):
-
-                if value == min_value:
-                    level_count = 0
-
-                elif value == max_value:
-                    level_count = self.levels - 1
-
-                else:
-                    for level_position in range(len(level_list)):
-                        left_bound, right_bound = level_list[level_position]
-
-                        if left_bound <= value and right_bound > value:
-                            level_count = level_position
-
-                            break
-
-                level_vector = self.space.get(names=["level_{}".format(level_count)])[0]
-
-                roll_vector = permute(level_vector, rotate_by=value_position)
-
-                if sum_vector is None:
-                    sum_vector = roll_vector
-
-                else:
-                    sum_vector = bundle(sum_vector, roll_vector)
+            point_vector = self._encode_point(point)
 
             # Add the hyperdimensional representation of the data point to the space
-            sum_vector.name = "point_{}".format(point_position)
-            self.space.insert(sum_vector)
+            point_vector.name = "point_{}".format(point_position)
+            self.space.insert(point_vector)
 
             if labels:
                 # Tag vector with its class label
-                self.space.add_tag(name=sum_vector.name, tag=labels[point_position])
+                self.space.add_tag(name=point_vector.name, tag=labels[point_position])
+
+    def _encode_point(self, point: List[float]) -> Vector:
+        """Encode a single data point. It must be used after `fit()`.
+
+        Parameters
+        ----------
+        point : list
+            A data point.
+
+        Returns
+        -------
+        Vector
+            The encoded data point.
+        """
+
+        sum_vector = None
+
+        for value_position, value in enumerate(point):
+            if value == self.min_value:
+                level_count = 0
+
+            elif value == self.max_value:
+                level_count = self.levels - 1
+
+            else:
+                for level_position in range(len(self.level_list)):
+                    left_bound, right_bound = self.level_list[level_position]
+
+                    if left_bound <= value and right_bound > value:
+                        level_count = level_position
+
+                        break
+
+            level_vector = self.space.get(names=["level_{}".format(level_count)])[0]
+
+            roll_vector = permute(level_vector, rotate_by=value_position)
+
+            if sum_vector is None:
+                sum_vector = roll_vector
+
+            else:
+                sum_vector = bundle(sum_vector, roll_vector)
+
+        return sum_vector
 
     def error_rate(
         self,
@@ -473,7 +498,7 @@ class MLModel(object):
         test_indices: List[int],
         distance_method: str="cosine",
         retrain: int=0
-    ) -> Tuple[List[int], List[str], int, float]:
+    ) -> Tuple[List[int], List[str], int, float, List[Vector]]:
         """Supervised Learning. Predict the class labels of the data points in the test set.
 
         Parameters
@@ -491,7 +516,7 @@ class MLModel(object):
         tuple
             A tuple with the input list `test_indices` in addition to a list with the predicted class labels with the 
             same size of `test_indices`, the total number of retraining iterations used to retrain the classification model, 
-            and the model error rate.
+            the model error rate, and the retraining class vectors (i.e., the actual model).
 
         Raises
         ------
@@ -613,26 +638,49 @@ class MLModel(object):
         prediction = list()
 
         for test_vector in sorted(test_vectors, key=lambda vector: test_indices.index(int(vector.name.split("_")[-1]))):
-            closest_class = None
-            closest_dist = np.NINF
+            prediction.append(self._predict_vector(test_vector, retraining_class_vectors, distance_method=distance_method))
 
-            for class_vector in retraining_class_vectors:
-                # Compute the distance between the test points and the hyperdimensional representations of classes
-                with np.errstate(invalid="ignore", divide="ignore"):
-                    distance = test_vector.dist(class_vector, method=distance_method)
+        return test_indices, prediction, retraining_iterations, model_error_rate, retraining_class_vectors
 
-                if closest_class is None:
+    def _predict_vector(
+        self, 
+        vector: Vector, 
+        training_class_vectors: List[Vector], 
+        distance_method: str="cosine"
+    ) -> str:
+        """Predict the class of an input vector.
+
+        Parameters
+        ----------
+        vector : Vector
+            The input vector for prediction.
+        training_class_vectors : list
+            List of eventually retrained class vectors representing the classification model.
+
+        Returns
+        -------
+        str
+            The closest class as the prediction.
+        """
+
+        closest_class = None
+        closest_dist = np.NINF
+
+        for class_vector in training_class_vectors:
+            # Compute the distance between the input vector and the hyperdimensional representations of classes
+            with np.errstate(invalid="ignore", divide="ignore"):
+                distance = vector.dist(class_vector, method=distance_method)
+
+            if closest_class is None:
+                closest_class = list(class_vector.tags)[0]
+                closest_dist = distance
+
+            else:
+                if distance < closest_dist:
                     closest_class = list(class_vector.tags)[0]
                     closest_dist = distance
 
-                else:
-                    if distance < closest_dist:
-                        closest_class = list(class_vector.tags)[0]
-                        closest_dist = distance
-
-            prediction.append(closest_class)
-
-        return test_indices, prediction, retraining_iterations, model_error_rate
+        return closest_class
 
     def cross_val_predict(
         self,
@@ -703,13 +751,13 @@ class MLModel(object):
             for _, test_indices in kf.split(points, labels):
                 test_indices = test_indices.tolist()
 
-                _, test_predictions, retraining_iterations, model_error_rate = self.predict(
+                _, test_predictions, retraining_iterations, model_error_rate, training_class_vectors = self.predict(
                     test_indices,
                     distance_method=distance_method,
                     retrain=retrain
                 )
 
-                predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
+                predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate, training_class_vectors))
 
         else:
             predict_partial = partial(
@@ -730,9 +778,9 @@ class MLModel(object):
 
                 # Get results from jobs
                 for job in jobs:
-                    test_indices, test_predictions, retraining_iterations, model_error_rate = job.get()
+                    test_indices, test_predictions, retraining_iterations, model_error_rate, training_class_vectors = job.get()
 
-                    predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate))
+                    predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate, training_class_vectors))
 
         return predictions
 
