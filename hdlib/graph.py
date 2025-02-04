@@ -27,6 +27,7 @@ class Graph(object):
     def __init__(
         self,
         size: int=10000,
+        weights: int=100,
         directed: bool=False,
         weighted: bool=False,
         seed: Optional[int]=None
@@ -37,6 +38,8 @@ class Graph(object):
         ----------
         size : int, default 10000
             The size of vectors used to create a Space and define Vector objects.
+        weights : int, default 100
+            The number of weight level vectors.
         directed : bool, default False
             Directed or undirected.
         weighted : bool, default False
@@ -47,9 +50,11 @@ class Graph(object):
         Raises
         ------
         TypeError
-            If the vector size is not an integer number.
+            - If the vector size is not an integer number;
+            - If the number of weight level vectors is not an integer.
         ValueError
-            If the vector size is lower than 10,000 or the number of level vectors is lower than 2.
+            - If the vector size is lower than 10,000;
+            - If the number of weight level vectors is lower than 2.
 
         Examples
         --------
@@ -68,8 +73,17 @@ class Graph(object):
         if size < 10000:
             raise ValueError("Vectors size must be greater than or equal to 10000")
 
+        if not isinstance(weights, int):
+            raise TypeError("The number of weight level vectors must be an integer")
+
+        if weights < 2:
+            raise ValueError("The number of weight level vectors must be greater than or equal to 2")
+
         # Register vectors dimensionality
         self.size = size
+
+        # Register the number of weight level vectors
+        self.weights = weights
 
         # Register vectors type
         self.vtype = "bipolar"
@@ -257,10 +271,10 @@ class Graph(object):
 
             if self.weighted:
                 # Keep track of the edge weight
-                self.space.space[node1].weights[node2] = round(weight, 2)
+                self.space.space[node1].weights[node2] = round(weight, 5)
 
                 if not self.directed:
-                    self.space.space[node2].weights[node1] = round(weight, 2)
+                    self.space.space[node2].weights[node1] = round(weight, 5)
 
     def _node_memory(self, node: str) -> None:
         """Build the node memory as a vector containing information about its neighbors.
@@ -332,7 +346,7 @@ class Graph(object):
         change = int(self.size / 2)
 
         for weight in np.arange(start, end, step):
-            weight = round(weight, 2)
+            weight = round(weight, 5)
 
             if weight == start:
                 base = np.full(self.size, -1 if self.vtype == "bipolar" else 0)
@@ -535,8 +549,7 @@ class Graph(object):
         if self.weighted and build_nodes_memory:
             # Build the vector representation of the edges weight
             # Weights are float numbers between 0.0 and 1.0, here limited to the second decimal point
-            # This limits the total number of vectors required to represent weiths to 100
-            self._weight_memory(0.0, 1.0, 0.01)
+            self._weight_memory(0.0, 1.0, 1 / self.weights)
 
         graph = None
 
@@ -669,7 +682,7 @@ class Graph(object):
 
         if self.directed:
             # In case of directed graphs, nodes memory are rotated by 1 position
-            # Thus, it must be ratated back in order to preserve the similarity
+            # Thus, it must be rotated back in order to preserve the similarity
             node1_memory = permute(node1_memory, rotate_by=-1)
 
         # Check whether there is a edge between node1 and node2 by computing the
