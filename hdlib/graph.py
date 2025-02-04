@@ -1,12 +1,12 @@
 """Directed and undirected, weighted and unweighted graphs with hdlib.
 
-It implements the __hdlib.graph.Graph__ class object which allows to represent directed and undirected, weighted and unweighted graphs
+It implements the __hdlib.graph.Graph__ class object which allows to represent weighted directed and undirected graphs
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Poduval et al. 2022_ https://doi.org/10.3389/fnins.2022.757125."""
 
 import copy
 import itertools
 import multiprocessing as mp
-from typing import Optional, Set, Tuple, Union
+from typing import Any, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -17,7 +17,7 @@ from hdlib.arithmetic import bind, permute
 # Private graph vector name
 GRAPH_ID = "__graph__"
 
-# Private weight vector name prefix in case of weighted graph only
+# Private weight vector name prefix
 WEIGHT_ID = "__weight__"
 
 
@@ -29,7 +29,6 @@ class Graph(object):
         size: int=10000,
         weights: int=100,
         directed: bool=False,
-        weighted: bool=False,
         seed: Optional[int]=None
     ) -> "Graph":
         """Initialize a Graph object.
@@ -40,10 +39,9 @@ class Graph(object):
             The size of vectors used to create a Space and define Vector objects.
         weights : int, default 100
             The number of weight level vectors.
+            Weights are used to encode class labels.
         directed : bool, default False
             Directed or undirected.
-        weighted : bool, default False
-            Weighted or unweighted.
         seed : int, optional
             Random seed for reproducibility of results.
 
@@ -59,12 +57,11 @@ class Graph(object):
         Examples
         --------
         >>> from hdlib.graph import Graph
-        >>> graph = Graph(size=10000, vtype='bipolar', directed=False, weighted=False)
+        >>> graph = Graph(size=10000, vtype='bipolar', directed=False)
         >>> type(graph)
         <class 'hdlib.graph.Graph'>
 
-        This creates a new Graph object around a Space that can host random bipolar Vector objects with size 10,000.
-        The represented graph is undirected and unweighted.
+        This creates a new undirected Graph object around a Space that can host random bipolar Vector objects with size 10,000.
         """
 
         if not isinstance(size, int):
@@ -85,14 +82,15 @@ class Graph(object):
         # Register the number of weight level vectors
         self.weights = weights
 
+        # Register a dictionary with the mapping between edge weights (classes)
+        # and the interval weight values as hypervector IDs
+        self.weights_map = dict()
+
         # Register vectors type
         self.vtype = "bipolar"
 
         # Register whether the graph is directed or undirected
         self.directed = directed
-
-        # Register whether the graph is weighted or unweighted
-        self.weighted = weighted
 
         # Keep track of the number of nodes
         self.nodes_counter = 0
@@ -126,8 +124,7 @@ class Graph(object):
         -------
         str
             A description of the Graph object. It reports the vectors size, the vector type,
-            the number of nodes, the number of edges, and whether it is directed or undirected,
-            and weighted or unweighted.
+            the number of nodes, the number of edges, and whether it is directed or undirected.
 
         Examples
         --------
@@ -140,7 +137,7 @@ class Graph(object):
                 Size:     10000
                 Type:     bipolar
                 Directed: False
-                Weighted: False
+                Weights:  100
                 Nodes:    0
                 Edges:    0
                 Seed:     None
@@ -156,7 +153,7 @@ class Graph(object):
             Size:     {}
             Type:     {}
             Directed: {}
-            Weighted: {}
+            Weights:  {}
             Nodes:    {}
             Edges:    {}
             Seed:     {}
@@ -165,7 +162,7 @@ class Graph(object):
             self.size,
             self.vtype,
             self.directed,
-            self.weighted,
+            self.weights,
             self.nodes_counter,
             self.edges_counter,
             self.seed
@@ -175,7 +172,7 @@ class Graph(object):
         self,
         node1: str,
         node2: str,
-        weight: Optional[float]=None
+        weight: Any,
     ) -> None:
         """Add an edge to the graph and automatically build nodes if they do not exist in the space.
 
@@ -185,17 +182,14 @@ class Graph(object):
             Node name.
         node2 : str
             Node name.
-        weight : float, optional
-            The edge weight as a float between 0.0 and 1.0.
+        weight : Any
+            The edge weight.
+            This can be numeric or a string used as a class label.
 
         Raises
         ------
-        TypeError
-            If `weight` is not a float.
         ValueError
-            - if `node1` or `node2` is equals to `GRAPH_ID`;
-            - if the graph is weighted but `weight` is None;
-            - if `weight` is <0.0 or >1.0.
+            If `node1` or `node2` is equals to `GRAPH_ID`.
         """
 
         if node1 == GRAPH_ID or node2 == GRAPH_ID:
@@ -212,18 +206,6 @@ class Graph(object):
                 edge_exists = True
 
         if not edge_exists:
-            # Check whether the graph is weighted and the edge weight is a valid number
-            # In case the graph is unweighted, ignore the weight
-            if self.weighted:
-                if weight is None:
-                    raise ValueError("The edge weight cannot be None in a weighted graph")
-
-                elif not isinstance(weight, float):
-                    raise TypeError("Weight must be a float number")
-
-                elif weight < 0.0 or weight > 1.0:
-                    raise ValueError("Weight must be between 0.0 and 1.0")
-
             for node in [node1, node2]:
                 # Build node if it is not in the space
                 if node not in self.space.space:
@@ -245,10 +227,9 @@ class Graph(object):
                     # about current node neighbors
                     setattr(vector, "memory", None)
 
-                    if self.weighted:
-                        # Define a new property called weights to store
-                        # edge weights in case of a weighted graph
-                        setattr(vector, "weights", dict())
+                    # Define a new property called weights to store
+                    # edge weights in case of a weighted graph
+                    setattr(vector, "weights", dict())
 
                     # Register the node into the space
                     self.space.insert(vector)
@@ -269,12 +250,17 @@ class Graph(object):
                 # Increment the edges counter
                 self.edges_counter += 1
 
-            if self.weighted:
-                # Keep track of the edge weight
-                self.space.space[node1].weights[node2] = round(weight, 5)
+            # Keep track of the edge weight
+            if node2 not in self.space.space[node1].weights:
+                self.space.space[node1].weights[node2] = set()
 
-                if not self.directed:
-                    self.space.space[node2].weights[node1] = round(weight, 5)
+            self.space.space[node1].weights[node2].add(weight)
+
+            if not self.directed:
+                if node1 not in self.space.space[node2].weights:
+                    self.space.space[node2].weights[node1] = set()
+
+                self.space.space[node2].weights[node1].add(weight)
 
     def _node_memory(self, node: str) -> None:
         """Build the node memory as a vector containing information about its neighbors.
@@ -299,12 +285,13 @@ class Graph(object):
         node_memory = None
 
         for neighbor in neighbors:
-            if self.weighted:
-                # Get the real weight from vector tags
-                weight = self.space.space[node].weights[neighbor]
+            # Get the real weight from vector tags
+            for weight in self.space.space[node].weights[neighbor]:
+                # Retrieve the weight hypervector ID
+                weight_id = self.weights_map[weight]
 
                 # Retrieve the weight vector from the space
-                weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight)]
+                weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight_id)]
 
                 if node_memory is None:
                     # Initialize the node memory with the first neighbor
@@ -315,15 +302,6 @@ class Graph(object):
                     # Multiply each neighbor with its weight vector and
                     # bundle all the resulting vectors together to build the node memory
                     node_memory = node_memory + (weight_vector * self.space.space[neighbor])
-
-            else:
-                if node_memory is None:
-                    # Initialize the node memory with the first neighbor
-                    node_memory = self.space.space[neighbor]
-
-                else:
-                    # Bundle all the node's neighbors together to build the node memory
-                    node_memory = node_memory + self.space.space[neighbor]
 
         # Store the node memory into the memory property of the node vector object
         self.space.space[node].memory = node_memory
@@ -339,13 +317,34 @@ class Graph(object):
             Final point of the weight interval.
         step : float
             Interval step for iterating over the weight interval.
+
+        Raises
+        ------
+        Exception
+            If the number of unique weights is greater than the number of weight vectors.
         """
+
+        weights = np.arange(start, end, step)
+
+        edge_weights = set()
+
+        # Recover edge weights from the space
+        for node in self.space.space:
+            # Check whether the current node is not the actual graph memory
+            # Also, check whether the current node is not a weight vector
+            if node != GRAPH_ID and not node.startswith(WEIGHT_ID):
+                for neighbor in self.space.space[node].weights:
+                    # Retrieve the weights on these edges
+                    edge_weights.update(self.space.space[node].weights[neighbor])
+
+        if len(edge_weights) > len(weights):
+            raise Exception("Not enough weight vectors to cover edge weights")
 
         index_vector = range(self.size)
         next_level = int((self.size / 2 / len(np.arange(start, end, step))))
         change = int(self.size / 2)
 
-        for weight in np.arange(start, end, step):
+        for edge_weight, weight in zip(edge_weights, weights):
             weight = round(weight, 5)
 
             if weight == start:
@@ -367,11 +366,12 @@ class Graph(object):
 
             self.space.insert(weight_vector)
 
+            self.weights_map[edge_weight] = weight
+
     def error_rate(
         self,
-        edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]],
-        threshold: float=0.7
-    ) -> Tuple[float, Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]], Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]]]:
+        edges: Set[Tuple[str, str, float]],
+    ) -> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
         """Compute the error rate defined as the number of mispredicted edges on the total number of edges.
         Note that the error rate depends on the set of edges in input to this function which could be different
         from the actual set of edges used to build the graph model.
@@ -381,21 +381,12 @@ class Graph(object):
         edges : set
             The set of edges used to mitigate the graph model error rate.
             Note that the edges in this set do not necessarily have to be present in the graph.
-        threshold : float
-            The distance threshold for establishing whether an edge exists in the graph.
 
         Returns
         -------
         tuple
             A tuple with the error rate, and the sets of flase positive and false negative edges
             among those in the input `edges`.
-
-        Raises
-        ------
-        Exception
-            - if the graph is weighted but the input edges do not have a weight;
-            - if the graph is unweighted but the input edges have a weight;
-            - if the tuples that define the edges contain less than 2 elements or more than 3.
         """
 
         # Compute the error rate as the number of mispredicted edges over the total number of edges
@@ -403,37 +394,39 @@ class Graph(object):
         false_negatives = set()
 
         for edge in edges:
-            weight = None
+            node1, node2, weight_true = edge
 
-            if len(edge) == 2:
-                if self.weighted:
-                    raise Exception("Graph is weghted but no weights are specified")
+            weight_pred = None
+            weight_pred_dist = np.NINF
 
-                node1, node2 = edge
+            for weight_id in np.arange(0.0, 1.0, 1 / self.weights):
+                weight_id = round(weight_id, 5)
 
-            elif len(edge) == 3:
-                if not self.weighted:
-                    raise Exception("Graph is unweghted but weights are specified")
+                # Retrieve the original weight from the weights map
+                weight = [w for w in self.weights_map if self.weights_map[w] == weight_id][0]
 
-                node1, node2, weight = edge
+                _, weight_dist = self.edge_exists(node1, node2, weight)
 
-            else:
-                raise Exception("Malformed edge {}".format(edge))
+                if weight_pred is None:
+                    weight_pred = weight
+                    weight_pred_dist = weight_dist
 
-            exists, _ = self.edge_exists(node1, node2, weight=weight, threshold=threshold)
+                else:
+                    if weight_dist < weight_pred_dist:
+                        weight_pred = weight
+                        weight_pred_dist = weight_dist
 
-            if exists and node2 not in self.space.space[node1].children:
+            if weight_true == weight_pred and node2 not in self.space.space[node1].children:
                 false_positives.add(edge)
 
-            elif not exists and node2 in self.space.space[node1].children:
+            elif weight_true != weight_pred and node2 in self.space.space[node1].children:
                 false_negatives.add(edge)
 
         return (len(false_positives) + len(false_negatives)) / len(edges), false_positives, false_negatives
 
     def error_mitigation(
         self,
-        edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]],
-        threshold: float=0.7,
+        edges: Set[Tuple[str, str, float]],
         max_iter: int=10,
         prev_error_rate: Optional[float]=None
     ) -> None:
@@ -444,8 +437,6 @@ class Graph(object):
         edges : set
             The set of edges used to mitigate the graph model error rate.
             Note that the edges in this set do not necessarily have to be present in the graph.
-        threshold : float, default 0.7
-            The distance threshold for establishing whether an edge exists in the graph.
         max_iter : int, deafult 10
             This is an iterative process that is repeated for up to `max_iter` iterations.
         prev_error_rate : float, optional
@@ -454,50 +445,37 @@ class Graph(object):
         """
 
         # Compute the graph model error rate
-        error_rate, false_positives, false_negatives = self.error_rate(edges, threshold=threshold)
+        error_rate, false_positives, false_negatives = self.error_rate(edges)
 
         if (prev_error_rate is None or error_rate < prev_error_rate) and max_iter > 0:
             # Rebuild the mispredicted node memories
             for edge in false_positives.union(false_negatives):
-                weight_vector = None
+                node1, node2, weight = edge
 
-                if len(edge) == 2:
-                    node1, node2 = edge
+                # Retrieve the weight hypervector ID from the weights map
+                weight_id = self.weights_map[weight]
 
-                elif len(edge) == 3:
-                    node1, node2, weight = edge
-
-                    if self.weighted and weight:
-                        # Retrieve the weight vector from the space
-                        weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight)]
+                # Retrieve the weight vector from the space
+                weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight_id)]
 
                 if self.space.space[node1].memory:
                     if edge in false_positives:
                         # Reduce the signal of node2 in the memory of node1
-                        if weight_vector is not None:
-                            self.space.space[node1].memory -= (weight_vector * self.space.space[node2])
-
-                        else:
-                            self.space.space[node1].memory -= self.space.space[node2]
+                        self.space.space[node1].memory -= (weight_vector * self.space.space[node2])
 
                     elif edge in false_negatives:
-                        if weight_vector is not None:
-                            self.space.space[node1].memory += (weight_vector * self.space.space[node2])
-
-                        else:
-                            # Increase the signal of node2 in the memory of node1
-                            self.space.space[node1].memory += self.space.space[node2]
+                        self.space.space[node1].memory += (weight_vector * self.space.space[node2])
 
             # Rebuild the graph model
             # Do not rebuild the nodes memory since they have been overwritten earlier
             self.fit(self.edges, build_nodes_memory=False)
 
             # Recursively mitigate the error rate
-            self.error_mitigation(edges, threshold=threshold, max_iter=max_iter-1, prev_error_rate=error_rate)
+            self.error_mitigation(edges, max_iter=max_iter-1, prev_error_rate=error_rate)
 
     def fit(
         self,
-        edges: Union[Set[Tuple[str, str]], Set[Tuple[str, str, Optional[float]]]],
+        edges: Set[Tuple[str, str, float]],
         build_nodes_memory: bool=True
     ) -> None:
         """Build the graph memory and store it into the space.
@@ -506,7 +484,6 @@ class Graph(object):
         ----------
         edges : set
             The set of edges defined as tuples `<source, target, weight>`.
-            Note that `weight` is optional in case of unweighted graphs.
         build_nodes_memory : bool, default True
             Build nodes and weight memories by default.
             This must be set to False in case this is invoked to mitigate the error rate.
@@ -515,38 +492,17 @@ class Graph(object):
         ------
         ValueError
             If no edges are provided in input.
-        Exception
-            - if the tuple contains two elements but the graph is weighted;
-            - if the tuple contains three elements but the graph is unweighted;
-            - if the tuple representing the edge contain less than 2 elements or more than 3.
         """
 
         if not edges:
             raise ValueError("Must provide at least one edge")
 
         for edge in edges:
-            if len(edge) == 2:
-                if self.weighted:
-                    raise Exception("Graph is weghted but no weights are specified")
+            node1, node2, weight = edge
 
-                node1, node2 = edge
+            self._add_edge(node1, node2, weight)
 
-                # This edge is unweighted
-                self._add_edge(node1, node2)
-
-            elif len(edge) == 3:
-                if not self.weighted:
-                    raise Exception("Graph is unweighted but weights are specified")
-
-                node1, node2, weight = edge
-
-                # This edge is weighted
-                self._add_edge(node1, node2, weight=weight)
-
-            else:
-                raise Exception("Malformed edge {}".format(edge))
-
-        if self.weighted and build_nodes_memory:
+        if build_nodes_memory:
             # Build the vector representation of the edges weight
             # Weights are float numbers between 0.0 and 1.0, here limited to the second decimal point
             self._weight_memory(0.0, 1.0, 1 / self.weights)
@@ -617,7 +573,7 @@ class Graph(object):
         self,
         node1: str,
         node2: str,
-        weight: Optional[float]=None,
+        weight: Any,
         threshold: float=0.7
     ) -> Tuple[bool, float]:
         """Check whether an edge exists between `node1` and `node2` according to a specified distance `threshold`.
@@ -626,7 +582,7 @@ class Graph(object):
             The source node name or ID.
         node2 : str
             The target node name or ID.
-        weight : float, optional
+        weight : Any
             The edge weight.
         threshold : float, default 0.7
             The distance threshold on vectors to establish the presence of the edge.
@@ -642,11 +598,6 @@ class Graph(object):
         Exception
             - if there is no graph vector in the space;
             - if `node1` and `node2` are not in the graph space.
-        TypeError
-            If `weight` is not a float.
-        ValueError
-            - if the graph is weighted but `weight` is None;
-            - if `weight` is <0.0 or >1.0.
         """
 
         if GRAPH_ID not in self.space.space:
@@ -655,18 +606,6 @@ class Graph(object):
         for node in [node1, node2]:
             if node not in self.space.space:
                 raise Exception("Node '{}' is not in the space".format(node))
-
-        # Check whether the graph is weighted and the edge weight is a valid number
-        # In case the graph is unweighted, ignore the weight
-        if self.weighted:
-            if weight is None:
-                raise ValueError("The edge weight cannot be None in a weighted graph")
-
-            elif not isinstance(weight, float):
-                raise TypeError("Weight must be a float number")
-
-            elif weight < 0.0 or weight > 1.0:
-                raise ValueError("Weight must be between 0.0 and 1.0")
 
         # Retrieve the vector representation of the graph
         graph = self.space.space[GRAPH_ID]
@@ -685,18 +624,16 @@ class Graph(object):
             # Thus, it must be rotated back in order to preserve the similarity
             node1_memory = permute(node1_memory, rotate_by=-1)
 
-        # Check whether there is a edge between node1 and node2 by computing the
-        # distance between node2 and node1 memory
+        # Retrieve the weight hypervector ID from the weights map
+        weight_id = self.weights_map[weight]
+
+        # Check whether there is a edge between node1 and node2 by computing the distance between node2 and node1 memory
         # A distance close to 0 means the edge exists
         # A distance close to 1 means the edge does not exist
-        if self.weighted:
-            # Retrieve the weight vector from the space
-            weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight)]
+        # Retrieve the weight vector from the space
+        weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight_id)]
 
-            distance = (weight_vector * node2_vector).dist(node1_memory, method="cosine")
-
-        else:
-            distance = node2_vector.dist(node1_memory, method="cosine")
+        distance = (weight_vector * node2_vector).dist(node1_memory, method="cosine")
 
         if distance < threshold:
             return True, distance

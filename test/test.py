@@ -219,33 +219,33 @@ class TestHDLib(unittest.TestCase):
 
         # Define a directed, unweighted graph as a list of tuples representing its edges
         edges = set([
-            ("1", "2"),
-            ("2", "1"),
-            ("2", "3"),
-            ("3", "1"),
-            ("3", "4"),
-            ("3", "5"),
-            ("4", "5")
+            ("1", "2", 0.0),
+            ("2", "1", 0.0),
+            ("2", "3", 0.2),
+            ("3", "1", 0.0),
+            ("3", "4", 0.2),
+            ("3", "5", 0.2),
+            ("4", "5", 0.0)
         ])
 
         # Initialize the graph object
-        graph = Graph(size=10000, directed=True, weighted=False)
+        graph = Graph(size=10000, weights=2, directed=True)
 
         # Populate the graph with its nodes and edges
         graph.fit(edges)
 
+        # Compute the error rate of the graph model based on its set of edge
+        error_rate, _, _ = graph.error_rate(edges)
+
+        if error_rate > 0.0:
+            # Mitigate the error rate, up to 10 iterations
+            graph.error_mitigation(edges, max_iter=10)
+
         # Define the distance threshold to establish whether an edge exists in the graph model
-        # This is also used to mitigate the error rate while checking for false positives and false negatives
         threshold = 0.7
 
-        # Compute the error rate of the graph model based on its set of edge
-        error_rate, _, _ = graph.error_rate(edges, threshold=threshold)
-
-        # Mitigate the error rate, up to 10 iterations
-        graph.error_mitigation(edges, threshold=threshold, max_iter=10)
-
         # Check whether the edge <2, 3> exists
-        edge_exists, dist = graph.edge_exists("2", "3", weight=None, threshold=threshold)
+        edge_exists, dist = graph.edge_exists("2", "3", 0.2, threshold=threshold)
 
         self.assertTrue(edge_exists)
 
