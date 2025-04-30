@@ -201,6 +201,12 @@ class Vector(object):
 
                 rand = np.random.default_rng(seed=self.seed)
 
+            """
+            # Use the following statements to generate random vectors with real numbers
+            self.vector = rand.uniform(low=-1.0, high=1.0, size=(self.size,))
+            self.vector /= np.linalg.norm(self.vector)
+            """
+
             # Build a random binary vector
             self.vector = rand.integers(2, size=size)
 
@@ -1336,7 +1342,7 @@ class Space(object):
 
         self.root = name
 
-    def find(self, vector: Vector, threshold: float=np.Inf, method: str="cosine") -> Tuple[str, float]:
+    def find(self, vector: Vector, threshold: float=np.inf, method: str="cosine") -> Tuple[str, float]:
         """Search for the closest vector in space.
 
         Parameters
@@ -1376,7 +1382,7 @@ class Space(object):
 
         return best, distances[best]
 
-    def find_all(self, vector: Vector, threshold: float=np.Inf, method: str="cosine") -> Tuple[dict, str]:
+    def find_all(self, vector: Vector, threshold: float=np.inf, method: str="cosine") -> Tuple[dict, str]:
         """Compute distance of the input vector against all vectors in space.
 
         Parameters
@@ -1427,7 +1433,7 @@ class Space(object):
 
         distances = dict()
 
-        distance = np.Inf
+        distance = np.inf
 
         best = None
 
