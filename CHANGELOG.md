@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 0.1.19
+
+[@cumbof/hdlib@0.1.19](https://github.com/cumbof/hdlib/releases/tag/0.1.19)
+
+### Fixes
+
+- Replace `numpy.Inf` with `numpy.inf` as a change introduced in Numpy 2.0;
+- `hdlib.graph` and the corresponding unittest are now working properly.
+
 ## Version 0.1.18
 
 [@cumbof/hdlib@0.1.18](https://github.com/cumbof/hdlib/releases/tag/0.1.18)
