@@ -27,7 +27,6 @@ class Graph(object):
     def __init__(
         self,
         size: int=10000,
-        weights: int=100,
         directed: bool=False,
         seed: Optional[int]=None
     ) -> "Graph":
@@ -37,9 +36,6 @@ class Graph(object):
         ----------
         size : int, default 10000
             The size of vectors used to create a Space and define Vector objects.
-        weights : int, default 100
-            The number of weight level vectors.
-            Weights are used to encode class labels.
         directed : bool, default False
             Directed or undirected.
         seed : int, optional
@@ -48,11 +44,9 @@ class Graph(object):
         Raises
         ------
         TypeError
-            - If the vector size is not an integer number;
-            - If the number of weight level vectors is not an integer.
+            If the vector size is not an integer number.
         ValueError
-            - If the vector size is lower than 10,000;
-            - If the number of weight level vectors is lower than 2.
+            If the vector size is lower than 10,000.
 
         Examples
         --------
@@ -70,21 +64,11 @@ class Graph(object):
         if size < 10000:
             raise ValueError("Vectors size must be greater than or equal to 10000")
 
-        if not isinstance(weights, int):
-            raise TypeError("The number of weight level vectors must be an integer")
-
-        if weights < 2:
-            raise ValueError("The number of weight level vectors must be greater than or equal to 2")
-
         # Register vectors dimensionality
         self.size = size
 
-        # Register the number of weight level vectors
-        self.weights = weights
-
-        # Register a dictionary with the mapping between edge weights (classes)
-        # and the interval weight values as hypervector IDs
-        self.weights_map = dict()
+        # Register a set with edge weights (classes)
+        self.weights = set()
 
         # Register vectors type
         self.vtype = "bipolar"
@@ -162,7 +146,7 @@ class Graph(object):
             self.size,
             self.vtype,
             self.directed,
-            self.weights,
+            len(self.weights),
             self.nodes_counter,
             self.edges_counter,
             self.seed
@@ -210,17 +194,10 @@ class Graph(object):
                 # Build node if it is not in the space
                 if node not in self.space.space:
                     # Build a random binary vector
-                    base = self.rand.integers(2, size=self.size)
-
-                    if self.vtype == "bipolar":
-                        # Build a random bipolar vector
-                        base = 2 * base - 1
-
                     vector = Vector(
                         name=node,
                         size=self.size,
-                        vtype=self.vtype,
-                        vector=copy.deepcopy(base)
+                        vtype=self.vtype
                     )
 
                     # Define a new property called memory to store information
@@ -254,13 +231,14 @@ class Graph(object):
             if node2 not in self.space.space[node1].weights:
                 self.space.space[node1].weights[node2] = set()
 
-            self.space.space[node1].weights[node2].add(weight)
-
             if not self.directed:
                 if node1 not in self.space.space[node2].weights:
                     self.space.space[node2].weights[node1] = set()
 
-                self.space.space[node2].weights[node1].add(weight)
+        self.space.space[node1].weights[node2].add(weight)
+
+        if not self.directed:
+            self.space.space[node2].weights[node1].add(weight)
 
     def _node_memory(self, node: str) -> None:
         """Build the node memory as a vector containing information about its neighbors.
@@ -287,11 +265,8 @@ class Graph(object):
         for neighbor in neighbors:
             # Get the real weight from vector tags
             for weight in self.space.space[node].weights[neighbor]:
-                # Retrieve the weight hypervector ID
-                weight_id = self.weights_map[weight]
-
                 # Retrieve the weight vector from the space
-                weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight_id)]
+                weight_vector = self.space.space["{}{}".format(WEIGHT_ID, weight)]
 
                 if node_memory is None:
                     # Initialize the node memory with the first neighbor
@@ -306,27 +281,9 @@ class Graph(object):
         # Store the node memory into the memory property of the node vector object
         self.space.space[node].memory = node_memory
 
-    def _weight_memory(self, start: float, end: float, step: float=0.1) -> None:
+    def _weight_memory(self) -> None:
         """Build the weights memory.
-
-        Parameters
-        ----------
-        start : float
-            Initial point of the weights interval.
-        end : float
-            Final point of the weight interval.
-        step : float
-            Interval step for iterating over the weight interval.
-
-        Raises
-        ------
-        Exception
-            If the number of unique weights is greater than the number of weight vectors.
         """
-
-        weights = np.arange(start, end, step)
-
-        edge_weights = set()
 
         # Recover edge weights from the space
         for node in self.space.space:
@@ -335,42 +292,21 @@ class Graph(object):
             if node != GRAPH_ID and not node.startswith(WEIGHT_ID):
                 for neighbor in self.space.space[node].weights:
                     # Retrieve the weights on these edges
-                    edge_weights.update(self.space.space[node].weights[neighbor])
+                    self.weights.update(self.space.space[node].weights[neighbor])
 
-        if len(edge_weights) > len(weights):
-            raise Exception("Not enough weight vectors to cover edge weights")
-
-        index_vector = range(self.size)
-        next_level = int((self.size / 2 / len(np.arange(start, end, step))))
-        change = int(self.size / 2)
-
-        for edge_weight, weight in zip(edge_weights, weights):
-            weight = round(weight, 5)
-
-            if weight == start:
-                base = np.full(self.size, -1 if self.vtype == "bipolar" else 0)
-                to_one = self.rand.permutation(index_vector)[:change]
-
-            else:
-                to_one = self.rand.permutation(index_vector)[:next_level]
-
-            for index in to_one:
-                base[index] = base[index] * -1 if self.vtype == "bipolar" else base[index] + 1
-
+        for weight in self.weights:
+            # Build a random vector
             weight_vector = Vector(
-                name="{}__{}".format(WEIGHT_ID, weight),
+                name="{}{}".format(WEIGHT_ID, weight),
                 size=self.size,
-                vtype=self.vtype,
-                vector=copy.deepcopy(base)
+                vtype=self.vtype
             )
 
             self.space.insert(weight_vector)
 
-            self.weights_map[edge_weight] = weight
-
     def error_rate(
         self,
-        edges: Set[Tuple[str, str, float]],
+        edges: Set[Tuple[str, str, Any]],
     ) -> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
         """Compute the error rate defined as the number of mispredicted edges on the total number of edges.
         Note that the error rate depends on the set of edges in input to this function which could be different
@@ -396,37 +332,43 @@ class Graph(object):
         for edge in edges:
             node1, node2, weight_true = edge
 
-            weight_pred = None
-            weight_pred_dist = np.NINF
+            weight_pred = list()
 
-            for weight_id in np.arange(0.0, 1.0, 1 / self.weights):
-                weight_id = round(weight_id, 5)
-
-                # Retrieve the original weight from the weights map
-                weight = [w for w in self.weights_map if self.weights_map[w] == weight_id][0]
-
+            for weight in self.weights:
                 _, weight_dist = self.edge_exists(node1, node2, weight)
 
-                if weight_pred is None:
-                    weight_pred = weight
-                    weight_pred_dist = weight_dist
+                weight_pred.append((weight, weight_dist))
 
-                else:
-                    if weight_dist < weight_pred_dist:
-                        weight_pred = weight
-                        weight_pred_dist = weight_dist
+            if len(weight_pred) > 1:
+                # Sort weights based on their distances
+                weight_pred = sorted(weight_pred, key=lambda w: w[1])
 
-            if weight_true == weight_pred and node2 not in self.space.space[node1].children:
-                false_positives.add(edge)
+                # Get the difference between the closest and the farthest distances
+                dist_diff = weight_pred[-1][1] - weight_pred[0][1]
 
-            elif weight_true != weight_pred and node2 in self.space.space[node1].children:
-                false_negatives.add(edge)
+                # Use the difference in distances to select the top closest weights
+                weight_pred = [w[0] for w in weight_pred if w[1] - weight_pred[0][1] < dist_diff]
+
+                if weight_true in weight_pred and node2 not in self.space.space[node1].children:
+                    false_positives.add(edge)
+
+                elif weight_true not in weight_pred and node2 in self.space.space[node1].children:
+                    false_negatives.add(edge)
+
+            else:
+                weight_pred = weight_pred[0]
+
+                if weight_true == weight_pred and node2 not in self.space.space[node1].children:
+                    false_positives.add(edge)
+
+                elif weight_true != weight_pred and node2 in self.space.space[node1].children:
+                    false_negatives.add(edge)
 
         return (len(false_positives) + len(false_negatives)) / len(edges), false_positives, false_negatives
 
     def error_mitigation(
         self,
-        edges: Set[Tuple[str, str, float]],
+        edges: Set[Tuple[str, str, Any]],
         max_iter: int=10,
         prev_error_rate: Optional[float]=None
     ) -> None:
@@ -452,11 +394,8 @@ class Graph(object):
             for edge in false_positives.union(false_negatives):
                 node1, node2, weight = edge
 
-                # Retrieve the weight hypervector ID from the weights map
-                weight_id = self.weights_map[weight]
-
                 # Retrieve the weight vector from the space
-                weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight_id)]
+                weight_vector = self.space.space["{}{}".format(WEIGHT_ID, weight)]
 
                 if self.space.space[node1].memory:
                     if edge in false_positives:
@@ -475,7 +414,7 @@ class Graph(object):
 
     def fit(
         self,
-        edges: Set[Tuple[str, str, float]],
+        edges: Set[Tuple[str, str, Any]],
         build_nodes_memory: bool=True
     ) -> None:
         """Build the graph memory and store it into the space.
@@ -504,8 +443,7 @@ class Graph(object):
 
         if build_nodes_memory:
             # Build the vector representation of the edges weight
-            # Weights are float numbers between 0.0 and 1.0, here limited to the second decimal point
-            self._weight_memory(0.0, 1.0, 1 / self.weights)
+            self._weight_memory()
 
         graph = None
 
@@ -601,11 +539,14 @@ class Graph(object):
         """
 
         if GRAPH_ID not in self.space.space:
-            raise Exception("There is no graph in the space")
+            raise Exception("There is no graph in space")
 
         for node in [node1, node2]:
             if node not in self.space.space:
-                raise Exception("Node '{}' is not in the space".format(node))
+                raise Exception("Node '{}' not in space".format(node))
+
+        if "{}{}".format(WEIGHT_ID, weight) not in self.space.space:
+            raise Exception("Weight vector '{}' not in space".format(weight))
 
         # Retrieve the vector representation of the graph
         graph = self.space.space[GRAPH_ID]
@@ -624,18 +565,107 @@ class Graph(object):
             # Thus, it must be rotated back in order to preserve the similarity
             node1_memory = permute(node1_memory, rotate_by=-1)
 
-        # Retrieve the weight hypervector ID from the weights map
-        weight_id = self.weights_map[weight]
-
         # Check whether there is a edge between node1 and node2 by computing the distance between node2 and node1 memory
         # A distance close to 0 means the edge exists
         # A distance close to 1 means the edge does not exist
         # Retrieve the weight vector from the space
-        weight_vector = self.space.space["{}__{}".format(WEIGHT_ID, weight_id)]
+        weight_vector = self.space.space["{}{}".format(WEIGHT_ID, weight)]
 
-        distance = (weight_vector * node2_vector).dist(node1_memory, method="cosine")
+        with np.errstate(invalid="ignore", divide="ignore"):
+            distance = (weight_vector * node2_vector).dist(node1_memory, method="cosine")
 
         if distance < threshold:
             return True, distance
 
         return False, distance
+
+    def predict(
+        self,
+        edges: Set[Tuple[str, str, Any]],
+        retrain: int=10
+    ) -> Tuple[Any, float]:
+        """Predict the weight (class) of a specific set of edges.
+
+        Parameters
+        ----------
+        edges : set
+            Set of edges.
+        retrain : int, default 10
+            Maximum number of retraining iterations.
+
+        Returns
+        -------
+        tuple
+            A tuple with the predicted class and it's accuracy in terms of percentage of edges
+            that matched the predicted class.
+        """
+
+        if retrain < 1:
+            # Use a minimum of 1 iteration
+            retrain = 1
+
+        prediction = None
+
+        accuracy = 0.0
+
+        # Keep track of edges where nodes exist in the graph
+        # If a node does not exist, discart it
+        # This is just for retraining purposes
+        # We cannot retrain using nodes that are not in the graph space
+        retraining_edges = set()
+
+        for retrain_iter in range(retrain):
+            hits = {weight: 0 for weight in self.weights}
+
+            for node1, node2, edge_weight in edges:
+                if node1 in self.space.space and node2 in self.space.space:
+                    weight_pred = list()
+
+                    for weight in self.weights:
+                        _, weight_dist = self.edge_exists(node1, node2, weight)
+
+                        weight_pred.append((weight, weight_dist))
+
+                    if len(weight_pred) > 1:
+                        # Sort weights based on their distances
+                        weight_pred = sorted(weight_pred, key=lambda w: w[1])
+
+                        # Get the difference between the closest and the farthest distances
+                        dist_diff = weight_pred[-1][1] - weight_pred[0][1]
+
+                        # Use the difference in distances to select the top closest weights
+                        weight_pred = [w[0] for w in weight_pred if w[1] - weight_pred[0][1] < dist_diff]
+
+                        for weight in weight_pred:
+                            hits[weight] += 1
+
+                    else:
+                        weight_pred = weight_pred[0]
+
+                        hits[weight_pred] += 1
+
+                    # Both node1 and node2 are in the graph space
+                    # Keep track of this edge for retraining purposes
+                    retraining_edges.add((node1, node2, edge_weight))
+
+            # Get the best hit
+            iter_prediction = max(hits, key=hits.get)
+
+            iter_accuracy = (hits[iter_prediction] / len(edges)) * 100.0
+
+            if iter_accuracy < accuracy:
+                break
+
+            # Compare with the previous retraining iteration
+            # Update prediction and accuracy
+            prediction = iter_prediction
+
+            accuracy = iter_accuracy
+
+            # Skip the retraining if this is the last iteration
+            if retrain_iter < retrain-1:
+                # Apply `error_mitigation` with the input set of edges (where nodes are in the graph space)
+                # This is supposed to improve the model ability to correctly predict edges' weights
+                self.error_mitigation(retraining_edges, max_iter=retrain)
+
+        return (prediction, accuracy)
