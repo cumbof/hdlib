@@ -229,7 +229,7 @@ class TestHDLib(unittest.TestCase):
         ])
 
         # Initialize the graph object
-        graph = Graph(size=10000, weights=2, directed=True)
+        graph = Graph(size=10000, directed=True)
 
         # Populate the graph with its nodes and edges
         graph.fit(edges)
