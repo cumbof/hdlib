@@ -20,8 +20,8 @@ setuptools.setup(
     ],
     description="Hyperdimensional Computing Library for building Vector Symbolic Architectures in Python",
     install_requires=[
-        "numpy>=1.22.3",
-        "scikit-learn>=1.2.2",
+        "numpy>=2.2.5",
+        "scikit-learn>=1.6.1",
         "tabulate>=0.9.0",
     ],
     license="MIT",
