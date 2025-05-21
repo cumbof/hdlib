@@ -298,7 +298,7 @@ class MLModel(object):
 
         # Get the minimum and maximum value in the input dataset
         self.min_value = np.inf
-        self.max_value = np.NINF
+        self.max_value = -np.inf
 
         for point in points:
             min_point = min(point)
@@ -468,7 +468,7 @@ class MLModel(object):
 
             if true_class != None:
                 closest_class = None
-                closest_dist = np.NINF
+                closest_dist = -np.inf
 
                 for class_vector in class_vectors:
                     # Compute the distance between the training points and the hyperdimensional representations of classes
@@ -664,7 +664,7 @@ class MLModel(object):
         """
 
         closest_class = None
-        closest_dist = np.NINF
+        closest_dist = -np.inf
 
         for class_vector in training_class_vectors:
             # Compute the distance between the input vector and the hyperdimensional representations of classes
