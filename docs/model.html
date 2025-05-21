@@ -350,7 +350,7 @@ It also defines the number of level vectors to 100.</p></div>
 
         # Get the minimum and maximum value in the input dataset
         self.min_value = np.inf
-        self.max_value = np.NINF
+        self.max_value = -np.inf
 
         for point in points:
             min_point = min(point)
@@ -520,7 +520,7 @@ It also defines the number of level vectors to 100.</p></div>
 
             if true_class != None:
                 closest_class = None
-                closest_dist = np.NINF
+                closest_dist = -np.inf
 
                 for class_vector in class_vectors:
                     # Compute the distance between the training points and the hyperdimensional representations of classes
@@ -716,7 +716,7 @@ It also defines the number of level vectors to 100.</p></div>
         &#34;&#34;&#34;
 
         closest_class = None
-        closest_dist = np.NINF
+        closest_dist = -np.inf
 
         for class_vector in training_class_vectors:
             # Compute the distance between the input vector and the hyperdimensional representations of classes
