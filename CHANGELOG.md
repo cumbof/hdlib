@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 0.1.20
+
+[@cumbof/hdlib@0.1.20](https://github.com/cumbof/hdlib/releases/tag/0.1.20)
+
+### Fixes
+
+- Replace `numpy.NINF` with `-numpy.inf` as a change introduced in Numpy 2.0.
+
 ## Version 0.1.19
 
 [@cumbof/hdlib@0.1.19](https://github.com/cumbof/hdlib/releases/tag/0.1.19)
