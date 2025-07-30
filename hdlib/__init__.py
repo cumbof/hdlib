@@ -12,5 +12,5 @@ modules and how to use the library."""
 
 __author__ = ("Fabio Cumbo (fabio.cumbo@gmail.com)")
 
-__version__ = "0.1.20"
-__date__ = "May 21, 2025"
+__version__ = "0.1.21"
+__date__ = "Jul 26, 2025"
