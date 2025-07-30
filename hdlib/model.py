@@ -48,7 +48,7 @@ class MLModel(object):
         TypeError
             If the vector size or the number of levels are not integer numbers.
         ValueError
-            If the vector size is lower than 10,000 or the number of level vectors is lower than 2.
+            If the vector size is lower than 1,000 or the number of level vectors is lower than 2.
 
         Examples
         --------
@@ -64,8 +64,8 @@ class MLModel(object):
         if not isinstance(size, int):
             raise TypeError("Vectors size must be an integer number")
 
-        if size < 10000:
-            raise ValueError("Vectors size must be greater than or equal to 10000")
+        if size < 1000:
+            raise ValueError("Vectors size must be greater than or equal to 1000")
 
         # Register vectors dimensionality
         self.size = size

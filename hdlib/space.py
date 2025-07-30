@@ -68,7 +68,7 @@ class Vector(object):
             - if `size` is not an integer number.
         ValueError
             - if `vtype` is different than 'binary' or 'bipolar';
-            - if `size` is lower than 10,000.
+            - if `size` is lower than 1,000.
 
         Examples
         --------
@@ -77,12 +77,12 @@ class Vector(object):
         >>> type(vector)
         <class 'hdlib.space.Vector'>
 
-        A new bipolar vector with a size of 10,000 is created by default.
+        A new bipolar vector with a size of 1,000 is created by default.
 
         >>> vector = Vector(size=10)
-        ValueError: Vector size must be greater than or equal to 10000
+        ValueError: Vector size must be greater than or equal to 1000
 
-        This throws a ValueError since the vector size cannot be less than 10,000.
+        This throws a ValueError since the vector size cannot be less than 1,000.
 
         >>> vector1 = Vector()
         >>> vector1.dump(to_file='~/my_vector.pkl')
@@ -137,8 +137,8 @@ class Vector(object):
 
             self.size = len(self.vector)
 
-            if self.size < 10000:
-                raise ValueError("Vector size must be greater than or equal to 10000")
+            if self.size < 1000:
+                raise ValueError("Vector size must be greater than or equal to 1000")
 
             self.vtype = vtype
 
@@ -179,8 +179,8 @@ class Vector(object):
             if not isinstance(size, int):
                 raise TypeError("Vector size must be an integer number")
 
-            if size < 10000:
-                raise ValueError("Vector size must be greater than or equal to 10000")
+            if size < 1000:
+                raise ValueError("Vector size must be greater than or equal to 1000")
 
             self.size = size
 
@@ -636,7 +636,7 @@ class Space(object):
         Parameters
         ----------
         size : int, optional, default 10000
-            Size of vectors in the space. It is 10,000 by default and cannot be less than that.
+            Size of vectors in the space.
         vtype : {'binary', 'bipolar'}, default 'bipolar'
             The type of vectors in space.
         from_file : str, default None
@@ -655,7 +655,7 @@ class Space(object):
             If `from_file` is not None but the file does not exist.
         ValueError
             - if `vtype` is different than 'binary' or 'bipolar';
-            - if `size` is lower than 10,000.
+            - if `size` is lower than 1,000.
 
         Examples
         --------
@@ -666,9 +666,9 @@ class Space(object):
         Create a Space object that can host bipolar vectors with a size of 10,000 by default.
 
         >>> Space(size=10)
-        ValueError: Size of vectors in space must be greater than or equal to 10000
+        ValueError: Size of vectors in space must be greater than or equal to 1000
 
-        This throws a ValueError since the vector size cannot be less than 10,000.
+        This throws a ValueError since the vector size cannot be less than 1,000.
 
         >>> space1 = Space()
         >>> space1.dump(to_file='~/my_space.pkl')
@@ -691,8 +691,8 @@ class Space(object):
 
         self.size = size
 
-        if self.size < 10000:
-            raise ValueError("Size of vectors in space must be greater than or equal to 10000")
+        if self.size < 1000:
+            raise ValueError("Size of vectors in space must be greater than or equal to 1000")
 
         self.vtype = vtype.lower()
 
