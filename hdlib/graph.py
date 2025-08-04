@@ -97,6 +97,11 @@ class Graph(object):
 
             self.rand = np.random.default_rng(seed=self.seed)
 
+        # We estimate a proper threshold to establish whether an edge exists between two nodes
+        # Keep track of these thresholds to avoid recomputing them
+        # This is also weight dependant
+        self.weight_to_node_specific_thresholds = dict()
+
         # Keep track of hdlib version
         self.version = __version__
 
@@ -301,15 +306,15 @@ class Graph(object):
 
     @staticmethod
     def _error_rate(
-        instance: "Database",
+        instance: "Graph",
         edges: Set[Tuple[str, str, Any]],
-    ) -> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
+    ) -> Tuple[float, Set[Tuple[str, str, float, Tuple[float]]], Set[Tuple[str, str, float, Tuple[float]]]]:
         """Just a wrapper around the `error_rate` function to make it callable in multiprocessing.
         It is safe to run in multiprocessing because it does not modify any instance attributes.
 
         Parameters
         ----------
-        instance : Database
+        instance : Graph
             A Graph instance.
         edges : set
             The set of edges used to mitigate the graph model error rate.
@@ -327,7 +332,7 @@ class Graph(object):
     def error_rate(
         self,
         edges: Set[Tuple[str, str, Any]],
-    ) -> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
+    ) -> Tuple[float, Set[Tuple[str, str, float, Tuple[float]]], Set[Tuple[str, str, float, Tuple[float]]]]:
         """Compute the error rate defined as the number of mispredicted edges on the total number of edges.
         Note that the error rate depends on the set of edges in input to this function which could be different
         from the actual set of edges used to build the graph model.
@@ -349,28 +354,23 @@ class Graph(object):
         false_positives = set()
         false_negatives = set()
 
-        # We estimate a proper threshold to establish whether an edge exists between two nodes
-        # Keep track of these thresholds to avoid recomputing them
-        # This is also weight dependant
-        weight_to_node_specific_thresholds = dict()
-
         for edge in edges:
             node1, node2, weight_true = edge
 
             weight_pred = list()
 
             for weight in self.weights:
-                node1_threshold = weight_to_node_specific_thresholds[weight].get(node1) if weight in weight_to_node_specific_thresholds else None
+                node1_threshold = self.weight_to_node_specific_thresholds[weight].get(node1) if weight in self.weight_to_node_specific_thresholds else None
 
                 _, weight_dist, dist_threshold = self.edge_exists(node1, node2, weight, threshold=node1_threshold)
 
                 weight_pred.append((weight, weight_dist))
 
-                if weight not in weight_to_node_specific_thresholds:
-                    weight_to_node_specific_thresholds[weight] = dict()
+                if weight not in self.weight_to_node_specific_thresholds:
+                    self.weight_to_node_specific_thresholds[weight] = dict()
 
-                if node1 not in weight_to_node_specific_thresholds[weight]:
-                    weight_to_node_specific_thresholds[weight][node1] = dist_threshold
+                if node1 not in self.weight_to_node_specific_thresholds[weight]:
+                    self.weight_to_node_specific_thresholds[weight][node1] = dist_threshold
 
             if len(weight_pred) > 1:
                 # Sort weights based on their distances
@@ -380,7 +380,10 @@ class Graph(object):
                 dist_diff = weight_pred[-1][1] - weight_pred[0][1]
 
                 # Use the difference in distances to select the top closest weights
-                weight_pred = [w[0] for w in weight_pred if w[1] - weight_pred[0][1] < dist_diff]
+                weight_pred = tuple([w[0] for w in weight_pred if w[1] - weight_pred[0][1] < dist_diff])
+
+                # Add `weight_pred` to the edge tuple
+                edge = (node1, node2, weight_true, weight_pred)
 
                 if weight_true in weight_pred and node2 not in self.space.space[node1].children:
                     false_positives.add(edge)
@@ -390,6 +393,9 @@ class Graph(object):
 
             else:
                 weight_pred = weight_pred[0]
+
+                # Add `weight_pred` to the edge tuple
+                edge = (node1, node2, weight_true, tuple([weight_pred]))
 
                 if weight_true == weight_pred and node2 not in self.space.space[node1].children:
                     false_positives.add(edge)
@@ -419,34 +425,38 @@ class Graph(object):
         """
 
         if max_iter > 0:
-            # Redefine the number of CPUs for multiprocessing
-            if nproc < 1:
-                nproc = 1
-
-            elif nproc > mp.cpu_count():
-                nproc = mp.cpu_count()
-
-            # Split the set of edges into equally sized chunks
-            chunk_size = len(edges) // nproc
-
-            # Very inefficient but required
-            edges_list = list(edges)
-
-            edges_subsets = [(self, set(edges_list[i:i+chunk_size])) for i in range(0, len(edges_list), chunk_size)]
-
             # Keep track of misclassified edges
             false_positives = set()
             false_negatives = set()
 
-            with mp.Pool(processes=nproc) as pool:
-                error_estimation = pool.starmap(self.__class__._error_rate, edges_subsets)
+            # Redefine the number of CPUs for multiprocessing
+            if nproc < 1:
+                nproc = 1
 
-                # Retrieve the set of misclassified edges
-                for _, false_positives_partial, false_negatives_partial in error_estimation:
-                    false_positives = false_positives.union(false_positives_partial)
-                    false_negatives = false_negatives.union(false_negatives_partial)
+                # Compute the model error rate
+                prev_error_rate, false_positives, false_negatives = self.error_rate(edges)
 
-            prev_error_rate = (len(false_positives) + len(false_negatives)) / len(edges)
+            elif nproc > mp.cpu_count():
+                nproc = mp.cpu_count()
+
+                # Split the set of edges into equally sized chunks
+                chunk_size = len(edges) // nproc
+
+                # Very inefficient but required
+                edges_list = list(edges)
+
+                edges_subsets = [(self, set(edges_list[i:i+chunk_size])) for i in range(0, len(edges_list), chunk_size)]
+
+                with mp.Pool(processes=nproc) as pool:
+                    # Compute the model error rate in multiprocessing
+                    error_estimation = pool.starmap(self.__class__._error_rate, edges_subsets)
+
+                    # Retrieve the set of misclassified edges
+                    for _, false_positives_partial, false_negatives_partial in error_estimation:
+                        false_positives = false_positives.union(false_positives_partial)
+                        false_negatives = false_negatives.union(false_negatives_partial)
+
+                prev_error_rate = (len(false_positives) + len(false_negatives)) / len(edges)
 
             print(f"(base)\tError rate: {prev_error_rate}\tFalse positives: {len(false_positives)}\tFalse negatives: {len(false_negatives)}")
 
@@ -458,22 +468,49 @@ class Graph(object):
 
                     # Rebuild the mispredicted node memories
                     for edge in false_positives.union(false_negatives):
-                        node1, node2, weight = edge
-
-                        # Retrieve the weight vector from the space
-                        weight_vector = graph.space.space[f"{WEIGHT_ID}{weight}"]
+                        #node1, node2, weight_true, weights_pred = edge
+                        node1, node2, weight_true, _ = edge
 
                         if graph.space.space[node1].memory:
+                            # Retrieve the weight vector from the space
+                            weight_true_vector = graph.space.space[f"{WEIGHT_ID}{weight_true}"]
+
+                            # Defined correct connection vector
+                            correct_connection = weight_true_vector * graph.space.space[node2]
+
                             if edge in false_positives:
-                                # Reduce the signal of node2 in the memory of node1
-                                graph.space.space[node1].memory -= (weight_vector * graph.space.space[node2])
+                                # This is a false positive with respect to the true weight, but a connection with node2
+                                # considering the predicted weight could actually exist
+                                pass
 
                             elif edge in false_negatives:
-                                graph.space.space[node1].memory += (weight_vector * graph.space.space[node2])
+                                # Increase the signal of node2 (with the true weight) in the memory of node1
+                                graph.space.space[node1].memory += correct_connection
+
+                                # Retrieve node1 memory from the graph
+                                node1_memory = bind(node1_vector, graph)
+
+                                if self.directed:
+                                    # In case of directed graphs, nodes memory are rotated by 1 position
+                                    # Thus, it must be rotated back in order to preserve the similarity
+                                    node1_memory = permute(node1_memory, rotate_by=-1)
+
+                                    # Remove node1 and its memory from the graph
+                                    graph.space.space[GRAPH_ID] -= graph.space.space[node1] * permute(node1_memory, rotate_by=1)
+
+                                    # Reinsert node1 with its updated memory
+                                    graph.space.space[GRAPH_ID] += graph.space.space[node1] * permute(graph.space.space[node1].memory, rotate_by=1)
+
+                                else:
+                                    # Remove node1 and its memory from the graph
+                                    graph.space.space[GRAPH_ID] -= graph.space.space[node1] * node1_memory
+
+                                    # Reinsert node1 with its updated memory
+                                    graph.space.space[GRAPH_ID] += graph.space.space[node1] * graph.space.space[node1].memory
 
                     # Rebuild the graph model
                     # Do not rebuild the nodes memory since they have been overwritten earlier
-                    graph.fit(graph.edges, build_nodes_memory=False)
+                    #graph.fit(graph.edges, build_nodes_memory=False)
 
                     # Reset `false_positives` and `false_negatives`
                     false_positives = set()
@@ -492,7 +529,7 @@ class Graph(object):
 
                     print(f"(iter {i+1})\tError rate: {error_rate}\tFalse positives: {len(false_positives)}\tFalse negatives: {len(false_negatives)}")
 
-                    if error_rate > prev_error_rate:
+                    if error_rate >= prev_error_rate:
                         # Stop the error mitigating the graph model here
                         break
 
@@ -500,8 +537,14 @@ class Graph(object):
                     prev_error_rate = error_rate
 
                     # Update the graph model
+                    # Save the `self.weight_to_node_specific_thresholds` first
+                    weight_to_node_specific_thresholds = copy.deepcopy(self.weight_to_node_specific_thresholds)
+
                     # Make the error mitigated graph persistent
                     self.__dict__.update(graph.__dict__)
+
+                    # Update node thresholds
+                    self.weight_to_node_specific_thresholds.update(weight_to_node_specific_thresholds)
 
                     if error_rate == 0.0:
                         # There is nothing else to do here
@@ -675,10 +718,8 @@ class Graph(object):
 
             else:
                 # Retrieve node1 children
-                # There could be hundreds of thousands of nodes here, so we focus on a random selection (5%)
-                selection = len(self.space.space[node1].children) if len(self.space.space[node1].children) < 100 else int(len(self.space.space[node1].children)*5.0//100.0)
-
-                neighbors = set(self.rand.choice(list(self.space.space[node1].children), size=selection, replace=False))
+                # There could be hundreds of thousands of nodes here, so we focus on the first 10
+                neighbors = set(list(self.space.space[node1].children)[:10])
 
                 # Pick the same number of random non-neighbors
                 # This is very inefficient!
@@ -710,6 +751,37 @@ class Graph(object):
 
         return False, distance, threshold
 
+    @staticmethod
+    def _predict(
+        instance: "Graph",
+        name: str,
+        y_true: str,
+        edges: Set[Tuple[str, str, Any]],
+    ) -> Tuple[float, Set[Tuple[str, str, float, Tuple[float]]], Set[Tuple[str, str, float, Tuple[float]]]]:
+        """Just a wrapper around the `predict` function to make it callable in multiprocessing.
+        It is safe to run in multiprocessing because it does not modify any instance attributes.
+
+        Parameters
+        ----------
+        instance : Graph
+            A Graph instance.
+        name : str
+            The name associated to the set of edges.
+        y_true : str
+            The true class.
+        edges : set
+            The set of edges used to mitigate the graph model error rate.
+            Note that the edges in this set do not necessarily have to be present in the graph.
+
+        Returns
+        -------
+        tuple
+            A tuple with the name of the test set, the true class, and a tuple with the predicted class and it's accuracy 
+            in terms of percentage of edges that matched the predicted class.
+        """
+
+        return name, y_true, instance.predict(edges)
+
     def predict(
         self,
         edges: Set[Tuple[str, str, Any]]
@@ -730,27 +802,22 @@ class Graph(object):
 
         hits = {weight: 0 for weight in self.weights}
 
-        # We estimate a proper threshold to establish whether an edge exists between two nodes
-        # Keep track of these thresholds to avoid recomputing them
-        # This is also weight dependant
-        weight_to_node_specific_thresholds = dict()
-
         for node1, node2, edge_weight in edges:
             if node1 in self.space.space and node2 in self.space.space:
                 weight_pred = list()
 
                 for weight in self.weights:
-                    node1_threshold = weight_to_node_specific_thresholds[weight].get(node1) if weight in weight_to_node_specific_thresholds else None
+                    node1_threshold = self.weight_to_node_specific_thresholds[weight].get(node1) if weight in self.weight_to_node_specific_thresholds else None
 
                     _, weight_dist, dist_threshold = self.edge_exists(node1, node2, weight, threshold=node1_threshold)
 
                     weight_pred.append((weight, weight_dist))
 
-                    if weight not in weight_to_node_specific_thresholds:
-                        weight_to_node_specific_thresholds[weight] = dict()
+                    if weight not in self.weight_to_node_specific_thresholds:
+                        self.weight_to_node_specific_thresholds[weight] = dict()
 
-                    if node1 not in weight_to_node_specific_thresholds[weight]:
-                        weight_to_node_specific_thresholds[weight][node1] = dist_threshold
+                    if node1 not in self.weight_to_node_specific_thresholds[weight]:
+                        self.weight_to_node_specific_thresholds[weight][node1] = dist_threshold
 
                 if len(weight_pred) > 1:
                     # Sort weights based on their distances
