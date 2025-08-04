@@ -430,14 +430,15 @@ class Graph(object):
             false_negatives = set()
 
             # Redefine the number of CPUs for multiprocessing
-            if nproc < 1:
+            if nproc <= 1:
                 nproc = 1
 
                 # Compute the model error rate
                 prev_error_rate, false_positives, false_negatives = self.error_rate(edges)
 
-            elif nproc > mp.cpu_count():
-                nproc = mp.cpu_count()
+            else:
+                if nproc > mp.cpu_count():
+                    nproc = mp.cpu_count()
 
                 # Split the set of edges into equally sized chunks
                 chunk_size = len(edges) // nproc
@@ -476,6 +477,7 @@ class Graph(object):
                             weight_true_vector = graph.space.space[f"{WEIGHT_ID}{weight_true}"]
 
                             # Defined correct connection vector
+                            # Reinforcement signal
                             correct_connection = weight_true_vector * graph.space.space[node2]
 
                             if edge in false_positives:
@@ -484,33 +486,13 @@ class Graph(object):
                                 pass
 
                             elif edge in false_negatives:
-                                # Increase the signal of node2 (with the true weight) in the memory of node1
-                                graph.space.space[node1].memory += correct_connection
-
-                                # Retrieve node1 memory from the graph
-                                node1_memory = bind(node1_vector, graph)
-
                                 if self.directed:
-                                    # In case of directed graphs, nodes memory are rotated by 1 position
-                                    # Thus, it must be rotated back in order to preserve the similarity
-                                    node1_memory = permute(node1_memory, rotate_by=-1)
-
-                                    # Remove node1 and its memory from the graph
-                                    graph.space.space[GRAPH_ID] -= graph.space.space[node1] * permute(node1_memory, rotate_by=1)
-
-                                    # Reinsert node1 with its updated memory
-                                    graph.space.space[GRAPH_ID] += graph.space.space[node1] * permute(graph.space.space[node1].memory, rotate_by=1)
+                                    # Increase the signal of node1, node2 connection on weight_true
+                                    graph.space.space[GRAPH_ID] += graph.space.space[node1] * permute(correct_connection, rotate_by=1)
 
                                 else:
-                                    # Remove node1 and its memory from the graph
-                                    graph.space.space[GRAPH_ID] -= graph.space.space[node1] * node1_memory
-
-                                    # Reinsert node1 with its updated memory
-                                    graph.space.space[GRAPH_ID] += graph.space.space[node1] * graph.space.space[node1].memory
-
-                    # Rebuild the graph model
-                    # Do not rebuild the nodes memory since they have been overwritten earlier
-                    #graph.fit(graph.edges, build_nodes_memory=False)
+                                    # Do not permute the reinforced node1 memory if the global graph is not directed
+                                    graph.space.space[GRAPH_ID] += graph.space.space[node1] * correct_connection
 
                     # Reset `false_positives` and `false_negatives`
                     false_positives = set()
@@ -529,7 +511,7 @@ class Graph(object):
 
                     print(f"(iter {i+1})\tError rate: {error_rate}\tFalse positives: {len(false_positives)}\tFalse negatives: {len(false_negatives)}")
 
-                    if error_rate >= prev_error_rate:
+                    if error_rate > prev_error_rate:
                         # Stop the error mitigating the graph model here
                         break
 
