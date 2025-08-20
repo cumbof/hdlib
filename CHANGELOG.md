@@ -1,5 +1,18 @@
 # Changelog
 
+## Version 0.1.21
+
+[@cumbof/hdlib@0.1.21](https://github.com/cumbof/hdlib/releases/tag/0.1.21)
+
+## New features
+
+- New `hdlib.graph._error_rate` and `hdlib.graph._predict` static methods for the estimation of the model error rate and the evaluation of a graph model in multiprocessing.
+
+## Fixes
+
+- `hdlib.graph.error_mitigation` does not take into account for false positives;
+- `hdlib.graph.error_rate` and `hdlib.graph.predict` now check whether an edge exist using weight-specific thresholds.
+
 ## Version 0.1.20
 
 [@cumbof/hdlib@0.1.20](https://github.com/cumbof/hdlib/releases/tag/0.1.20)
