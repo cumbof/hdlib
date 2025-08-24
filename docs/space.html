@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.1">
 <title>hdlib.space API documentation</title>
-<meta name="description" content="Implementation of hyperdimensional Vector and Space …">
+<meta name="description" content="Implementation of hyperdimensional Space">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -25,9 +25,9 @@ hljs.highlightAll();
 <h1 class="title">Module <code>hdlib.space</code></h1>
 </header>
 <section id="section-intro">
-<p>Implementation of hyperdimensional Vector and Space.</p>
-<p><strong>hdlib</strong> provides the <em>Space</em> and <em>Vector</em> classes under <em>hdlib.space</em> for building the abstract
-representation of a hyperdimensional space which acts as a container for a multitude of vectors.</p>
+<p>Implementation of hyperdimensional Space.</p>
+<p><strong>hdlib</strong> provides the <em>Space</em> class under <em>hdlib.space</em> for building the abstract representation of
+a hyperdimensional space which acts as a container for a multitude of vectors.</p>
 </section>
 <section>
 </section>
@@ -40,7 +40,7 @@ representation of a hyperdimensional space which acts as a container for a multi
 <dl>
 <dt id="hdlib.space.Space"><code class="flex name class">
 <span>class <span class="ident">Space</span></span>
-<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0x7cb40330a0>] = None)</span>
+<span>(</span><span>size: int = 10000, vtype: str = 'bipolar', from_file: Optional[<function abspath at 0x7dd9e130a0>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Vectors space.</p>
@@ -48,7 +48,7 @@ representation of a hyperdimensional space which acts as a container for a multi
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>size</code></strong> :&ensp;<code>int</code>, optional, default <code>10000</code></dt>
-<dd>Size of vectors in the space. It is 10,000 by default and cannot be less than that.</dd>
+<dd>Size of vectors in the space.</dd>
 <dt><strong><code>vtype</code></strong> :&ensp;<code>{'binary', 'bipolar'}</code>, default <code>'bipolar'</code></dt>
 <dd>The type of vectors in space.</dd>
 <dt><strong><code>from_file</code></strong> :&ensp;<code>str</code>, default <code>None</code></dt>
@@ -69,7 +69,7 @@ representation of a hyperdimensional space which acts as a container for a multi
 <dd>
 <ul>
 <li>if <code>vtype</code> is different than 'binary' or 'bipolar';</li>
-<li>if <code>size</code> is lower than 10,000.</li>
+<li>if <code>size</code> is lower than 1,000.</li>
 </ul>
 </dd>
 </dl>
@@ -80,9 +80,9 @@ representation of a hyperdimensional space which acts as a container for a multi
 </code></pre>
 <p>Create a Space object that can host bipolar vectors with a size of 10,000 by default.</p>
 <pre><code class="language-python-repl">&gt;&gt;&gt; Space(size=10)
-ValueError: Size of vectors in space must be greater than or equal to 10000
+ValueError: Size of vectors in space must be greater than or equal to 1000
 </code></pre>
-<p>This throws a ValueError since the vector size cannot be less than 10,000.</p>
+<p>This throws a ValueError since the vector size cannot be less than 1,000.</p>
 <pre><code class="language-python-repl">&gt;&gt;&gt; space1 = Space()
 &gt;&gt;&gt; space1.dump(to_file='~/my_space.pkl')
 &gt;&gt;&gt; space2 = Space(from_file='~/my_space.pkl')
@@ -104,7 +104,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         Parameters
         ----------
         size : int, optional, default 10000
-            Size of vectors in the space. It is 10,000 by default and cannot be less than that.
+            Size of vectors in the space.
         vtype : {&#39;binary&#39;, &#39;bipolar&#39;}, default &#39;bipolar&#39;
             The type of vectors in space.
         from_file : str, default None
@@ -123,7 +123,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
             If `from_file` is not None but the file does not exist.
         ValueError
             - if `vtype` is different than &#39;binary&#39; or &#39;bipolar&#39;;
-            - if `size` is lower than 10,000.
+            - if `size` is lower than 1,000.
 
         Examples
         --------
@@ -134,9 +134,9 @@ and finally create a new space object <code>space2</code> from the pickle file.<
         Create a Space object that can host bipolar vectors with a size of 10,000 by default.
 
         &gt;&gt;&gt; Space(size=10)
-        ValueError: Size of vectors in space must be greater than or equal to 10000
+        ValueError: Size of vectors in space must be greater than or equal to 1000
 
-        This throws a ValueError since the vector size cannot be less than 10,000.
+        This throws a ValueError since the vector size cannot be less than 1,000.
 
         &gt;&gt;&gt; space1 = Space()
         &gt;&gt;&gt; space1.dump(to_file=&#39;~/my_space.pkl&#39;)
@@ -159,8 +159,8 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         self.size = size
 
-        if self.size &lt; 10000:
-            raise ValueError(&#34;Size of vectors in space must be greater than or equal to 10000&#34;)
+        if self.size &lt; 1000:
+            raise ValueError(&#34;Size of vectors in space must be greater than or equal to 1000&#34;)
 
         self.vtype = vtype.lower()
 
@@ -273,7 +273,7 @@ and finally create a new space object <code>space2</code> from the pickle file.<
 
         return len(self.space)
 
-    def __str__(self) -&gt; None:
+    def __str__(self) -&gt; str:
         &#34;&#34;&#34;Print the Space object properties.
 
         Returns
@@ -1039,7 +1039,7 @@ my_vector_4
 Both 'my_vector_3' and 'my_vector_4' contain 'tag1' in their set of tags.</p></div>
 </dd>
 <dt id="hdlib.space.Space.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7cb40330a0>] = None) ‑> None</span>
+<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7dd9e130a0>] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Dump the Space object to a pickle file.</p>
@@ -1064,13 +1064,13 @@ True
 <p>Create a Space object and dump it to a pickle file under the home directory.</p></div>
 </dd>
 <dt id="hdlib.space.Space.find"><code class="name flex">
-<span>def <span class="ident">find</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = inf, method: str = 'cosine') ‑> Tuple[str, float]</span>
+<span>def <span class="ident">find</span></span>(<span>self, vector: <a title="hdlib.vector.Vector" href="vector.html#hdlib.vector.Vector">Vector</a>, threshold: float = inf, method: str = 'cosine') ‑> Tuple[str, float]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Search for the closest vector in space.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
+<dt><strong><code>vector</code></strong> :&ensp;<code>Vector</code></dt>
 <dd>Input Vector object. Search for the closest vector to this Vector in the space.</dd>
 <dt><strong><code>threshold</code></strong> :&ensp;<code>float</code>, default <code>numpy.Inf</code></dt>
 <dd>Threshold on distance between vectors.</dd>
@@ -1098,13 +1098,13 @@ True
 The result is obviously itself, 'vector1', with a cosine distance of 0.0.</p></div>
 </dd>
 <dt id="hdlib.space.Space.find_all"><code class="name flex">
-<span>def <span class="ident">find_all</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, threshold: float = inf, method: str = 'cosine') ‑> Tuple[dict, str]</span>
+<span>def <span class="ident">find_all</span></span>(<span>self, vector: <a title="hdlib.vector.Vector" href="vector.html#hdlib.vector.Vector">Vector</a>, threshold: float = inf, method: str = 'cosine') ‑> Tuple[dict, str]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Compute distance of the input vector against all vectors in space.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
+<dt><strong><code>vector</code></strong> :&ensp;<code>Vector</code></dt>
 <dd>Input Vector object. Search for the closest vector to this Vector in the space.</dd>
 <dt><strong><code>threshold</code></strong> :&ensp;<code>float</code>, default <code>numpy.Inf</code></dt>
 <dd>Threshold on distance between vectors.</dd>
@@ -1141,7 +1141,7 @@ and all the other vectors in space (including itseld). The closest vector is obv
 distance of 0.0. Use a seed for reproducing the same distances.</p></div>
 </dd>
 <dt id="hdlib.space.Space.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, names: Optional[List[str]] = None, tags: Optional[List[Union[str, int, float]]] = None) ‑> List[<a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>]</span>
+<span>def <span class="ident">get</span></span>(<span>self, names: Optional[List[str]] = None, tags: Optional[List[Union[str, int, float]]] = None) ‑> List[<a title="hdlib.vector.Vector" href="vector.html#hdlib.vector.Vector">Vector</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get vectors by names or tags.</p>
@@ -1187,13 +1187,13 @@ It then retrieves a list of vectors by searching for a specific tag which is in 
 the two vectors in this case. It finally prints the vector names.</p></div>
 </dd>
 <dt id="hdlib.space.Space.insert"><code class="name flex">
-<span>def <span class="ident">insert</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>) ‑> None</span>
+<span>def <span class="ident">insert</span></span>(<span>self, vector: <a title="hdlib.vector.Vector" href="vector.html#hdlib.vector.Vector">Vector</a>) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add a Vector object to the space.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
+<dt><strong><code>vector</code></strong> :&ensp;<code>Vector</code></dt>
 <dd>The input Vector object that must be added to the Space</dd>
 </dl>
 <h2 id="raises">Raises</h2>
@@ -1278,7 +1278,7 @@ Retrieve 'vector2' from the space and check whether 'vector1' is in its set of l
 the list of vector names. In this case a list with one element only 'my_vector'.</p></div>
 </dd>
 <dt id="hdlib.space.Space.remove"><code class="name flex">
-<span>def <span class="ident">remove</span></span>(<span>self, name: str) ‑> <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></span>
+<span>def <span class="ident">remove</span></span>(<span>self, name: str) ‑> <a title="hdlib.vector.Vector" href="vector.html#hdlib.vector.Vector">Vector</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Remove a vector from the space by its name.</p>
@@ -1289,7 +1289,7 @@ the list of vector names. In this case a list with one element only 'my_vector'.
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
+<dt><code>Vector</code></dt>
 <dd>Returns the Vector object.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
@@ -1378,853 +1378,6 @@ set 'vector1' as root. Finally, print the name of the nodes linked to the root.<
 </dd>
 </dl>
 </dd>
-<dt id="hdlib.space.Vector"><code class="flex name class">
-<span>class <span class="ident">Vector</span></span>
-<span>(</span><span>name: Optional[str] = None, size: int = 10000, vector: Optional[numpy.ndarray] = None, vtype: str = 'bipolar', tags: Optional[Set[Union[str, int, float]]] = None, seed: Optional[int] = None, warning: bool = False, from_file: Optional[<function abspath at 0x7cb40330a0>] = None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Vector object.</p>
-<p>Initialize a Vector object.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The unique identifier of the Vector object. A random UUID v4 is generated if not specified.</dd>
-<dt><strong><code>size</code></strong> :&ensp;<code>int</code>, optional, default <code>10000</code></dt>
-<dd>The size of the vector. It is 10,000 by default and cannot be less than that.</dd>
-<dt><strong><code>vector</code></strong> :&ensp;<code>numpy.ndarray</code>, optional, default <code>None</code></dt>
-<dd>The actual vector. A random vector is created if not specified.</dd>
-<dt><strong><code>vtype</code></strong> :&ensp;<code>{'binary', 'bipolar'}</code>, default <code>'bipolar'</code></dt>
-<dd>The vector type.</dd>
-<dt><strong><code>tags</code></strong> :&ensp;<code>set</code>, default <code>None</code></dt>
-<dd>An optional set of vector tags. Tags can be str, int, and float.</dd>
-<dt><strong><code>seed</code></strong> :&ensp;<code>int</code>, default <code>None</code></dt>
-<dd>An optional seed for reproducibly generating the vector numpy.ndarray randomly.</dd>
-<dt><strong><code>warning</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
-<dd>Print warning messages if True.</dd>
-<dt><strong><code>from_file</code></strong> :&ensp;<code>str</code>, default <code>None</code></dt>
-<dd>Path to a pickle file. Used to load a Vector object from file.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
-<dd>A new Vector object.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>Exception</code></dt>
-<dd>If the pickle object in <code>from_file</code> is not instance of Vector.</dd>
-<dt><code>FileNotFoundError</code></dt>
-<dd>If <code>from_file</code> is not None but the file does not exist.</dd>
-<dt><code>TypeError</code></dt>
-<dd>
-<ul>
-<li>if the vector name is not instance of a primitive;</li>
-<li>if <code>tags</code> is not an instance of set;</li>
-<li>if <code>vector</code> is not an instance of numpy.ndarray;</li>
-<li>if <code>size</code> is not an integer number.</li>
-</ul>
-</dd>
-<dt><code>ValueError</code></dt>
-<dd>
-<ul>
-<li>if <code>vtype</code> is different than 'binary' or 'bipolar';</li>
-<li>if <code>size</code> is lower than 10,000.</li>
-</ul>
-</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; vector = Vector()
-&gt;&gt;&gt; type(vector)
-&lt;class 'hdlib.space.Vector'&gt;
-</code></pre>
-<p>A new bipolar vector with a size of 10,000 is created by default.</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; vector = Vector(size=10)
-ValueError: Vector size must be greater than or equal to 10000
-</code></pre>
-<p>This throws a ValueError since the vector size cannot be less than 10,000.</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; vector1 = Vector()
-&gt;&gt;&gt; vector1.dump(to_file='~/my_vector.pkl')
-&gt;&gt;&gt; vector2 = Vector(from_file='~/my_vector.pkl')
-&gt;&gt;&gt; type(vector2)
-&lt;class 'hdlib.space.Vector'&gt;
-</code></pre>
-<p>This creates a random bipolar vector <code>vector1</code>, dumps the object to a pickle file under the home directory,
-and finally create a new vector object <code>vector2</code> from the pickle file.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Vector(object):
-    &#34;&#34;&#34;Vector object.&#34;&#34;&#34;
-
-    def __init__(
-        self,
-        name: Optional[str]=None,
-        size: int=10000,
-        vector: Optional[np.ndarray]=None,
-        vtype: str=&#34;bipolar&#34;,
-        tags: Optional[Set[Union[str, int, float]]]=None,
-        seed: Optional[int]=None,
-        warning: bool=False,
-        from_file: Optional[os.path.abspath]=None,
-    ) -&gt; &#34;Vector&#34;:
-        &#34;&#34;&#34;Initialize a Vector object.
-
-        Parameters
-        ----------
-        name : str, optional
-            The unique identifier of the Vector object. A random UUID v4 is generated if not specified.
-        size : int, optional, default 10000
-            The size of the vector. It is 10,000 by default and cannot be less than that.
-        vector : numpy.ndarray, optional, default None
-            The actual vector. A random vector is created if not specified.
-        vtype : {&#39;binary&#39;, &#39;bipolar&#39;}, default &#39;bipolar&#39;
-            The vector type.
-        tags : set, default None
-            An optional set of vector tags. Tags can be str, int, and float.
-        seed : int, default None
-            An optional seed for reproducibly generating the vector numpy.ndarray randomly.
-        warning : bool, default False
-            Print warning messages if True.
-        from_file : str, default None
-            Path to a pickle file. Used to load a Vector object from file.
-
-        Returns
-        -------
-        Vector
-            A new Vector object.
-
-        Raises
-        ------
-        Exception
-            If the pickle object in `from_file` is not instance of Vector.
-        FileNotFoundError
-            If `from_file` is not None but the file does not exist.
-        TypeError
-            - if the vector name is not instance of a primitive;
-            - if `tags` is not an instance of set;
-            - if `vector` is not an instance of numpy.ndarray;
-            - if `size` is not an integer number.
-        ValueError
-            - if `vtype` is different than &#39;binary&#39; or &#39;bipolar&#39;;
-            - if `size` is lower than 10,000.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; type(vector)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        A new bipolar vector with a size of 10,000 is created by default.
-
-        &gt;&gt;&gt; vector = Vector(size=10)
-        ValueError: Vector size must be greater than or equal to 10000
-
-        This throws a ValueError since the vector size cannot be less than 10,000.
-
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector1.dump(to_file=&#39;~/my_vector.pkl&#39;)
-        &gt;&gt;&gt; vector2 = Vector(from_file=&#39;~/my_vector.pkl&#39;)
-        &gt;&gt;&gt; type(vector2)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        This creates a random bipolar vector `vector1`, dumps the object to a pickle file under the home directory,
-        and finally create a new vector object `vector2` from the pickle file.
-        &#34;&#34;&#34;
-
-        # Conditions on vector name or ID
-        # Vector name is casted to string. For this reason, only Python primitives are allowed
-        # A random name is assigned if not specified
-        try:
-            if name is None:
-                name = str(uuid.uuid4())
-
-            else:
-                name = str(name)
-
-            self.name = name
-
-        except:
-            raise TypeError(&#34;Vector name must be instance of a primitive&#34;)
-
-        # Register random seed for reproducibility
-        self.seed = seed
-
-        # Take track of the hdlib version
-        self.version = __version__
-
-        if tags and not isinstance(tags, set):
-            raise TypeError(&#34;Tags must be a set&#34;)
-
-        # Add tags
-        self.tags = tags if tags else set()
-
-        # Add links
-        # Used to link Vectors by their names or IDs
-        self.parents = set()
-        self.children = set()
-
-        # Conditions on vector
-        # It must be a numpy.ndarray
-        # A random vector is generated if not specified
-        if vector is not None:
-            if not isinstance(vector, np.ndarray):
-                raise TypeError(&#34;Vector must be instance of numpy.ndarray&#34;)
-
-            self.vector = vector
-
-            self.size = len(self.vector)
-
-            if self.size &lt; 10000:
-                raise ValueError(&#34;Vector size must be greater than or equal to 10000&#34;)
-
-            self.vtype = vtype
-
-            # Try to infer the vector type from the content of the vector itself
-            # only in the case where the elements are not all 1s
-            if not (self.vector == 1).all():
-                if ((self.vector == 0) | (self.vector == 1)).all():
-                    self.vtype = &#34;binary&#34;
-
-                elif ((self.vector == -1) | (self.vector == 1)).all():
-                    self.vtype = &#34;bipolar&#34;
-
-                else:
-                    if warning:
-                        print(&#34;Vector type can be binary or bipolar only&#34;)
-
-        elif from_file:
-            if not os.path.isfile(from_file):
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), from_file)
-
-            else:
-                # Load vector from pickle file
-                with open(from_file, &#34;rb&#34;) as pkl:
-                    from_file_obj = pickle.load(pkl)
-
-                    if not isinstance(from_file_obj, type(self)):
-                        raise Exception(&#34;Pickle object is not instance of {}&#34;.format(type(self)))
-
-                    self.__dict__.update(from_file_obj.__dict__)
-
-                    if self.version != __version__:
-                        print(&#34;Warning: the specified Space has been created with a different version of hdlib&#34;)
-
-        else:
-            # Conditions on vector size
-            # It must be an integer number greater than or equal to 10000
-            # This size makes sure that vectors are quasi-orthogonal in space
-            if not isinstance(size, int):
-                raise TypeError(&#34;Vector size must be an integer number&#34;)
-
-            if size &lt; 10000:
-                raise ValueError(&#34;Vector size must be greater than or equal to 10000&#34;)
-
-            self.size = size
-
-            if vtype not in (&#34;bipolar&#34;, &#34;binary&#34;):
-                raise ValueError(&#34;Vector type can be binary or bipolar only&#34;)
-
-            # Add vector type
-            self.vtype = vtype.lower()
-
-            if seed is None:
-                rand = np.random.default_rng()
-
-            else:
-                # Conditions on random seed for reproducibility
-                # numpy allows integers as random seeds
-                if not isinstance(seed, int):
-                    raise TypeError(&#34;Seed must be an integer number&#34;)
-
-                rand = np.random.default_rng(seed=self.seed)
-
-            &#34;&#34;&#34;
-            # Use the following statements to generate random vectors with real numbers
-            self.vector = rand.uniform(low=-1.0, high=1.0, size=(self.size,))
-            self.vector /= np.linalg.norm(self.vector)
-            &#34;&#34;&#34;
-
-            # Build a random binary vector
-            self.vector = rand.integers(2, size=size)
-
-            if vtype == &#34;bipolar&#34;:
-                # Build a random bipolar vector
-                self.vector = 2 * self.vector - 1
-
-    def __len__(self) -&gt; int:
-        &#34;&#34;&#34;Get the vector size.
-
-        Returns
-        -------
-        int
-            The vector size.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; len(vector)
-        10000
-
-        Return the vector size, which is 10,000 by default here
-        &#34;&#34;&#34;
-
-        return self.size
-
-    def __str__(self) -&gt; None:
-        &#34;&#34;&#34;Print the Vector object properties.
-
-        Returns
-        -------
-        str
-            A description of the Vector object. It reports the name, seed, size,
-            vector type, tags, and the actual vector.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; print(vector)
-
-                Class:   hdlib.space.Vector
-                Version: 0.1.17
-                Name:    89ea628b-3d29-47e1-9d10-34bdbfce8d40
-                Seed:    None
-                Size:    10000
-                Type:    bipolar
-                Tags:
-
-                []
-
-                Vector:
-
-                [ 1 -1 -1 ... -1  1 -1]
-
-        Print the Vector object properties. The name has been generated as a UUID v4, while
-        the vector size and type are 10,000 and &#39;bipolar&#39; by default. No tags have been specified.
-        Thus, the set of vector tags is empty.
-        &#34;&#34;&#34;
-
-        return &#34;&#34;&#34;
-            Class:   hdlib.space.Vector
-            Version: {}
-            Name:    {}
-            Seed:    {}
-            Size:    {}
-            Type:    {}
-            Tags:
-
-            {}
-
-            Vector:
-
-            {}
-        &#34;&#34;&#34;.format(
-            self.version,
-            self.name,
-            self.seed,
-            self.size,
-            self.vtype,
-            np.array(list(self.tags)),
-            self.vector
-        )
-
-    def __add__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
-        &#34;&#34;&#34;Implement the addition operator between two Vector objects as bundle.
-
-        Returns
-        -------
-        Vector
-            A new vector object as the result of the bundle operator on the two input vectors.
-
-        Raises
-        ------
-        TypeError
-            If the input `vector` is not instance of the Vector class.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector3 = vector1 + vector2
-        &gt;&gt;&gt; type(vector3)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        The bundle function returns a new Vector object whose content is computed as the element-wise sum 
-        of the two input vectors.
-        &#34;&#34;&#34;
-
-        if not isinstance(vector, type(self)):
-            raise TypeError(&#34;Cannot apply the bundle operator to non-Vector objects&#34;)
-
-        # Import arithmetic.bundle here to avoid circular imports
-        from hdlib.arithmetic import bundle as bundle_operator
-
-        return bundle_operator(self, vector)
-
-    def __sub__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
-        &#34;&#34;&#34;Implement the subtraction operator between two Vector objects.
-
-        Returns
-        -------
-        Vector
-            A new vector object as the result of the subtraction operator on the two input vectors.
-
-        Raises
-        ------
-        TypeError
-            If the input `vector` is not instance of the Vector class.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector3 = vector1 - vector2
-        &gt;&gt;&gt; type(vector3)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        The subtraction operation returns a new Vector object whose content is computed as the element-wise 
-        subtraction of the two input vectors.
-        &#34;&#34;&#34;
-
-        if not isinstance(vector, type(self)):
-            raise TypeError(&#34;Cannot apply the subtraction operator to non-Vector objects&#34;)
-
-        # Import arithmetic.bind here to avoid circular imports
-        from hdlib.arithmetic import subtraction as subtraction_operator
-
-        return subtraction_operator(self, vector)
-
-    def __mul__(self, vector: &#34;Vector&#34;) -&gt; &#34;Vector&#34;:
-        &#34;&#34;&#34;Implement the multiplication operator between two Vector objects as bind.
-
-        Returns
-        -------
-        Vector
-            A new vector object as the result of the bind operator on the two input vectors.
-
-        Raises
-        ------
-        TypeError
-            If the input `vector` is not instance of the Vector class.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector3 = vector1 * vector2
-        &gt;&gt;&gt; type(vector3)
-        &lt;class &#39;hdlib.space.Vector&#39;&gt;
-
-        The bind function returns a new Vector object whose content is computed as the element-wise 
-        multiplication of the two input vectors.
-        &#34;&#34;&#34;
-
-        if not isinstance(vector, type(self)):
-            raise TypeError(&#34;Cannot apply the bind operator to non-Vector objects&#34;)
-
-        # Import arithmetic.bind here to avoid circular imports
-        from hdlib.arithmetic import bind as bind_operator
-
-        return bind_operator(self, vector)
-
-    def dist(self, vector: &#34;Vector&#34;, method: str=&#34;cosine&#34;) -&gt; float:
-        &#34;&#34;&#34;Compute distance between vectors.
-
-        Parameters
-        ----------
-        vector : Vector
-            A Vector object from which the distance must be computed.
-        method : {&#39;cosine&#39;, &#39;euclidean&#39;, &#39;hamming&#39;}, optional, default &#39;cosine&#39;
-            The distance method.
-
-        Returns
-        -------
-        float
-            The distance between the current Vector object and the input `vector`.
-
-        Raises
-        ------
-        Exception
-            If the current vector has a different size or vector type than the input vector.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector(seed=1)
-        &gt;&gt;&gt; vector2 = Vector(seed=2)
-        &gt;&gt;&gt; vector1.dist(vector2, method=&#39;cosine&#39;)
-        0.996
-
-        Generate two random bipolar vectors and compute the distance between them.
-        &#34;&#34;&#34;
-
-        if self.size != vector.size:
-            raise Exception(&#34;Vectors must have the same size&#34;)
-
-        if self.vtype != vector.vtype:
-            raise Exception(&#34;Vectors must be of the same type&#34;)
-
-        if method.lower() == &#34;cosine&#34;:
-            return 1 - np.dot(self.vector, vector.vector) / (np.linalg.norm(self.vector) * np.linalg.norm(vector.vector))
-
-        elif method.lower() == &#34;hamming&#34;:
-            return np.count_nonzero(self.vector != vector.vector)
-
-        elif method.lower() == &#34;euclidean&#34;:
-            return np.linalg.norm(self.vector - vector.vector)
-
-        else:
-            raise ValueError(&#34;Distance method \&#34;{}\&#34; is not supported&#34;.format(method))
-
-    def normalize(self) -&gt; None:
-        &#34;&#34;&#34;Normalize a vector after a binding or bundling with another vector.
-
-        Raises
-        ------
-        Exception
-            If the vector type is not supported (i.e., is different from binary and bipolar).
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; from hdlib.arithmetic import bind
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector3 = bind(vector1, vector2)
-        &gt;&gt;&gt; vector3.normalize()
-        &gt;&gt;&gt; ((vector3.vector == -1) | (vector3.vector == 1)).all()
-        True
-
-        Binding or bundling two vectors can produce a new vector whose vtype is different from the
-        one of the two input vector. This function normalizes the vector content in accordance to
-        its vector type.
-        &#34;&#34;&#34;
-
-        if self.vtype not in (&#34;bipolar&#34;, &#34;binary&#34;):
-            raise Exception(&#34;Vector type is not supported&#34;)
-
-        self.vector[self.vector &gt; 0] = 1
-
-        self.vector[self.vector &lt;= 0] = 0 if self.vtype == &#34;binary&#34; else -1
-
-    def bind(self, vector: &#34;Vector&#34;) -&gt; None:
-        &#34;&#34;&#34;Bind the current vector with another vector object inplace.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input Vector object.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector1.bind(vector2)
-
-        It overrides the actual vector content of `vector1` with the result of the binding with `vector2`.
-        Refers to hdlib.arithmetic.bind for additional information.
-        &#34;&#34;&#34;
-
-        # Import arithmetic.bind here to avoid circular imports
-        from hdlib.arithmetic import bind as bind_operator
-
-        self.__override_object(bind_operator(self, vector))
-
-    def bundle(self, vector: &#34;Vector&#34;) -&gt; None:
-        &#34;&#34;&#34;Bundle the current vector with another vector object inplace.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input Vector object.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector1.bundle(vector2)
-
-        It overrides the actual vector content of `vector1` with the result of the bundling with `vector2`.
-        Refers to hdlib.arithmetic.bundle for additional information.
-        &#34;&#34;&#34;
-
-        # Import arithmetic.bundle here to avoid circular imports
-        from hdlib.arithmetic import bundle as bundle_operator
-
-        self.__override_object(bundle_operator(self, vector))
-
-    def subtraction(self, vector: &#34;Vector&#34;) -&gt; None:
-        &#34;&#34;&#34;Subtract a vector from the current vector object inplace.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input Vector object.
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector1 = Vector()
-        &gt;&gt;&gt; vector2 = Vector()
-        &gt;&gt;&gt; vector1.subtract(vector2)
-
-        It overrides the actual vector content of `vector1` with the result of the subtraction with `vector2`.
-        Refers to hdlib.arithmetic.subtraction for additional information.
-        &#34;&#34;&#34;
-
-        # Import arithmetic.subtraction here to avoid circular imports
-        from hdlib.arithmetic import subtraction as subtraction_operator
-
-        self.__override_object(subtraction_operator(self, vector))
-
-    def permute(self, rotate_by: int=1) -&gt; None:
-        &#34;&#34;&#34;Permute the current vector inplace.
-
-        Parameters
-        ----------
-        rotate_by : int
-            Rotate the input vector by `rotate_by` positions (the default is 1).
-
-        Examples
-        --------
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; vector.permute(rotate_by=2)
-
-        It overrides the actual vector content of `vector` with the result of applying the permute function inplace.
-        Refers to hdlib.arithmetic.permute for additional information.
-        &#34;&#34;&#34;
-
-        # Import arithmetic.permute here to avoid circular imports
-        from hdlib.arithmetic import permute as permute_operator
-
-        self.__override_object(permute_operator(self, rotate_by=rotate_by))
-
-    def __override_object(self, vector: &#34;Vector&#34;) -&gt; None:
-        &#34;&#34;&#34;Override the Vector object with another Vector object. This is a private method.
-
-        Parameters
-        ----------
-        vector : Vector
-            The input vector from which properties are inherited to the current vector.
-        &#34;&#34;&#34;
-
-        self.name = vector.name
-        self.size = vector.size
-        self.seed = vector.seed
-        self.tags = vector.tags
-
-        self.parents = vector.parents
-        self.children = vector.children
-
-        self.vtype = vector.vtype
-        self.vector = vector.vector
-
-        self.version = vector.version
-
-    def dump(self, to_file: Optional[os.path.abspath]=None) -&gt; None:
-        &#34;&#34;&#34;Dump the Vector object to a pickle file.
-
-        Parameters
-        ----------
-        to_file
-            Path to the file used to dump the Vector object to.
-
-        Raises
-        ------
-        Exception
-            If the `to_file` file already exists.
-
-        Examples
-        --------
-        &gt;&gt;&gt; import os
-        &gt;&gt;&gt; from hdlib.space import Vector
-        &gt;&gt;&gt; vector = Vector()
-        &gt;&gt;&gt; vector.dump(to_file=&#39;~/my_vector.pkl&#39;)
-        &gt;&gt;&gt; os.path.isfile(&#39;~/my_vector.pkl&#39;)
-        True
-
-        Create a Vector object and dump it to a pickle file under the home directory.
-        &#34;&#34;&#34;
-
-        if not to_file:
-            # Dump the vector to a pickle file in the current working directory if not file path is provided
-            to_file = os.path.join(os.getcwd(), &#34;{}.pkl&#34;.format(self.name))
-
-        if os.path.isfile(to_file):
-            raise Exception(&#34;The output file already exists!\n{}&#34;.format(to_file))
-
-        with open(to_file, &#34;wb&#34;) as pkl:
-            pickle.dump(self, pkl)</code></pre>
-</details>
-<h3>Methods</h3>
-<dl>
-<dt id="hdlib.space.Vector.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Bind the current vector with another vector object inplace.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
-<dd>The input Vector object.</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; vector1 = Vector()
-&gt;&gt;&gt; vector2 = Vector()
-&gt;&gt;&gt; vector1.bind(vector2)
-</code></pre>
-<p>It overrides the actual vector content of <code>vector1</code> with the result of the binding with <code>vector2</code>.
-Refers to hdlib.arithmetic.bind for additional information.</p></div>
-</dd>
-<dt id="hdlib.space.Vector.bundle"><code class="name flex">
-<span>def <span class="ident">bundle</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Bundle the current vector with another vector object inplace.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
-<dd>The input Vector object.</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; vector1 = Vector()
-&gt;&gt;&gt; vector2 = Vector()
-&gt;&gt;&gt; vector1.bundle(vector2)
-</code></pre>
-<p>It overrides the actual vector content of <code>vector1</code> with the result of the bundling with <code>vector2</code>.
-Refers to hdlib.arithmetic.bundle for additional information.</p></div>
-</dd>
-<dt id="hdlib.space.Vector.dist"><code class="name flex">
-<span>def <span class="ident">dist</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>, method: str = 'cosine') ‑> float</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Compute distance between vectors.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
-<dd>A Vector object from which the distance must be computed.</dd>
-<dt><strong><code>method</code></strong> :&ensp;<code>{'cosine', 'euclidean', 'hamming'}</code>, optional, default <code>'cosine'</code></dt>
-<dd>The distance method.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>float</code></dt>
-<dd>The distance between the current Vector object and the input <code>vector</code>.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>Exception</code></dt>
-<dd>If the current vector has a different size or vector type than the input vector.</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; vector1 = Vector(seed=1)
-&gt;&gt;&gt; vector2 = Vector(seed=2)
-&gt;&gt;&gt; vector1.dist(vector2, method='cosine')
-0.996
-</code></pre>
-<p>Generate two random bipolar vectors and compute the distance between them.</p></div>
-</dd>
-<dt id="hdlib.space.Vector.dump"><code class="name flex">
-<span>def <span class="ident">dump</span></span>(<span>self, to_file: Optional[<function abspath at 0x7cb40330a0>] = None) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Dump the Vector object to a pickle file.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>to_file</code></strong></dt>
-<dd>Path to the file used to dump the Vector object to.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>Exception</code></dt>
-<dd>If the <code>to_file</code> file already exists.</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; import os
-&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; vector = Vector()
-&gt;&gt;&gt; vector.dump(to_file='~/my_vector.pkl')
-&gt;&gt;&gt; os.path.isfile('~/my_vector.pkl')
-True
-</code></pre>
-<p>Create a Vector object and dump it to a pickle file under the home directory.</p></div>
-</dd>
-<dt id="hdlib.space.Vector.normalize"><code class="name flex">
-<span>def <span class="ident">normalize</span></span>(<span>self) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Normalize a vector after a binding or bundling with another vector.</p>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>Exception</code></dt>
-<dd>If the vector type is not supported (i.e., is different from binary and bipolar).</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; from hdlib.arithmetic import bind
-&gt;&gt;&gt; vector1 = Vector()
-&gt;&gt;&gt; vector2 = Vector()
-&gt;&gt;&gt; vector3 = bind(vector1, vector2)
-&gt;&gt;&gt; vector3.normalize()
-&gt;&gt;&gt; ((vector3.vector == -1) | (vector3.vector == 1)).all()
-True
-</code></pre>
-<p>Binding or bundling two vectors can produce a new vector whose vtype is different from the
-one of the two input vector. This function normalizes the vector content in accordance to
-its vector type.</p></div>
-</dd>
-<dt id="hdlib.space.Vector.permute"><code class="name flex">
-<span>def <span class="ident">permute</span></span>(<span>self, rotate_by: int = 1) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Permute the current vector inplace.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>rotate_by</code></strong> :&ensp;<code>int</code></dt>
-<dd>Rotate the input vector by <code>rotate_by</code> positions (the default is 1).</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; vector = Vector()
-&gt;&gt;&gt; vector.permute(rotate_by=2)
-</code></pre>
-<p>It overrides the actual vector content of <code>vector</code> with the result of applying the permute function inplace.
-Refers to hdlib.arithmetic.permute for additional information.</p></div>
-</dd>
-<dt id="hdlib.space.Vector.subtraction"><code class="name flex">
-<span>def <span class="ident">subtraction</span></span>(<span>self, vector: <a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a>) ‑> None</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Subtract a vector from the current vector object inplace.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>vector</code></strong> :&ensp;<code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></dt>
-<dd>The input Vector object.</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.space import Vector
-&gt;&gt;&gt; vector1 = Vector()
-&gt;&gt;&gt; vector2 = Vector()
-&gt;&gt;&gt; vector1.subtract(vector2)
-</code></pre>
-<p>It overrides the actual vector content of <code>vector1</code> with the result of the subtraction with <code>vector2</code>.
-Refers to hdlib.arithmetic.subtraction for additional information.</p></div>
-</dd>
-</dl>
-</dd>
 </dl>
 </section>
 </article>
@@ -2255,18 +1408,6 @@ Refers to hdlib.arithmetic.subtraction for additional information.</p></div>
 <li><code><a title="hdlib.space.Space.remove" href="#hdlib.space.Space.remove">remove</a></code></li>
 <li><code><a title="hdlib.space.Space.remove_tag" href="#hdlib.space.Space.remove_tag">remove_tag</a></code></li>
 <li><code><a title="hdlib.space.Space.set_root" href="#hdlib.space.Space.set_root">set_root</a></code></li>
-</ul>
-</li>
-<li>
-<h4><code><a title="hdlib.space.Vector" href="#hdlib.space.Vector">Vector</a></code></h4>
-<ul class="two-column">
-<li><code><a title="hdlib.space.Vector.bind" href="#hdlib.space.Vector.bind">bind</a></code></li>
-<li><code><a title="hdlib.space.Vector.bundle" href="#hdlib.space.Vector.bundle">bundle</a></code></li>
-<li><code><a title="hdlib.space.Vector.dist" href="#hdlib.space.Vector.dist">dist</a></code></li>
-<li><code><a title="hdlib.space.Vector.dump" href="#hdlib.space.Vector.dump">dump</a></code></li>
-<li><code><a title="hdlib.space.Vector.normalize" href="#hdlib.space.Vector.normalize">normalize</a></code></li>
-<li><code><a title="hdlib.space.Vector.permute" href="#hdlib.space.Vector.permute">permute</a></code></li>
-<li><code><a title="hdlib.space.Vector.subtraction" href="#hdlib.space.Vector.subtraction">subtraction</a></code></li>
 </ul>
 </li>
 </ul>

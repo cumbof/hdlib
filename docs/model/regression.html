@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
+<title>hdlib.model.regression API documentation</title>
+<meta name="description" content="Similarity-preserving encoding and multi-model regression">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>hdlib.model.regression</code></h1>
+</header>
+<section id="section-intro">
+<p>Similarity-preserving encoding and multi-model regression.</p>
+<p>It implements the <strong>hdlib.model.regression.RegressionEncoder</strong> and <strong>hdlib.model.regression.RegressionModel</strong> class objects
+built according to the Hyperdimensional Computing (HDC) paradigm as described in <em>Hernández-Cano et al. 2021</em> <a href="https://doi.org/10.1109/DAC18074.2021.9586284.">https://doi.org/10.1109/DAC18074.2021.9586284.</a></p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="hdlib.model.regression.RegressionEncoder"><code class="flex name class">
+<span>class <span class="ident">RegressionEncoder</span></span>
+<span>(</span><span>D: int, n_features: int)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implements the similarity-preserving encoding from the RegHD article.
+Maps input features to high-dimensional real-valued hypervectors.</p>
+<p>The encoding function is h_i = cos(F_bar . B_i + b_i) * sin(F_bar . B_i), where F_bar is the input feature vector,
+B_i are random base hypervectors, and b_i are random biases.</p>
+<p>Initializes the RegressionEncoder.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>D</code></strong> :&ensp;<code>int</code></dt>
+<dd>Dimensionality of the high-dimensional space (e.g., 10000).</dd>
+<dt><strong><code>n_features</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of features in the input data.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="hdlib.model.regression.RegressionEncoder" href="#hdlib.model.regression.RegressionEncoder">RegressionEncoder</a></code></dt>
+<dd>The regression encoder object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RegressionEncoder:
+    &#34;&#34;&#34;Implements the similarity-preserving encoding from the RegHD article.
+    Maps input features to high-dimensional real-valued hypervectors.
+
+    The encoding function is h_i = cos(F_bar . B_i + b_i) * sin(F_bar . B_i), where F_bar is the input feature vector, 
+    B_i are random base hypervectors, and b_i are random biases.
+    &#34;&#34;&#34;
+
+    def __init__(self, D: int, n_features: int):
+        &#34;&#34;&#34;Initializes the RegressionEncoder.
+
+        Parameters
+        ----------
+        D : int
+            Dimensionality of the high-dimensional space (e.g., 10000).
+        n_features : int
+            Number of features in the input data.
+
+        Returns
+        -------
+        RegressionEncoder
+            The regression encoder object.
+        &#34;&#34;&#34;
+
+        if D &lt;= 0 or not isinstance(D, int):
+            raise ValueError(&#34;Dimensionality D must be a positive integer.&#34;)
+
+        if n_features &lt;= 0 or not isinstance(n_features, int):
+            raise ValueError(&#34;Number of features n_features must be a positive integer.&#34;)
+
+        self.D = D
+        self.n_features = n_features
+
+        # Randomly chosen base hypervectors (B_k in paper)
+        # These are generated from a normal distribution as suggested by the paper (B_kj ~ N(0,1)).
+        # Shape: (n_features, D)
+        self.base_hypervectors = np.random.randn(n_features, D)
+
+        # Random biases b_i ~ U(0, 2pi)
+        # Shape: (D,)
+        self.biases = np.random.uniform(0, 2 * np.pi, D)
+
+    def encode(self, feature_vector: np.ndarray) -&gt; np.ndarray:
+        &#34;&#34;&#34;Encodes a single feature vector into a high-dimensional real-valued hypervector.
+
+        Parameters
+        ----------
+        feature_vector : np.ndarray
+            A 1D numpy array of shape (n_features,) representing the input features.
+
+        Returns
+        -------
+        np.ndarray
+            A 1D numpy array of shape (D,) representing the encoded high-dimensional real-valued hypervector.
+        &#34;&#34;&#34;
+
+        # Ensure feature_vector is a 1D numpy array
+        feature_vector = np.asarray(feature_vector).flatten()
+
+        if feature_vector.shape[0] != self.n_features:
+            raise ValueError(f&#34;Input feature vector must have {self.n_features} features, but got {feature_vector.shape[0]}&#34;)
+
+        # Compute dot products: F_bar . B_i for each B_i (column in base_hypervectors)
+        # This results in a 1D array of shape (D,)
+        dot_products = np.dot(feature_vector, self.base_hypervectors)
+
+        # Apply the encoding formula: h_i = cos(dot_product + b_i) * sin(dot_product)
+        encoded_vector = np.cos(dot_products + self.biases) * np.sin(dot_products)
+
+        return encoded_vector</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="hdlib.model.regression.RegressionEncoder.encode"><code class="name flex">
+<span>def <span class="ident">encode</span></span>(<span>self, feature_vector: numpy.ndarray) ‑> numpy.ndarray</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Encodes a single feature vector into a high-dimensional real-valued hypervector.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>feature_vector</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>A 1D numpy array of shape (n_features,) representing the input features.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ndarray</code></dt>
+<dd>A 1D numpy array of shape (D,) representing the encoded high-dimensional real-valued hypervector.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="hdlib.model.regression.RegressionModel"><code class="flex name class">
+<span>class <span class="ident">RegressionModel</span></span>
+<span>(</span><span>D: int, n_features: int, k_models: int = 8, learning_rate: float = 0.01, iterations: int = 20, binary_threshold: float = 0.0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implements the RegHD multi-model regression algorithm.</p>
+<p>This class handles the training and prediction phases, including the management of cluster and regression models,
+and optional quantization for efficiency.</p>
+<p>Initializes the RegHDRegressor.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>D</code></strong> :&ensp;<code>int</code></dt>
+<dd>Dimensionality of hypervectors.</dd>
+<dt><strong><code>n_features</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of input features.</dd>
+<dt><strong><code>k_models</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of cluster/regression models to use.</dd>
+<dt><strong><code>learning_rate</code></strong> :&ensp;<code>float</code></dt>
+<dd>Alpha parameter for model updates.</dd>
+<dt><strong><code>iterations</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of training iterations (epochs).</dd>
+<dt><strong><code>binary_threshold</code></strong> :&ensp;<code>float</code></dt>
+<dd>Threshold for binarizing real-valued hypervectors (e.g., 0.0 for bipolar conversion).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="hdlib.model.regression.RegressionModel" href="#hdlib.model.regression.RegressionModel">RegressionModel</a></code></dt>
+<dd>The regression model object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RegressionModel:
+    &#34;&#34;&#34;Implements the RegHD multi-model regression algorithm.
+
+    This class handles the training and prediction phases, including the management of cluster and regression models, 
+    and optional quantization for efficiency.
+    &#34;&#34;&#34;
+    def __init__(
+        self, 
+        D: int, 
+        n_features: int, 
+        k_models: int=8, 
+        learning_rate: float=0.01, 
+        iterations: int=20, 
+        binary_threshold: float=0.0
+    ):
+        &#34;&#34;&#34;Initializes the RegHDRegressor.
+
+        Parameters
+        ----------
+        D : int
+            Dimensionality of hypervectors.
+        n_features : int
+            Number of input features.
+        k_models : int
+            Number of cluster/regression models to use.
+        learning_rate : float
+            Alpha parameter for model updates.
+        iterations : int
+            Number of training iterations (epochs).
+        binary_threshold : float
+            Threshold for binarizing real-valued hypervectors (e.g., 0.0 for bipolar conversion).
+
+        Returns
+        -------
+        RegressionModel
+            The regression model object.
+        &#34;&#34;&#34;
+
+        if D &lt;= 0 or not isinstance(D, int):
+            raise ValueError(&#34;Dimensionality D must be a positive integer.&#34;)
+
+        if n_features &lt;= 0 or not isinstance(n_features, int):
+            raise ValueError(&#34;Number of features n_features must be a positive integer.&#34;)
+
+        if k_models &lt;= 0 or not isinstance(k_models, int):
+            raise ValueError(&#34;Number of models k_models must be a positive integer.&#34;)
+
+        if not isinstance(learning_rate, (int, float)) or learning_rate &lt;= 0:
+            raise ValueError(&#34;Learning rate must be a positive number.&#34;)
+
+        if iterations &lt;= 0 or not isinstance(iterations, int):
+            raise ValueError(&#34;Number of iterations must be a positive integer.&#34;)
+
+        if not isinstance(binary_threshold, (int, float)):
+            raise ValueError(&#34;Binary threshold must be a number.&#34;)
+
+        self.D = D
+        self.n_features = n_features
+        self.k_models = k_models
+        self.learning_rate = learning_rate
+        self.iterations = iterations
+        self.binary_threshold = binary_threshold
+
+        # Initialize the encoder for mapping input features to HD space
+        self.encoder = RegressionEncoder(D, n_features)
+
+        # Initialize cluster hypervectors (C_i) and regression model hypervectors (M_i)
+        # As per the paper, we maintain both &#34;integer&#34; (float numpy array) and &#34;binary&#34; (Vector)
+        # versions for cluster models.
+        # Cluster models (binary for similarity search, float for updates)
+        self.cluster_models_b = [Vector(vtype=&#34;bipolar&#34;, size=D) for _ in range(k_models)]
+        self.cluster_models_int = [np.zeros(D, dtype=float) for _ in range(k_models)]
+
+        # Initialize integer models from the binary ones to ensure consistency
+        for i in range(self.k_models):
+            self.cluster_models_int[i] = self.cluster_models_b[i].vector.astype(float)
+
+        # Regression models (float for updates, binary for optional quantized prediction)
+        self.regression_models_int = [np.zeros(D, dtype=float) for _ in range(k_models)]
+        self.regression_models_b = [Vector(vtype=&#34;bipolar&#34;, vector=np.zeros(D)) for _ in range(k_models)]
+
+        # Flag to control prediction quantization strategy
+        self.quantized_prediction = False
+
+    def _to_bipolar(self, vec_float: np.ndarray) -&gt; Vector:
+        &#34;&#34;&#34;Converts a float numpy array to an hdlib Vector (bipolar). Values &gt;= binary_threshold become 1, others become -1.
+        &#34;&#34;&#34;
+
+        bipolar_array = np.where(vec_float &gt;= self.binary_threshold, 1, -1)
+
+        return Vector(vtype=&#34;bipolar&#34;, vector=bipolar_array)
+
+    def _calculate_similarity(self, encoded_s_b: Vector, cluster_model_b: Vector) -&gt; float:
+        &#34;&#34;&#34;Calculates similarity between a binary encoded input hypervector and a
+        binary cluster model hypervector. For bipolar vectors, this is based on cosine similarity.
+        &#34;&#34;&#34;
+
+        # Using cosine similarity as the primary metric for bipolar vectors in hdlib
+        return 1.0 - encoded_s_b.dist(cluster_model_b, method=&#34;cosine&#34;)
+
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        &#34;&#34;&#34;Trains the RegHD regressor using the provided training data.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Input features, a 2D numpy array of shape (n_samples, n_features).
+        y : np.ndarray
+            Target values, a 1D numpy array of shape (n_samples,).
+        &#34;&#34;&#34;
+
+        X = np.asarray(X, dtype=float)
+        y = np.asarray(y, dtype=float)
+
+        if X.shape[1] != self.n_features:
+            raise ValueError(f&#34;Input X must have {self.n_features} features, but got {X.shape[1]}&#34;)
+
+        if X.shape[0] != y.shape[0]:
+            raise ValueError(&#34;Number of samples in X and y must match.&#34;)
+
+        print(f&#34;Starting RegHD training with D={self.D}, k_models={self.k_models}, iterations={self.iterations}&#34;)
+
+        for iteration in range(self.iterations):
+            total_mse = 0.0
+
+            for i in range(X.shape[0]):
+                feature_vector = X[i]
+                actual_output = y[i]
+
+                # 1. Encode input data
+                encoded_s_float = self.encoder.encode(feature_vector)
+                encoded_s_b = self._to_bipolar(encoded_s_float)
+
+                # 2. Check similarity with all binary cluster hypervectors
+                similarities = np.array([self._calculate_similarity(encoded_s_b, cluster_b) for cluster_b in self.cluster_models_b])
+
+                # 3. Normalize similarity values using softmax to get confidences
+                confidences = softmax(similarities)
+
+                # 4. Predict output value during training
+                predicted_output = 0.0
+                for j in range(self.k_models):
+                    predicted_output += confidences[j] * np.dot(self.regression_models_int[j], encoded_s_float)
+
+                # 5. Calculate prediction error
+                error = actual_output - predicted_output
+                total_mse += error**2
+
+                # 6. Update Regression Models
+                for j in range(self.k_models):
+                    self.regression_models_int[j] += self.learning_rate * confidences[j] * error * encoded_s_float
+
+                # 7. Update Cluster Models
+                l_max_similarity = np.argmax(similarities)
+                self.cluster_models_int[l_max_similarity] += (1 - confidences[l_max_similarity]) * encoded_s_float
+
+            # After each epoch, quantize the updated models
+            for j in range(self.k_models):
+                self.cluster_models_b[j] = self._to_bipolar(self.cluster_models_int[j])
+
+                if self.quantized_prediction:
+                    self.regression_models_b[j] = self._to_bipolar(self.regression_models_int[j])
+
+            avg_mse = total_mse / X.shape[0]
+
+            print(f&#34;Iteration {iteration+1}/{self.iterations}, Mean Squared Error (MSE): {avg_mse:.4f}&#34;)
+
+    def predict(self, X_query: np.ndarray) -&gt; np.ndarray:
+        &#34;&#34;&#34;Predicts output values for new input data.
+
+        Parameters
+        ----------
+        X_query : np.ndarray
+            Input features, a 2D numpy array of shape (n_samples, n_features).
+
+        Returns
+        -------
+        np.ndarray
+            Predicted target values, a 1D numpy array of shape (n_samples,).
+        &#34;&#34;&#34;
+
+        X_query = np.asarray(X_query, dtype=float)
+
+        if X_query.shape[1] != self.n_features:
+            raise ValueError(f&#34;Input X_query must have {self.n_features} features, but got {X_query.shape[1]}&#34;)
+
+        predictions = []
+
+        for i in range(X_query.shape[0]):
+            feature_vector = X_query[i]
+
+            # 1. Encode input data
+            encoded_s_float = self.encoder.encode(feature_vector)
+            encoded_s_b = self._to_bipolar(encoded_s_float)
+
+            # 2. Compute similarity with all binary cluster centers
+            similarities = np.array([self._calculate_similarity(encoded_s_b, cluster_b) for cluster_b in self.cluster_models_b])
+
+            # 3. Normalize similarity values
+            confidences = softmax(similarities)
+
+            # 4. Predict output value
+            predicted_output = 0.0
+            for j in range(self.k_models):
+                if self.quantized_prediction:
+                    predicted_output += confidences[j] * np.dot(self.regression_models_b[j].vector, encoded_s_b.vector)
+
+                else:
+                    predicted_output += confidences[j] * np.dot(self.regression_models_int[j], encoded_s_float)
+
+            predictions.append(predicted_output)
+
+        return np.array(predictions)
+
+    def set_quantized_prediction_mode(self, enable: bool=True):
+        &#34;&#34;&#34;Sets whether prediction should use binarized regression models.
+        &#34;&#34;&#34;
+
+        self.quantized_prediction = enable
+
+        if enable:
+            for j in range(self.k_models):
+                self.regression_models_b[j] = self._to_bipolar(self.regression_models_int[j])</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="hdlib.model.regression.RegressionModel.fit"><code class="name flex">
+<span>def <span class="ident">fit</span></span>(<span>self, X: numpy.ndarray, y: numpy.ndarray)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Trains the RegHD regressor using the provided training data.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Input features, a 2D numpy array of shape (n_samples, n_features).</dd>
+<dt><strong><code>y</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Target values, a 1D numpy array of shape (n_samples,).</dd>
+</dl></div>
+</dd>
+<dt id="hdlib.model.regression.RegressionModel.predict"><code class="name flex">
+<span>def <span class="ident">predict</span></span>(<span>self, X_query: numpy.ndarray) ‑> numpy.ndarray</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Predicts output values for new input data.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X_query</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Input features, a 2D numpy array of shape (n_samples, n_features).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ndarray</code></dt>
+<dd>Predicted target values, a 1D numpy array of shape (n_samples,).</dd>
+</dl></div>
+</dd>
+<dt id="hdlib.model.regression.RegressionModel.set_quantized_prediction_mode"><code class="name flex">
+<span>def <span class="ident">set_quantized_prediction_mode</span></span>(<span>self, enable: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets whether prediction should use binarized regression models.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="hdlib.model" href="index.html">hdlib.model</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="hdlib.model.regression.RegressionEncoder" href="#hdlib.model.regression.RegressionEncoder">RegressionEncoder</a></code></h4>
+<ul class="">
+<li><code><a title="hdlib.model.regression.RegressionEncoder.encode" href="#hdlib.model.regression.RegressionEncoder.encode">encode</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="hdlib.model.regression.RegressionModel" href="#hdlib.model.regression.RegressionModel">RegressionModel</a></code></h4>
+<ul class="">
+<li><code><a title="hdlib.model.regression.RegressionModel.fit" href="#hdlib.model.regression.RegressionModel.fit">fit</a></code></li>
+<li><code><a title="hdlib.model.regression.RegressionModel.predict" href="#hdlib.model.regression.RegressionModel.predict">predict</a></code></li>
+<li><code><a title="hdlib.model.regression.RegressionModel.set_quantized_prediction_mode" href="#hdlib.model.regression.RegressionModel.set_quantized_prediction_mode">set_quantized_prediction_mode</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Copyright &copy; 2025 Fabio Cumbo - Distributed under the <a href="https://github.com/cumbof/hdlib/blob/main/LICENSE" target="_blank">MIT License</a> - Documentation generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+</footer>
+</body>
+</html>

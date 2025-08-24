@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.1">
-<title>hdlib.graph API documentation</title>
-<meta name="description" content="Directed and undirected, weighted and unweighted graphs with hdlib …">
+<title>hdlib.model.graph API documentation</title>
+<meta name="description" content="Directed and undirected, weighted and unweighted graphs with hdlib">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -22,11 +22,11 @@ hljs.highlightAll();
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>hdlib.graph</code></h1>
+<h1 class="title">Module <code>hdlib.model.graph</code></h1>
 </header>
 <section id="section-intro">
 <p>Directed and undirected, weighted and unweighted graphs with hdlib.</p>
-<p>It implements the <strong>hdlib.graph.Graph</strong> class object which allows to represent weighted directed and undirected graphs
+<p>It implements the <strong>hdlib.model.graph.GraphModel</strong> class object which allows to represent weighted directed and undirected graphs
 built according to the Hyperdimensional Computing (HDC) paradigm as described in <em>Poduval et al. 2022</em> <a href="https://doi.org/10.3389/fnins.2022.757125.">https://doi.org/10.3389/fnins.2022.757125.</a></p>
 </section>
 <section>
@@ -38,13 +38,13 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="hdlib.graph.Graph"><code class="flex name class">
-<span>class <span class="ident">Graph</span></span>
+<dt id="hdlib.model.graph.GraphModel"><code class="flex name class">
+<span>class <span class="ident">GraphModel</span></span>
 <span>(</span><span>size: int = 10000, directed: bool = False, seed: Optional[int] = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Hyperdimensional Graph representation.</p>
-<p>Initialize a Graph object.</p>
+<div class="desc"><p>Hyperdimensional GraphModel representation.</p>
+<p>Initialize a GraphModel object.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>size</code></strong> :&ensp;<code>int</code>, default <code>10000</code></dt>
@@ -59,29 +59,29 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
 <dt><code>TypeError</code></dt>
 <dd>If the vector size is not an integer number.</dd>
 <dt><code>ValueError</code></dt>
-<dd>If the vector size is lower than 10,000.</dd>
+<dd>If the vector size is lower than 1,000.</dd>
 </dl>
 <h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.graph import Graph
-&gt;&gt;&gt; graph = Graph(size=10000, vtype='bipolar', directed=False)
+<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.model import GraphModel
+&gt;&gt;&gt; graph = GraphModel(size=10000, vtype='bipolar', directed=False)
 &gt;&gt;&gt; type(graph)
-&lt;class 'hdlib.graph.Graph'&gt;
+&lt;class 'hdlib.model.GraphModel'&gt;
 </code></pre>
-<p>This creates a new undirected Graph object around a Space that can host random bipolar Vector objects with size 10,000.</p></div>
+<p>This creates a new undirected GraphModel object around a Space that can host random bipolar Vector objects with size 10,000.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Graph(object):
-    &#34;&#34;&#34;Hyperdimensional Graph representation.&#34;&#34;&#34;
+<pre><code class="python">class GraphModel(object):
+    &#34;&#34;&#34;Hyperdimensional GraphModel representation.&#34;&#34;&#34;
 
     def __init__(
         self,
         size: int=10000,
         directed: bool=False,
         seed: Optional[int]=None
-    ) -&gt; &#34;Graph&#34;:
-        &#34;&#34;&#34;Initialize a Graph object.
+    ) -&gt; &#34;GraphModel&#34;:
+        &#34;&#34;&#34;Initialize a GraphModel object.
 
         Parameters
         ----------
@@ -97,23 +97,23 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         TypeError
             If the vector size is not an integer number.
         ValueError
-            If the vector size is lower than 10,000.
+            If the vector size is lower than 1,000.
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.graph import Graph
-        &gt;&gt;&gt; graph = Graph(size=10000, vtype=&#39;bipolar&#39;, directed=False)
+        &gt;&gt;&gt; from hdlib.model import GraphModel
+        &gt;&gt;&gt; graph = GraphModel(size=10000, vtype=&#39;bipolar&#39;, directed=False)
         &gt;&gt;&gt; type(graph)
-        &lt;class &#39;hdlib.graph.Graph&#39;&gt;
+        &lt;class &#39;hdlib.model.GraphModel&#39;&gt;
 
-        This creates a new undirected Graph object around a Space that can host random bipolar Vector objects with size 10,000.
+        This creates a new undirected GraphModel object around a Space that can host random bipolar Vector objects with size 10,000.
         &#34;&#34;&#34;
 
         if not isinstance(size, int):
             raise TypeError(&#34;Vectors size must be an integer number&#34;)
 
-        if size &lt; 10000:
-            raise ValueError(&#34;Vectors size must be greater than or equal to 10000&#34;)
+        if size &lt; 1000:
+            raise ValueError(&#34;Vectors size must be greater than or equal to 1000&#34;)
 
         # Register vectors dimensionality
         self.size = size
@@ -149,25 +149,33 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
 
             self.rand = np.random.default_rng(seed=self.seed)
 
+        # We estimate a proper threshold to establish whether an edge exists between two nodes
+        # Keep track of these thresholds to avoid recomputing them
+        # This is also weight dependant
+        self.weight_to_node_specific_thresholds = dict()
+
+        # Also keep track of the edges for error rate estimation and error mitigation
+        self.edges = set()
+
         # Keep track of hdlib version
         self.version = __version__
 
-    def __str__(self) -&gt; None:
-        &#34;&#34;&#34;Print the Graph object properties.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Print the GraphModel object properties.
 
         Returns
         -------
         str
-            A description of the Graph object. It reports the vectors size, the vector type,
+            A description of the GraphModel object. It reports the vectors size, the vector type,
             the number of nodes, the number of edges, and whether it is directed or undirected.
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.graph import Graph
-        &gt;&gt;&gt; graph = Graph()
+        &gt;&gt;&gt; from hdlib.model import GraphModel
+        &gt;&gt;&gt; graph = GraphModel()
         &gt;&gt;&gt; print(graph)
 
-                Class:    hdlib.graph.Graph
+                Class:    hdlib.model.graph.GraphModel
                 Version:  0.1.17
                 Size:     10000
                 Type:     bipolar
@@ -177,13 +185,13 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
                 Edges:    0
                 Seed:     None
 
-        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
+        Print the GraphModel object properties. By default, the size of vectors in space is 10,000,
         their types is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         &#34;&#34;&#34;
 
         return &#34;&#34;&#34;
-            Class:    hdlib.graph.Graph
+            Class:    hdlib.model.graph.GraphModel
             Version:  {}
             Size:     {}
             Type:     {}
@@ -228,7 +236,7 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         &#34;&#34;&#34;
 
         if node1 == GRAPH_ID or node2 == GRAPH_ID:
-            raise ValueError(&#34;Node names cannot match with the private graph ID `{}`&#34;.format(GRAPH_ID))
+            raise ValueError(f&#34;Node names cannot match with the private graph ID `{GRAPH_ID}`&#34;)
 
         edge_exists = False
 
@@ -291,6 +299,9 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         if not self.directed:
             self.space.space[node2].weights[node1].add(weight)
 
+        # Keep track of the edges here
+        self.edges.add((node1, node2, weight))
+
     def _node_memory(self, node: str) -&gt; None:
         &#34;&#34;&#34;Build the node memory as a vector containing information about its neighbors.
 
@@ -307,7 +318,7 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         &#34;&#34;&#34;
 
         if node not in self.space.space:
-            raise Exception(&#34;Node `{}` is not in the graph space&#34;.format(node))
+            raise Exception(f&#34;Node `{node}` is not in the graph space&#34;)
 
         neighbors = self.space.space[node].children
 
@@ -317,7 +328,7 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
             # Get the real weight from vector tags
             for weight in self.space.space[node].weights[neighbor]:
                 # Retrieve the weight vector from the space
-                weight_vector = self.space.space[&#34;{}{}&#34;.format(WEIGHT_ID, weight)]
+                weight_vector = self.space.space[f&#34;{WEIGHT_ID}{weight}&#34;]
 
                 if node_memory is None:
                     # Initialize the node memory with the first neighbor
@@ -347,27 +358,33 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
 
         for weight in self.weights:
             # Build a random vector
-            weight_vector = Vector(
-                name=&#34;{}{}&#34;.format(WEIGHT_ID, weight),
-                size=self.size,
-                vtype=self.vtype
-            )
+            weight_vector = Vector(name=f&#34;{WEIGHT_ID}{weight}&#34;, size=self.size, vtype=self.vtype)
 
             self.space.insert(weight_vector)
 
-    def error_rate(
-        self,
-        edges: Set[Tuple[str, str, Any]],
-    ) -&gt; Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
-        &#34;&#34;&#34;Compute the error rate defined as the number of mispredicted edges on the total number of edges.
-        Note that the error rate depends on the set of edges in input to this function which could be different
-        from the actual set of edges used to build the graph model.
+    @staticmethod
+    def _error_rate(instance: &#34;GraphModel&#34;) -&gt; Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
+        &#34;&#34;&#34;Just a wrapper around the `error_rate` function to make it callable in multiprocessing.
+        It is safe to run in multiprocessing because it does not modify any instance attributes.
 
         Parameters
         ----------
-        edges : set
-            The set of edges used to mitigate the graph model error rate.
-            Note that the edges in this set do not necessarily have to be present in the graph.
+        instance : GraphModel
+            A GraphModel instance.
+
+        Returns
+        -------
+        tuple
+            A tuple with the error rate, and the sets of flase positive and false negative edges
+            among those in the input `edges`.
+        &#34;&#34;&#34;
+
+        return instance.error_rate()
+
+    def error_rate(self) -&gt; Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
+        &#34;&#34;&#34;Compute the error rate defined as the number of mispredicted edges on the total number of edges.
+        Note that the error rate depends on the set of edges in input to this function which could be different
+        from the actual set of edges used to build the graph model.
 
         Returns
         -------
@@ -377,91 +394,145 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         &#34;&#34;&#34;
 
         # Compute the error rate as the number of mispredicted edges over the total number of edges
-        false_positives = set()
         false_negatives = set()
 
-        for edge in edges:
+        for edge in self.edges:
             node1, node2, weight_true = edge
 
-            weight_pred = list()
+            # Compute node specific threshold
+            node1_threshold = self.weight_to_node_specific_thresholds[weight_true].get(node1) if weight_true in self.weight_to_node_specific_thresholds else None
 
-            for weight in self.weights:
-                _, weight_dist = self.edge_exists(node1, node2, weight)
+            # Search for the current edge
+            edge_exists, _, dist_threshold = self.edge_exists(node1, node2, weight, threshold=node1_threshold)
 
-                weight_pred.append((weight, weight_dist))
+            if weight_true not in self.weight_to_node_specific_thresholds:
+                self.weight_to_node_specific_thresholds[weight_true] = dict()
 
-            if len(weight_pred) &gt; 1:
-                # Sort weights based on their distances
-                weight_pred = sorted(weight_pred, key=lambda w: w[1])
+            if node1 not in self.weight_to_node_specific_thresholds[weight_true]:
+                self.weight_to_node_specific_thresholds[weight_true][node1] = dist_threshold
 
-                # Get the difference between the closest and the farthest distances
-                dist_diff = weight_pred[-1][1] - weight_pred[0][1]
+            if not edge_exists:
+                # This is a false negative
+                false_negatives.add(edge)
 
-                # Use the difference in distances to select the top closest weights
-                weight_pred = [w[0] for w in weight_pred if w[1] - weight_pred[0][1] &lt; dist_diff]
-
-                if weight_true in weight_pred and node2 not in self.space.space[node1].children:
-                    false_positives.add(edge)
-
-                elif weight_true not in weight_pred and node2 in self.space.space[node1].children:
-                    false_negatives.add(edge)
-
-            else:
-                weight_pred = weight_pred[0]
-
-                if weight_true == weight_pred and node2 not in self.space.space[node1].children:
-                    false_positives.add(edge)
-
-                elif weight_true != weight_pred and node2 in self.space.space[node1].children:
-                    false_negatives.add(edge)
-
-        return (len(false_positives) + len(false_negatives)) / len(edges), false_positives, false_negatives
+        return len(false_negatives) / len(edges), false_negatives
 
     def error_mitigation(
         self,
-        edges: Set[Tuple[str, str, Any]],
         max_iter: int=10,
-        prev_error_rate: Optional[float]=None
+        nproc: int=1
     ) -&gt; None:
         &#34;&#34;&#34;Mitigate the error rate of the graph model.
 
         Parameters
         ----------
-        edges : set
-            The set of edges used to mitigate the graph model error rate.
-            Note that the edges in this set do not necessarily have to be present in the graph.
         max_iter : int, deafult 10
             This is an iterative process that is repeated for up to `max_iter` iterations.
-        prev_error_rate : float, optional
-            Used to compare the error rate of the graph model with the error rate computed
-            at the previous iteration. This must be initially set to `1.0`.
+        nproc : int, default 1
+            Maximum number of jobs for multiprocessing.
         &#34;&#34;&#34;
 
-        # Compute the graph model error rate
-        error_rate, false_positives, false_negatives = self.error_rate(edges)
+        if max_iter &gt; 0:
+            # Keep track of misclassified edges
+            false_negatives = set()
 
-        if (prev_error_rate is None or error_rate &lt; prev_error_rate) and max_iter &gt; 0:
-            # Rebuild the mispredicted node memories
-            for edge in false_positives.union(false_negatives):
-                node1, node2, weight = edge
+            # Split the set of edges into equally sized chunks
+            # This is used for multiprocessing only
+            chunk_size = len(self.edges) // nproc
 
-                # Retrieve the weight vector from the space
-                weight_vector = self.space.space[&#34;{}{}&#34;.format(WEIGHT_ID, weight)]
+            edges_list = None
+            edges_subsets = None
 
-                if self.space.space[node1].memory:
-                    if edge in false_positives:
-                        # Reduce the signal of node2 in the memory of node1
-                        self.space.space[node1].memory -= (weight_vector * self.space.space[node2])
+            # Redefine the number of CPUs for multiprocessing
+            if nproc &lt;= 1:
+                nproc = 1
 
-                    elif edge in false_negatives:
-                        self.space.space[node1].memory += (weight_vector * self.space.space[node2])
+                # Compute the model error rate
+                prev_error_rate, false_negatives = self.error_rate()
 
-            # Rebuild the graph model
-            # Do not rebuild the nodes memory since they have been overwritten earlier
-            self.fit(self.edges, build_nodes_memory=False)
+            else:
+                if nproc &gt; mp.cpu_count():
+                    nproc = mp.cpu_count()
 
-            # Recursively mitigate the error rate
-            self.error_mitigation(edges, max_iter=max_iter-1, prev_error_rate=error_rate)
+                # Very inefficient but required
+                edges_list = list(self.edges)
+
+                edges_subsets = [(self, set(edges_list[i:i+chunk_size])) for i in range(0, len(edges_list), chunk_size)]
+
+                with mp.Pool(processes=nproc) as pool:
+                    # Compute the model error rate in multiprocessing
+                    error_estimation = pool.starmap(self.__class__._error_rate, edges_subsets)
+
+                    # Retrieve the set of misclassified edges
+                    for _, false_negatives_partial in error_estimation:
+                        false_negatives = false_negatives.union(false_negatives_partial)
+
+                prev_error_rate = len(false_negatives) / len(self.edges)
+
+            print(f&#34;(base)\tError rate: {prev_error_rate}\tFalse negatives: {len(false_negatives)}&#34;)
+
+            # Error mitigate the model if the error rate is &gt; 0
+            if prev_error_rate &gt; 0:
+                for i in range(max_iter):
+                    # Work on a copy of self here
+                    graph = copy.deepcopy(self)
+
+                    # Rebuild the mispredicted node memories
+                    for edge in false_negatives:
+                        #node1, node2, weight_true, weights_pred = edge
+                        node1, node2, weight_true = edge
+
+                        if graph.space.space[node1].memory:
+                            # Retrieve the weight vector from the space
+                            weight_true_vector = graph.space.space[f&#34;{WEIGHT_ID}{weight_true}&#34;]
+
+                            # Defined correct connection vector
+                            # Reinforcement signal
+                            correct_connection = weight_true_vector * graph.space.space[node2]
+
+                            if self.directed:
+                                # Increase the signal of node1, node2 connection on weight_true
+                                graph.space.space[GRAPH_ID] += graph.space.space[node1] * permute(correct_connection, rotate_by=1)
+
+                            else:
+                                # Do not permute the reinforced node1 memory if the global graph is not directed
+                                graph.space.space[GRAPH_ID] += graph.space.space[node1] * correct_connection
+
+                    # Reset `false_negatives`
+                    false_negatives = set()
+
+                    # Redefine the number of CPUs for multiprocessing
+                    # There is no need to downscale nproc here
+                    if nproc == 1:
+                        # Compute the model error rate
+                        error_rate, false_negatives = graph.error_rate()
+
+                    else:
+                        with mp.Pool(processes=nproc) as pool:
+                            # Compute the model error rate in multiprocessing
+                            error_estimation = pool.starmap(graph.__class__._error_rate, edges_subsets)
+
+                            # Retrieve the set of misclassified edges
+                            for _, false_negatives_partial in error_estimation:
+                                false_negatives = false_negatives.union(false_negatives_partial)
+
+                        error_rate = len(false_negatives) / len(graph.edges)
+
+                    print(f&#34;(iter {i+1})\tError rate: {error_rate}\tFalse negatives: {len(false_negatives)}&#34;)
+
+                    if error_rate &gt; prev_error_rate:
+                        # Stop the error mitigating the graph model here
+                        break
+
+                    # Update the error rate
+                    prev_error_rate = error_rate
+
+                    # Make the error mitigated graph persistent
+                    self.__dict__.update(graph.__dict__)
+
+                    if error_rate == 0.0:
+                        # There is nothing else to do here
+                        break
 
     def fit(
         self,
@@ -563,8 +634,8 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         node1: str,
         node2: str,
         weight: Any,
-        threshold: float=0.7
-    ) -&gt; Tuple[bool, float]:
+        threshold: Optional[float]=None
+    ) -&gt; Tuple[bool, float, float]:
         &#34;&#34;&#34;Check whether an edge exists between `node1` and `node2` according to a specified distance `threshold`.
 
         node1 : str
@@ -573,14 +644,16 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
             The target node name or ID.
         weight : Any
             The edge weight.
-        threshold : float, default 0.7
+        threshold : float, default None
             The distance threshold on vectors to establish the presence of the edge.
+            It is automatically estimated if None.
 
         Returns
         -------
         Tuple
             True in case an edge between `node1` and `node2` exists in the graph space,
-            otherwise False. It also returns the actual distance between the two vectors.
+            otherwise False. It also returns the actual distance between the two vectors and
+            the threshold used to establish whether the edge exists.
 
         Raises
         ------
@@ -594,10 +667,10 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
 
         for node in [node1, node2]:
             if node not in self.space.space:
-                raise Exception(&#34;Node &#39;{}&#39; not in space&#34;.format(node))
+                raise Exception(f&#34;Node &#39;{node}&#39; not in space&#34;)
 
-        if &#34;{}{}&#34;.format(WEIGHT_ID, weight) not in self.space.space:
-            raise Exception(&#34;Weight vector &#39;{}&#39; not in space&#34;.format(weight))
+        if f&#34;{WEIGHT_ID}{weight}&#34; not in self.space.space:
+            raise Exception(f&#34;Weight vector &#39;{weight}&#39; not in space&#34;)
 
         # Retrieve the vector representation of the graph
         graph = self.space.space[GRAPH_ID]
@@ -620,20 +693,82 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         # A distance close to 0 means the edge exists
         # A distance close to 1 means the edge does not exist
         # Retrieve the weight vector from the space
-        weight_vector = self.space.space[&#34;{}{}&#34;.format(WEIGHT_ID, weight)]
+        weight_vector = self.space.space[f&#34;{WEIGHT_ID}{weight}&#34;]
+
+        if threshold == None:
+            if not self.space.space[node1].children:
+                # We cannot do much if node1 has no children
+                threshold = 1.0
+
+            else:
+                # Retrieve node1 children
+                # There could be hundreds of thousands of nodes here, so we focus on the first 10
+                neighbors = set(list(self.space.space[node1].children)[:10])
+
+                # Pick the same number of random non-neighbors
+                # This is very inefficient!
+                non_neighbors = set(self.rand.choice(list(self.space.space.keys()), size=len(neighbors), replace=False))
+
+                # Keep track of cosine distances between node1 and its neighbors plus random non-neighbors
+                distances = list()
+
+                for node in neighbors.union(non_neighbors):
+                    if node == GRAPH_ID or node.startswith(WEIGHT_ID):
+                        continue
+
+                    # Retrieve the node vector from the space
+                    # node is numpy.str_
+                    node_vector = self.space.space[str(node)]
+
+                    with np.errstate(invalid=&#34;ignore&#34;, divide=&#34;ignore&#34;):
+                        distances.append((weight_vector * node_vector).dist(node1_memory, method=&#34;cosine&#34;))
+
+                # Use the 5th percentile as threshold
+                # This is a node-specific threshold for node1
+                threshold = float(np.percentile(distances, 5))
 
         with np.errstate(invalid=&#34;ignore&#34;, divide=&#34;ignore&#34;):
             distance = (weight_vector * node2_vector).dist(node1_memory, method=&#34;cosine&#34;)
 
         if distance &lt; threshold:
-            return True, distance
+            return True, distance, threshold
 
-        return False, distance
+        return False, distance, threshold
+
+    @staticmethod
+    def _predict(
+        instance: &#34;GraphModel&#34;,
+        name: str,
+        y_true: str,
+        edges: Set[Tuple[str, str, Any]],
+    ) -&gt; Tuple[float, Set[Tuple[str, str, float, Tuple[float]]], Set[Tuple[str, str, float, Tuple[float]]]]:
+        &#34;&#34;&#34;Just a wrapper around the `predict` function to make it callable in multiprocessing.
+        It is safe to run in multiprocessing because it does not modify any instance attributes.
+
+        Parameters
+        ----------
+        instance : GraphModel
+            A GraphModel instance.
+        name : str
+            The name associated to the set of edges.
+        y_true : str
+            The true class.
+        edges : set
+            The set of edges used to mitigate the graph model error rate.
+            Note that the edges in this set do not necessarily have to be present in the graph.
+
+        Returns
+        -------
+        tuple
+            A tuple with the name of the test set, the true class, and a tuple with the predicted class and it&#39;s accuracy 
+            in terms of percentage of edges that matched the predicted class.
+        &#34;&#34;&#34;
+
+        return name, y_true, instance.predict(edges)
 
     def predict(
         self,
-        edges: Set[Tuple[str, str, Any]],
-        retrain: int=10
+        edges: Set[Tuple[str, str, Any]]
     ) -&gt; Tuple[Any, float]:
         &#34;&#34;&#34;Predict the weight (class) of a specific set of edges.
 
@@ -641,8 +776,6 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
         ----------
         edges : set
             Set of edges.
-        retrain : int, default 10
-            Maximum number of retraining iterations.
 
         Returns
         -------
@@ -651,80 +784,54 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
             that matched the predicted class.
         &#34;&#34;&#34;
 
-        if retrain &lt; 1:
-            # Use a minimum of 1 iteration
-            retrain = 1
+        hits = {weight: 0 for weight in self.weights}
 
-        prediction = None
+        for node1, node2, edge_weight in edges:
+            if node1 in self.space.space and node2 in self.space.space:
+                weight_pred = list()
 
-        accuracy = 0.0
+                for weight in self.weights:
+                    node1_threshold = self.weight_to_node_specific_thresholds[weight].get(node1) if weight in self.weight_to_node_specific_thresholds else None
 
-        # Keep track of edges where nodes exist in the graph
-        # If a node does not exist, discart it
-        # This is just for retraining purposes
-        # We cannot retrain using nodes that are not in the graph space
-        retraining_edges = set()
+                    _, weight_dist, dist_threshold = self.edge_exists(node1, node2, weight, threshold=node1_threshold)
 
-        for retrain_iter in range(retrain):
-            hits = {weight: 0 for weight in self.weights}
+                    weight_pred.append((weight, weight_dist))
 
-            for node1, node2, edge_weight in edges:
-                if node1 in self.space.space and node2 in self.space.space:
-                    weight_pred = list()
+                    if weight not in self.weight_to_node_specific_thresholds:
+                        self.weight_to_node_specific_thresholds[weight] = dict()
 
-                    for weight in self.weights:
-                        _, weight_dist = self.edge_exists(node1, node2, weight)
+                    if node1 not in self.weight_to_node_specific_thresholds[weight]:
+                        self.weight_to_node_specific_thresholds[weight][node1] = dist_threshold
 
-                        weight_pred.append((weight, weight_dist))
+                if len(weight_pred) &gt; 1:
+                    # Sort weights based on their distances
+                    weight_pred = sorted(weight_pred, key=lambda w: w[1])
 
-                    if len(weight_pred) &gt; 1:
-                        # Sort weights based on their distances
-                        weight_pred = sorted(weight_pred, key=lambda w: w[1])
+                    # Get the difference between the closest and the farthest distances
+                    dist_diff = weight_pred[-1][1] - weight_pred[0][1]
 
-                        # Get the difference between the closest and the farthest distances
-                        dist_diff = weight_pred[-1][1] - weight_pred[0][1]
+                    # Use the difference in distances to select the top closest weights
+                    weight_pred = [w[0] for w in weight_pred if w[1] - weight_pred[0][1] &lt; dist_diff]
 
-                        # Use the difference in distances to select the top closest weights
-                        weight_pred = [w[0] for w in weight_pred if w[1] - weight_pred[0][1] &lt; dist_diff]
+                    for weight in weight_pred:
+                        hits[weight] += 1
 
-                        for weight in weight_pred:
-                            hits[weight] += 1
+                else:
+                    weight_pred = weight_pred[0][0]
 
-                    else:
-                        weight_pred = weight_pred[0]
+                    hits[weight_pred] += 1
 
-                        hits[weight_pred] += 1
+        # Get the best hit
+        prediction = max(hits, key=hits.get)
 
-                    # Both node1 and node2 are in the graph space
-                    # Keep track of this edge for retraining purposes
-                    retraining_edges.add((node1, node2, edge_weight))
-
-            # Get the best hit
-            iter_prediction = max(hits, key=hits.get)
-
-            iter_accuracy = (hits[iter_prediction] / len(edges)) * 100.0
-
-            if iter_accuracy &lt; accuracy:
-                break
-
-            # Compare with the previous retraining iteration
-            # Update prediction and accuracy
-            prediction = iter_prediction
-
-            accuracy = iter_accuracy
-
-            # Skip the retraining if this is the last iteration
-            if retrain_iter &lt; retrain-1:
-                # Apply `error_mitigation` with the input set of edges (where nodes are in the graph space)
-                # This is supposed to improve the model ability to correctly predict edges&#39; weights
-                self.error_mitigation(retraining_edges, max_iter=retrain)
+        accuracy = (hits[prediction] / len(edges)) * 100.0
 
         return (prediction, accuracy)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="hdlib.graph.Graph.edge_exists"><code class="name flex">
-<span>def <span class="ident">edge_exists</span></span>(<span>self, node1: str, node2: str, weight: Any, threshold: float = 0.7) ‑> Tuple[bool, float]</span>
+<dt id="hdlib.model.graph.GraphModel.edge_exists"><code class="name flex">
+<span>def <span class="ident">edge_exists</span></span>(<span>self, node1: str, node2: str, weight: Any, threshold: Optional[float] = None) ‑> Tuple[bool, float, float]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Check whether an edge exists between <code>node1</code> and <code>node2</code> according to a specified distance <code>threshold</code>.</p>
@@ -734,13 +841,15 @@ node2 : str
 The target node name or ID.
 weight : Any
 The edge weight.
-threshold : float, default 0.7
-The distance threshold on vectors to establish the presence of the edge.</p>
+threshold : float, default None
+The distance threshold on vectors to establish the presence of the edge.
+It is automatically estimated if None.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>Tuple</code></dt>
 <dd>True in case an edge between <code>node1</code> and <code>node2</code> exists in the graph space,
-otherwise False. It also returns the actual distance between the two vectors.</dd>
+otherwise False. It also returns the actual distance between the two vectors and
+the threshold used to establish whether the edge exists.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -753,36 +862,26 @@ otherwise False. It also returns the actual distance between the two vectors.</d
 </dd>
 </dl></div>
 </dd>
-<dt id="hdlib.graph.Graph.error_mitigation"><code class="name flex">
-<span>def <span class="ident">error_mitigation</span></span>(<span>self, edges: Set[Tuple[str, str, Any]], max_iter: int = 10, prev_error_rate: Optional[float] = None) ‑> None</span>
+<dt id="hdlib.model.graph.GraphModel.error_mitigation"><code class="name flex">
+<span>def <span class="ident">error_mitigation</span></span>(<span>self, max_iter: int = 10, nproc: int = 1) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Mitigate the error rate of the graph model.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>edges</code></strong> :&ensp;<code>set</code></dt>
-<dd>The set of edges used to mitigate the graph model error rate.
-Note that the edges in this set do not necessarily have to be present in the graph.</dd>
 <dt><strong><code>max_iter</code></strong> :&ensp;<code>int, deafult 10</code></dt>
 <dd>This is an iterative process that is repeated for up to <code>max_iter</code> iterations.</dd>
-<dt><strong><code>prev_error_rate</code></strong> :&ensp;<code>float</code>, optional</dt>
-<dd>Used to compare the error rate of the graph model with the error rate computed
-at the previous iteration. This must be initially set to <code>1.0</code>.</dd>
+<dt><strong><code>nproc</code></strong> :&ensp;<code>int</code>, default <code>1</code></dt>
+<dd>Maximum number of jobs for multiprocessing.</dd>
 </dl></div>
 </dd>
-<dt id="hdlib.graph.Graph.error_rate"><code class="name flex">
-<span>def <span class="ident">error_rate</span></span>(<span>self, edges: Set[Tuple[str, str, Any]]) ‑> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]</span>
+<dt id="hdlib.model.graph.GraphModel.error_rate"><code class="name flex">
+<span>def <span class="ident">error_rate</span></span>(<span>self) ‑> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Compute the error rate defined as the number of mispredicted edges on the total number of edges.
 Note that the error rate depends on the set of edges in input to this function which could be different
 from the actual set of edges used to build the graph model.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>edges</code></strong> :&ensp;<code>set</code></dt>
-<dd>The set of edges used to mitigate the graph model error rate.
-Note that the edges in this set do not necessarily have to be present in the graph.</dd>
-</dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>tuple</code></dt>
@@ -790,7 +889,7 @@ Note that the edges in this set do not necessarily have to be present in the gra
 among those in the input <code>edges</code>.</dd>
 </dl></div>
 </dd>
-<dt id="hdlib.graph.Graph.fit"><code class="name flex">
+<dt id="hdlib.model.graph.GraphModel.fit"><code class="name flex">
 <span>def <span class="ident">fit</span></span>(<span>self, edges: Set[Tuple[str, str, Any]], build_nodes_memory: bool = True) ‑> None</span>
 </code></dt>
 <dd>
@@ -809,8 +908,8 @@ This must be set to False in case this is invoked to mitigate the error rate.</d
 <dd>If no edges are provided in input.</dd>
 </dl></div>
 </dd>
-<dt id="hdlib.graph.Graph.predict"><code class="name flex">
-<span>def <span class="ident">predict</span></span>(<span>self, edges: Set[Tuple[str, str, Any]], retrain: int = 10) ‑> Tuple[Any, float]</span>
+<dt id="hdlib.model.graph.GraphModel.predict"><code class="name flex">
+<span>def <span class="ident">predict</span></span>(<span>self, edges: Set[Tuple[str, str, Any]]) ‑> Tuple[Any, float]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Predict the weight (class) of a specific set of edges.</p>
@@ -818,8 +917,6 @@ This must be set to False in case this is invoked to mitigate the error rate.</d
 <dl>
 <dt><strong><code>edges</code></strong> :&ensp;<code>set</code></dt>
 <dd>Set of edges.</dd>
-<dt><strong><code>retrain</code></strong> :&ensp;<code>int</code>, default <code>10</code></dt>
-<dd>Maximum number of retraining iterations.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -840,19 +937,19 @@ that matched the predicted class.</dd>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="hdlib" href="index.html">hdlib</a></code></li>
+<li><code><a title="hdlib.model" href="index.html">hdlib.model</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="hdlib.graph.Graph" href="#hdlib.graph.Graph">Graph</a></code></h4>
+<h4><code><a title="hdlib.model.graph.GraphModel" href="#hdlib.model.graph.GraphModel">GraphModel</a></code></h4>
 <ul class="">
-<li><code><a title="hdlib.graph.Graph.edge_exists" href="#hdlib.graph.Graph.edge_exists">edge_exists</a></code></li>
-<li><code><a title="hdlib.graph.Graph.error_mitigation" href="#hdlib.graph.Graph.error_mitigation">error_mitigation</a></code></li>
-<li><code><a title="hdlib.graph.Graph.error_rate" href="#hdlib.graph.Graph.error_rate">error_rate</a></code></li>
-<li><code><a title="hdlib.graph.Graph.fit" href="#hdlib.graph.Graph.fit">fit</a></code></li>
-<li><code><a title="hdlib.graph.Graph.predict" href="#hdlib.graph.Graph.predict">predict</a></code></li>
+<li><code><a title="hdlib.model.graph.GraphModel.edge_exists" href="#hdlib.model.graph.GraphModel.edge_exists">edge_exists</a></code></li>
+<li><code><a title="hdlib.model.graph.GraphModel.error_mitigation" href="#hdlib.model.graph.GraphModel.error_mitigation">error_mitigation</a></code></li>
+<li><code><a title="hdlib.model.graph.GraphModel.error_rate" href="#hdlib.model.graph.GraphModel.error_rate">error_rate</a></code></li>
+<li><code><a title="hdlib.model.graph.GraphModel.fit" href="#hdlib.model.graph.GraphModel.fit">fit</a></code></li>
+<li><code><a title="hdlib.model.graph.GraphModel.predict" href="#hdlib.model.graph.GraphModel.predict">predict</a></code></li>
 </ul>
 </li>
 </ul>

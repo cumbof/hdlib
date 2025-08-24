@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.1">
-<title>hdlib.parser API documentation</title>
-<meta name="description" content="Utility to parse input files …">
+<title>hdlib.model API documentation</title>
+<meta name="description" content="">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -22,86 +22,34 @@ hljs.highlightAll();
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>hdlib.parser</code></h1>
+<h1 class="title">Module <code>hdlib.model</code></h1>
 </header>
 <section id="section-intro">
-<p>Utility to parse input files.</p>
-<p>This module provides a set of utilities to parse input tables and split the dataset
-into training and test sets as a simple percentage split or cross validation.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="hdlib.model.classification" href="classification.html">hdlib.model.classification</a></code></dt>
+<dd>
+<div class="desc"><p>Machine learning with hdlib …</p></div>
+</dd>
+<dt><code class="name"><a title="hdlib.model.clustering" href="clustering.html">hdlib.model.clustering</a></code></dt>
+<dd>
+<div class="desc"><p>Clustering model …</p></div>
+</dd>
+<dt><code class="name"><a title="hdlib.model.graph" href="graph.html">hdlib.model.graph</a></code></dt>
+<dd>
+<div class="desc"><p>Directed and undirected, weighted and unweighted graphs with hdlib …</p></div>
+</dd>
+<dt><code class="name"><a title="hdlib.model.regression" href="regression.html">hdlib.model.regression</a></code></dt>
+<dd>
+<div class="desc"><p>Similarity-preserving encoding and multi-model regression …</p></div>
+</dd>
+</dl>
 </section>
 <section>
 </section>
 <section>
-</section>
-<section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="hdlib.parser.load_dataset"><code class="name flex">
-<span>def <span class="ident">load_dataset</span></span>(<span>filepath: <function abspath at 0x7cb40330a0>, sep: str = '\t') ‑> Tuple[List[str], List[List[float]], List[str]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Load the input numerical dataset.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>filepath</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path to the input dataset.</dd>
-<dt><strong><code>sep</code></strong> :&ensp;<code>str</code></dt>
-<dd>Filed separator for the input dataset.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>tuple</code></dt>
-<dd>A tuple with a list of sample IDs, a list of features, a list of lists with the
-actual numerical data (floats), and a list with class labels.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>FileNotFoundError</code></dt>
-<dd>If the input file does not exist.</dd>
-<dt><code>ValueError</code></dt>
-<dd>If the input dataset does not contain number only.</dd>
-</dl></div>
-</dd>
-<dt id="hdlib.parser.percentage_split"><code class="name flex">
-<span>def <span class="ident">percentage_split</span></span>(<span>labels: List[str], percentage: float, seed: int = 0) ‑> List[int]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Given list of classes as appear in the original dataset and a percentage number, split a dataset and
-report the indices of the selected data points.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>labels</code></strong> :&ensp;<code>list</code></dt>
-<dd>List of class labels as they appear in the original dataset.</dd>
-<dt><strong><code>percentage</code></strong> :&ensp;<code>float</code></dt>
-<dd>Percentage of points to split out of the original dataset.</dd>
-<dt><strong><code>seed</code></strong> :&ensp;<code>int</code></dt>
-<dd>Random seed for reproducing the same results.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>list</code></dt>
-<dd>A list with the indices of selected points.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>ValueError</code></dt>
-<dd>
-<ul>
-<li>if the input <code>percentage</code> is lower than or equal to 0.0 or greater than 100.0;</li>
-<li>if the input <code>seed</code> is not an integer number.</li>
-</ul>
-</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.parser import percentage_split
-&gt;&gt;&gt; labels = [1, 2, 2, 2, 1, 1, 1, 1, 2, 2]
-&gt;&gt;&gt; percentage_split(labels, 20.0, seed=0)
-[6, 9]
-</code></pre>
-<p>Consider a dataset with 10 data points, select 20% of the points (2 points in this case),
-and report their indices in the original dataset.</p></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -113,13 +61,15 @@ and report their indices in the original dataset.</p></div>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="hdlib" href="index.html">hdlib</a></code></li>
+<li><code><a title="hdlib" href="../index.html">hdlib</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="hdlib.parser.load_dataset" href="#hdlib.parser.load_dataset">load_dataset</a></code></li>
-<li><code><a title="hdlib.parser.percentage_split" href="#hdlib.parser.percentage_split">percentage_split</a></code></li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="hdlib.model.classification" href="classification.html">hdlib.model.classification</a></code></li>
+<li><code><a title="hdlib.model.clustering" href="clustering.html">hdlib.model.clustering</a></code></li>
+<li><code><a title="hdlib.model.graph" href="graph.html">hdlib.model.graph</a></code></li>
+<li><code><a title="hdlib.model.regression" href="regression.html">hdlib.model.regression</a></code></li>
 </ul>
 </li>
 </ul>

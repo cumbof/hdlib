@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.1">
-<title>hdlib.model API documentation</title>
-<meta name="description" content="Machine learning with hdlib …">
+<title>hdlib.model.classification API documentation</title>
+<meta name="description" content="Machine learning with hdlib">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -22,11 +22,11 @@ hljs.highlightAll();
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>hdlib.model</code></h1>
+<h1 class="title">Module <code>hdlib.model.classification</code></h1>
 </header>
 <section id="section-intro">
 <p>Machine learning with hdlib.</p>
-<p>It implements the <strong>hdlib.model.MLModel</strong> class object which allows to generate, fit, and test a classification model
+<p>It implements the <strong>hdlib.model.classification.ClassificationModel</strong> class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in <em>Cumbo et al. 2020</em> <a href="https://doi.org/10.3390/a13090233.">https://doi.org/10.3390/a13090233.</a></p>
 <p>It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
 relevant features in a dataset according to the same HDC paradigm.</p>
@@ -40,13 +40,13 @@ relevant features in a dataset according to the same HDC paradigm.</p>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="hdlib.model.MLModel"><code class="flex name class">
-<span>class <span class="ident">MLModel</span></span>
+<dt id="hdlib.model.classification.ClassificationModel"><code class="flex name class">
+<span>class <span class="ident">ClassificationModel</span></span>
 <span>(</span><span>size: int = 10000, levels: int = 2, vtype: str = 'bipolar')</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Classification Model.</p>
-<p>Initialize a MLModel object.</p>
+<div class="desc"><p>Supervised Classification Model.</p>
+<p>Initialize a ClassificationModel object.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>size</code></strong> :&ensp;<code>int</code>, default <code>10000</code></dt>
@@ -61,13 +61,13 @@ relevant features in a dataset according to the same HDC paradigm.</p>
 <dt><code>TypeError</code></dt>
 <dd>If the vector size or the number of levels are not integer numbers.</dd>
 <dt><code>ValueError</code></dt>
-<dd>If the vector size is lower than 10,000 or the number of level vectors is lower than 2.</dd>
+<dd>If the vector size is lower than 1,000 or the number of level vectors is lower than 2.</dd>
 </dl>
 <h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.model import MLModel
-&gt;&gt;&gt; model = MLModel(size=10000, levels=100, vtype='bipolar')
+<pre><code class="language-python-repl">&gt;&gt;&gt; from hdlib.model import ClassificationModel
+&gt;&gt;&gt; model = ClassificationModel(size=10000, levels=100, vtype='bipolar')
 &gt;&gt;&gt; type(model)
-&lt;class 'hdlib.model.MLModel'&gt;
+&lt;class 'hdlib.model.ClassificationModel'&gt;
 </code></pre>
 <p>This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
 It also defines the number of level vectors to 100.</p></div>
@@ -75,16 +75,16 @@ It also defines the number of level vectors to 100.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class MLModel(object):
-    &#34;&#34;&#34;Classification Model.&#34;&#34;&#34;
+<pre><code class="python">class ClassificationModel(object):
+    &#34;&#34;&#34;Supervised Classification Model.&#34;&#34;&#34;
 
     def __init__(
         self,
         size: int=10000,
         levels: int=2,
         vtype: str=&#34;bipolar&#34;,
-    ) -&gt; &#34;MLModel&#34;:
-        &#34;&#34;&#34;Initialize a MLModel object.
+    ) -&gt; &#34;ClassificationModel&#34;:
+        &#34;&#34;&#34;Initialize a ClassificationModel object.
 
         Parameters
         ----------
@@ -100,14 +100,14 @@ It also defines the number of level vectors to 100.</p></div>
         TypeError
             If the vector size or the number of levels are not integer numbers.
         ValueError
-            If the vector size is lower than 10,000 or the number of level vectors is lower than 2.
+            If the vector size is lower than 1,000 or the number of level vectors is lower than 2.
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.model import MLModel
-        &gt;&gt;&gt; model = MLModel(size=10000, levels=100, vtype=&#39;bipolar&#39;)
+        &gt;&gt;&gt; from hdlib.model import ClassificationModel
+        &gt;&gt;&gt; model = ClassificationModel(size=10000, levels=100, vtype=&#39;bipolar&#39;)
         &gt;&gt;&gt; type(model)
-        &lt;class &#39;hdlib.model.MLModel&#39;&gt;
+        &lt;class &#39;hdlib.model.ClassificationModel&#39;&gt;
 
         This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
         It also defines the number of level vectors to 100.
@@ -116,8 +116,8 @@ It also defines the number of level vectors to 100.</p></div>
         if not isinstance(size, int):
             raise TypeError(&#34;Vectors size must be an integer number&#34;)
 
-        if size &lt; 10000:
-            raise ValueError(&#34;Vectors size must be greater than or equal to 10000&#34;)
+        if size &lt; 1000:
+            raise ValueError(&#34;Vectors size must be greater than or equal to 1000&#34;)
 
         # Register vectors dimensionality
         self.size = size
@@ -154,22 +154,22 @@ It also defines the number of level vectors to 100.</p></div>
         # Keep track of hdlib version
         self.version = __version__
 
-    def __str__(self) -&gt; None:
-        &#34;&#34;&#34;Print the MLModel object properties.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Print the ClassificationModel object properties.
 
         Returns
         -------
         str
-            A description of the MLModel object. It reports the vectors size, the vector type,
+            A description of the ClassificationModel object. It reports the vectors size, the vector type,
             the number of level vectors, the number of data points, and the number of class labels.
 
         Examples
         --------
-        &gt;&gt;&gt; from hdlib.model import MLModel
-        &gt;&gt;&gt; model = MLModel()
+        &gt;&gt;&gt; from hdlib.model import ClassificationModel
+        &gt;&gt;&gt; model = ClassificationModel()
         &gt;&gt;&gt; print(model)
 
-                Class:   hdlib.model.MLModel
+                Class:   hdlib.model.classification.ClassificationModel
                 Version: 0.1.17
                 Size:    10000
                 Type:    bipolar
@@ -179,13 +179,13 @@ It also defines the number of level vectors to 100.</p></div>
 
                 []
 
-        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
+        Print the ClassificationModel object properties. By default, the size of vectors in space is 10,000,
         their types is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         &#34;&#34;&#34;
 
         return &#34;&#34;&#34;
-            Class:   hdlib.model.MLModel
+            Class:   hdlib.model.classification.ClassificationModel
             Version: {}
             Size:    {}
             Type:    {}
@@ -216,7 +216,7 @@ It also defines the number of level vectors to 100.</p></div>
         n_jobs: int=1,
         metric: str=&#34;accuracy&#34;
     ) -&gt; Tuple[int, int, float]:
-        &#34;&#34;&#34;Initialize a new MLModel, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
+        &#34;&#34;&#34;Initialize a new ClassificationModel, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
 
         Parameters
         ----------
@@ -267,7 +267,7 @@ It also defines the number of level vectors to 100.</p></div>
             raise ValueError(&#34;Score metric {} is not supported&#34;.format(metric))
 
         # Generate a new Model
-        model = MLModel(size=size, levels=levels, vtype=vtype)
+        model = ClassificationModel(size=size, levels=levels, vtype=vtype)
 
         # Fit the model
         model.fit(points, labels=labels)
@@ -1252,7 +1252,7 @@ It also defines the number of level vectors to 100.</p></div>
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="hdlib.model.MLModel.auto_tune"><code class="name flex">
+<dt id="hdlib.model.classification.ClassificationModel.auto_tune"><code class="name flex">
 <span>def <span class="ident">auto_tune</span></span>(<span>self, points: List[List[float]], labels: List[str], size_range: range, levels_range: range, cv: int = 5, distance_method: str = 'cosine', retrain: int = 0, n_jobs: int = 1, metric: str = 'accuracy') ‑> Tuple[int, int, float]</span>
 </code></dt>
 <dd>
@@ -1303,7 +1303,7 @@ It also defines the number of level vectors to 100.</p></div>
 </dd>
 </dl></div>
 </dd>
-<dt id="hdlib.model.MLModel.cross_val_predict"><code class="name flex">
+<dt id="hdlib.model.classification.ClassificationModel.cross_val_predict"><code class="name flex">
 <span>def <span class="ident">cross_val_predict</span></span>(<span>self, points: List[List[float]], labels: List[str], cv: int = 5, distance_method: str = 'cosine', retrain: int = 0, n_jobs: int = 1) ‑> List[Tuple[List[int], List[str], int]]</span>
 </code></dt>
 <dd>
@@ -1347,8 +1347,8 @@ It also defines the number of level vectors to 100.</p></div>
 </dd>
 </dl></div>
 </dd>
-<dt id="hdlib.model.MLModel.error_rate"><code class="name flex">
-<span>def <span class="ident">error_rate</span></span>(<span>self, training_vectors: List[<a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>], class_vectors: List[<a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>], distance_method: str = 'cosine') ‑> Tuple[float, List[<a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>], List[str]]</span>
+<dt id="hdlib.model.classification.ClassificationModel.error_rate"><code class="name flex">
+<span>def <span class="ident">error_rate</span></span>(<span>self, training_vectors: List[<a title="hdlib.vector.Vector" href="../vector.html#hdlib.vector.Vector">Vector</a>], class_vectors: List[<a title="hdlib.vector.Vector" href="../vector.html#hdlib.vector.Vector">Vector</a>], distance_method: str = 'cosine') ‑> Tuple[float, List[<a title="hdlib.vector.Vector" href="../vector.html#hdlib.vector.Vector">Vector</a>], List[str]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Compute the error rate.</p>
@@ -1385,7 +1385,7 @@ of wrong predictions with the same length of the list with wrongly predicted Vec
 </dd>
 </dl></div>
 </dd>
-<dt id="hdlib.model.MLModel.fit"><code class="name flex">
+<dt id="hdlib.model.classification.ClassificationModel.fit"><code class="name flex">
 <span>def <span class="ident">fit</span></span>(<span>self, points: List[List[float]], labels: Optional[List[str]] = None, seed: Optional[int] = None) ‑> None</span>
 </code></dt>
 <dd>
@@ -1412,8 +1412,8 @@ Used in case of supervised learning only.</dd>
 </dd>
 </dl></div>
 </dd>
-<dt id="hdlib.model.MLModel.predict"><code class="name flex">
-<span>def <span class="ident">predict</span></span>(<span>self, test_indices: List[int], distance_method: str = 'cosine', retrain: int = 0) ‑> Tuple[List[int], List[str], int, float, List[<a title="hdlib.space.Vector" href="space.html#hdlib.space.Vector">Vector</a>]]</span>
+<dt id="hdlib.model.classification.ClassificationModel.predict"><code class="name flex">
+<span>def <span class="ident">predict</span></span>(<span>self, test_indices: List[int], distance_method: str = 'cosine', retrain: int = 0) ‑> Tuple[List[int], List[str], int, float, List[<a title="hdlib.vector.Vector" href="../vector.html#hdlib.vector.Vector">Vector</a>]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Supervised Learning. Predict the class labels of the data points in the test set.</p>
@@ -1452,7 +1452,7 @@ the model error rate, and the retraining class vectors (i.e., the actual model).
 <p>.. [1] Cumbo, Fabio, Eleonora Cappelli, and Emanuel Weitschek. "A brain-inspired hyperdimensional computing approach
 for classifying massive dna methylation data of cancer." Algorithms 13.9 (2020): 233.</p></div>
 </dd>
-<dt id="hdlib.model.MLModel.stepwise_regression"><code class="name flex">
+<dt id="hdlib.model.classification.ClassificationModel.stepwise_regression"><code class="name flex">
 <span>def <span class="ident">stepwise_regression</span></span>(<span>self, points: List[List[float]], features: List[str], labels: List[str], method: str = 'backward', cv: int = 5, distance_method: str = 'cosine', retrain: int = 0, n_jobs: int = 1, metric: str = 'accuracy', threshold: float = 0.6, uncertainty: float = 5.0, stop_if_worse: bool = False) ‑> Tuple[Dict[str, int], Dict[int, float], int]</span>
 </code></dt>
 <dd>
@@ -1528,20 +1528,20 @@ the best importance, and the total mount of ML models built and evaluated. For w
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="hdlib" href="index.html">hdlib</a></code></li>
+<li><code><a title="hdlib.model" href="index.html">hdlib.model</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="hdlib.model.MLModel" href="#hdlib.model.MLModel">MLModel</a></code></h4>
+<h4><code><a title="hdlib.model.classification.ClassificationModel" href="#hdlib.model.classification.ClassificationModel">ClassificationModel</a></code></h4>
 <ul class="two-column">
-<li><code><a title="hdlib.model.MLModel.auto_tune" href="#hdlib.model.MLModel.auto_tune">auto_tune</a></code></li>
-<li><code><a title="hdlib.model.MLModel.cross_val_predict" href="#hdlib.model.MLModel.cross_val_predict">cross_val_predict</a></code></li>
-<li><code><a title="hdlib.model.MLModel.error_rate" href="#hdlib.model.MLModel.error_rate">error_rate</a></code></li>
-<li><code><a title="hdlib.model.MLModel.fit" href="#hdlib.model.MLModel.fit">fit</a></code></li>
-<li><code><a title="hdlib.model.MLModel.predict" href="#hdlib.model.MLModel.predict">predict</a></code></li>
-<li><code><a title="hdlib.model.MLModel.stepwise_regression" href="#hdlib.model.MLModel.stepwise_regression">stepwise_regression</a></code></li>
+<li><code><a title="hdlib.model.classification.ClassificationModel.auto_tune" href="#hdlib.model.classification.ClassificationModel.auto_tune">auto_tune</a></code></li>
+<li><code><a title="hdlib.model.classification.ClassificationModel.cross_val_predict" href="#hdlib.model.classification.ClassificationModel.cross_val_predict">cross_val_predict</a></code></li>
+<li><code><a title="hdlib.model.classification.ClassificationModel.error_rate" href="#hdlib.model.classification.ClassificationModel.error_rate">error_rate</a></code></li>
+<li><code><a title="hdlib.model.classification.ClassificationModel.fit" href="#hdlib.model.classification.ClassificationModel.fit">fit</a></code></li>
+<li><code><a title="hdlib.model.classification.ClassificationModel.predict" href="#hdlib.model.classification.ClassificationModel.predict">predict</a></code></li>
+<li><code><a title="hdlib.model.classification.ClassificationModel.stepwise_regression" href="#hdlib.model.classification.ClassificationModel.stepwise_regression">stepwise_regression</a></code></li>
 </ul>
 </li>
 </ul>
