@@ -11,7 +11,8 @@ from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
 
-from hdlib import __version__, Vector
+from hdlib import __version__
+from hdlib.vector import Vector
 
 
 class Space(object):
