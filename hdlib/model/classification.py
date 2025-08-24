@@ -1,6 +1,6 @@
 """Machine learning with hdlib.
 
-It implements the __hdlib.model.MLModel__ class object which allows to generate, fit, and test a classification model
+It implements the __hdlib.model.classification.ClassificationModel__ class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
 
 It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
@@ -23,16 +23,16 @@ from hdlib.space import Space, Vector
 from hdlib.arithmetic import bundle, permute
 
 
-class MLModel(object):
-    """Classification Model."""
+class ClassificationModel(object):
+    """Supervised Classification Model."""
 
     def __init__(
         self,
         size: int=10000,
         levels: int=2,
         vtype: str="bipolar",
-    ) -> "MLModel":
-        """Initialize a MLModel object.
+    ) -> "ClassificationModel":
+        """Initialize a ClassificationModel object.
 
         Parameters
         ----------
@@ -52,10 +52,10 @@ class MLModel(object):
 
         Examples
         --------
-        >>> from hdlib.model import MLModel
-        >>> model = MLModel(size=10000, levels=100, vtype='bipolar')
+        >>> from hdlib.model import ClassificationModel
+        >>> model = ClassificationModel(size=10000, levels=100, vtype='bipolar')
         >>> type(model)
-        <class 'hdlib.model.MLModel'>
+        <class 'hdlib.model.ClassificationModel'>
 
         This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
         It also defines the number of level vectors to 100.
@@ -102,22 +102,22 @@ class MLModel(object):
         # Keep track of hdlib version
         self.version = __version__
 
-    def __str__(self) -> None:
-        """Print the MLModel object properties.
+    def __str__(self) -> str:
+        """Print the ClassificationModel object properties.
 
         Returns
         -------
         str
-            A description of the MLModel object. It reports the vectors size, the vector type,
+            A description of the ClassificationModel object. It reports the vectors size, the vector type,
             the number of level vectors, the number of data points, and the number of class labels.
 
         Examples
         --------
-        >>> from hdlib.model import MLModel
-        >>> model = MLModel()
+        >>> from hdlib.model import ClassificationModel
+        >>> model = ClassificationModel()
         >>> print(model)
 
-                Class:   hdlib.model.MLModel
+                Class:   hdlib.model.classification.ClassificationModel
                 Version: 0.1.17
                 Size:    10000
                 Type:    bipolar
@@ -127,13 +127,13 @@ class MLModel(object):
 
                 []
 
-        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
+        Print the ClassificationModel object properties. By default, the size of vectors in space is 10,000,
         their types is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         """
 
         return """
-            Class:   hdlib.model.MLModel
+            Class:   hdlib.model.classification.ClassificationModel
             Version: {}
             Size:    {}
             Type:    {}
@@ -164,7 +164,7 @@ class MLModel(object):
         n_jobs: int=1,
         metric: str="accuracy"
     ) -> Tuple[int, int, float]:
-        """Initialize a new MLModel, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
+        """Initialize a new ClassificationModel, then fit and cross-validate it. Used for size and levels hyperparameters tuning.
 
         Parameters
         ----------
@@ -215,7 +215,7 @@ class MLModel(object):
             raise ValueError("Score metric {} is not supported".format(metric))
 
         # Generate a new Model
-        model = MLModel(size=size, levels=levels, vtype=vtype)
+        model = ClassificationModel(size=size, levels=levels, vtype=vtype)
 
         # Fit the model
         model.fit(points, labels=labels)

@@ -37,7 +37,7 @@ setuptools.setup(
     },
     python_requires=">=3",
     scripts=[
-        "examples/chopin2.py",
+        "examples/chopin2/chopin2.py",
     ],
     url="http://github.com/cumbof/hdlib",
     version=__version__,

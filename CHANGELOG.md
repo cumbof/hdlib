@@ -1,17 +1,23 @@
 # Changelog
 
-## Version 0.1.21
+## Version 0.2.0
 
-[@cumbof/hdlib@0.1.21](https://github.com/cumbof/hdlib/releases/tag/0.1.21)
+[@cumbof/hdlib@0.2.0](https://github.com/cumbof/hdlib/releases/tag/0.2.0)
 
 ## New features
 
-- New `hdlib.graph._error_rate` and `hdlib.graph._predict` static methods for the estimation of the model error rate and the evaluation of a graph model in multiprocessing.
+- The `Vector` class is not in `hdlib.vector`;
+- `hdlib.model.MLModel` is now `hdlib.model.classification`;
+- `hdlib.graph.Graph` is now `hdlib.model.graph`;
+- The `hdlib.parser` module has been suppressed and its functions have been moved to [examples/chopin2/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2/chopin2.py);
+- New `hdlib.model.graph.GraphModel._error_rate` and `hdlib.model.graph.GraphModel._predict` static methods for the estimation of the model error rate and the evaluation of a graph model in multiprocessing;
+- New `hdlib.model.regression.RegressionModel` and `hdlib.model.clustering.ClusteringModel` classes for building regression and clustering models respectively;
+- New examples about the [classification of chemical structures](https://github.com/cumbof/hdlib/blob/main/examples/tox21) and the [classification of viral species via graph encoding](https://github.com/cumbof/hdlib/blob/main/examples/pangenome).
 
 ## Fixes
 
-- `hdlib.graph.error_mitigation` does not take into account for false positives;
-- `hdlib.graph.error_rate` and `hdlib.graph.predict` now check whether an edge exist using weight-specific thresholds.
+- `hdlib.model.graph.GraphModel.error_mitigation` does not take into account for false positives;
+- `hdlib.model.graph.GraphModel.error_rate` and `hdlib.model.graph.GraphModel.predict` now check whether an edge exist using weight-specific thresholds.
 
 ## Version 0.1.20
 
@@ -71,7 +77,7 @@
 - `model.Model` is now `model.MLModel`;
 - `parser.kfolds_split` has been deprecated and removed;
 - `model.MLModel.cross_val_predict` now uses `sklearn.model_selection.StratifiedKFold` for the generation of balanced folds;
-- Fix the order of the test real labels before computing the model metrics in [examples/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2.py).
+- Fix the order of the test real labels before computing the model metrics in [examples/chopin2/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2/chopin2.py).
 
 ## Version 0.1.15
 
@@ -79,7 +85,7 @@
 
 ### New features
 
-- Add [examples/chopin2_iris.sh](https://github.com/cumbof/hdlib/blob/main/examples/chopin2_iris.sh) as a test case for [examples/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2.py);
+- Add [examples/chopin2/chopin2_iris.sh](https://github.com/cumbof/hdlib/blob/main/examples/chopin2/chopin2_iris.sh) as a test case for [examples/chopin2/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2/chopin2.py);
 - Add new unit tests to [test/test.py](https://github.com/cumbof/hdlib/blob/main/test/test.py).
 
 ### Fixes
@@ -112,7 +118,7 @@
 
 ### New features
 
-- `examples/chopin2.py` now reports the Accuracy, F1, Precision, Recall, and the Matthews correlation coefficient for each of the folds in addition to the average of these scores as evaluation metrics of the hyperdimensional computing models;
+- `examples/chopin2/chopin2.py` now reports the Accuracy, F1, Precision, Recall, and the Matthews correlation coefficient for each of the folds in addition to the average of these scores as evaluation metrics of the hyperdimensional computing models;
 - `model.Model` class functions now raise different exceptions based on multiple checks on the input parameters.
 
 ## Version 0.1.11
@@ -123,7 +129,7 @@
 
 - The `model.Model.stepwise_regression` function now report the importance corresponding to the best score;
 - The `model.Model._init_fit_predict` function uses `average="weighted"` for computing a score different from the accuracy to account for label imbalance;
-- `examples/chopin2.py` now computes different scores on the resulting predictions, prints the list of selected features based on the best score, and finally reports the confusion matrices.
+- `examples/chopin2/chopin2.py` now computes different scores on the resulting predictions, prints the list of selected features based on the best score, and finally reports the confusion matrices.
 
 ## Version 0.1.10
 
@@ -193,7 +199,7 @@
 - Add `parser` module with utility functions for dealing with input datasets;
 - Check if the input pickle file exists before initializing `Vector` and `Space` objects with `from_file`;
 - Report `Vector` and `Space`objects information when calling `print`;
-- Add `examples/chopin2.py`: reimplementation of the [chopin2](https://github.com/cumbof/chopin2) ML model with `hdlib`.
+- Add `examples/chopin2/chopin2.py`: reimplementation of the [chopin2](https://github.com/cumbof/chopin2) ML model with `hdlib`.
 
 ### Fixes
 

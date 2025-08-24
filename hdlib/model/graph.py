@@ -1,6 +1,6 @@
 """Directed and undirected, weighted and unweighted graphs with hdlib.
 
-It implements the __hdlib.graph.Graph__ class object which allows to represent weighted directed and undirected graphs
+It implements the __hdlib.model.graph.GraphModel__ class object which allows to represent weighted directed and undirected graphs
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Poduval et al. 2022_ https://doi.org/10.3389/fnins.2022.757125."""
 
 import copy
@@ -20,16 +20,16 @@ GRAPH_ID = "__graph__"
 WEIGHT_ID = "__weight__"
 
 
-class Graph(object):
-    """Hyperdimensional Graph representation."""
+class GraphModel(object):
+    """Hyperdimensional GraphModel representation."""
 
     def __init__(
         self,
         size: int=10000,
         directed: bool=False,
         seed: Optional[int]=None
-    ) -> "Graph":
-        """Initialize a Graph object.
+    ) -> "GraphModel":
+        """Initialize a GraphModel object.
 
         Parameters
         ----------
@@ -49,12 +49,12 @@ class Graph(object):
 
         Examples
         --------
-        >>> from hdlib.graph import Graph
-        >>> graph = Graph(size=10000, vtype='bipolar', directed=False)
+        >>> from hdlib.model import GraphModel
+        >>> graph = GraphModel(size=10000, vtype='bipolar', directed=False)
         >>> type(graph)
-        <class 'hdlib.graph.Graph'>
+        <class 'hdlib.model.GraphModel'>
 
-        This creates a new undirected Graph object around a Space that can host random bipolar Vector objects with size 10,000.
+        This creates a new undirected GraphModel object around a Space that can host random bipolar Vector objects with size 10,000.
         """
 
         if not isinstance(size, int):
@@ -108,22 +108,22 @@ class Graph(object):
         # Keep track of hdlib version
         self.version = __version__
 
-    def __str__(self) -> None:
-        """Print the Graph object properties.
+    def __str__(self) -> str:
+        """Print the GraphModel object properties.
 
         Returns
         -------
         str
-            A description of the Graph object. It reports the vectors size, the vector type,
+            A description of the GraphModel object. It reports the vectors size, the vector type,
             the number of nodes, the number of edges, and whether it is directed or undirected.
 
         Examples
         --------
-        >>> from hdlib.graph import Graph
-        >>> graph = Graph()
+        >>> from hdlib.model import GraphModel
+        >>> graph = GraphModel()
         >>> print(graph)
 
-                Class:    hdlib.graph.Graph
+                Class:    hdlib.model.graph.GraphModel
                 Version:  0.1.17
                 Size:     10000
                 Type:     bipolar
@@ -133,13 +133,13 @@ class Graph(object):
                 Edges:    0
                 Seed:     None
 
-        Print the MLModel object properties. By default, the size of vectors in space is 10,000,
+        Print the GraphModel object properties. By default, the size of vectors in space is 10,000,
         their types is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         """
 
         return """
-            Class:    hdlib.graph.Graph
+            Class:    hdlib.model.graph.GraphModel
             Version:  {}
             Size:     {}
             Type:     {}
@@ -311,14 +311,14 @@ class Graph(object):
             self.space.insert(weight_vector)
 
     @staticmethod
-    def _error_rate(instance: "Graph") -> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
+    def _error_rate(instance: "GraphModel") -> Tuple[float, Set[Tuple[str, str, float]], Set[Tuple[str, str, float]]]:
         """Just a wrapper around the `error_rate` function to make it callable in multiprocessing.
         It is safe to run in multiprocessing because it does not modify any instance attributes.
 
         Parameters
         ----------
-        instance : Graph
-            A Graph instance.
+        instance : GraphModel
+            A GraphModel instance.
 
         Returns
         -------
@@ -685,7 +685,7 @@ class Graph(object):
 
     @staticmethod
     def _predict(
-        instance: "Graph",
+        instance: "GraphModel",
         name: str,
         y_true: str,
         edges: Set[Tuple[str, str, Any]],
@@ -695,8 +695,8 @@ class Graph(object):
 
         Parameters
         ----------
-        instance : Graph
-            A Graph instance.
+        instance : GraphModel
+            A GraphModel instance.
         name : str
             The name associated to the set of edges.
         y_true : str

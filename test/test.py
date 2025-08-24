@@ -20,9 +20,7 @@ sys.path.append(ROOT_DIR)
 # Finally import the space, vector, arithmetic operators, model, and parser utilities
 from hdlib.space import Space, Vector
 from hdlib.arithmetic import bundle, bind, permute
-from hdlib.model import MLModel
-from hdlib.parser import percentage_split
-from hdlib.graph import Graph
+from hdlib.model import ClassificationModel, GraphModel
 
 
 class TestHDLib(unittest.TestCase):
@@ -154,7 +152,7 @@ class TestHDLib(unittest.TestCase):
             self.assertTrue(all(bundle_vector.vector == permute(permute_vector, rotate_by=-1).vector))
 
     def test_mlmodel(self):
-        """Unit tests for hdlib/model.py:MLModel class"""
+        """Unit tests for hdlib/model/ClassificationModel.py:ClassificationModel class"""
 
         # Use the IRIS dataset from sklearn
         iris = datasets.load_iris()
@@ -164,7 +162,7 @@ class TestHDLib(unittest.TestCase):
         classes = iris.target.tolist()
 
         # Create a model with bipolar vectors
-        model = MLModel(size=10000, levels=10, vtype="bipolar")
+        model = ClassificationModel(size=10000, levels=10, vtype="bipolar")
 
         # Fit the model
         model.fit(points, classes)
@@ -215,7 +213,7 @@ class TestHDLib(unittest.TestCase):
             self.assertTrue(len(importance) == len(features))
 
     def test_graph(self):
-        """Unit tests for hdlib/graph.py"""
+        """Unit tests for hdlib/model/GraphModel.py:GraphModel class"""
 
         # Define a directed, unweighted graph as a list of tuples representing its edges
         edges = set([
@@ -229,7 +227,7 @@ class TestHDLib(unittest.TestCase):
         ])
 
         # Initialize the graph object
-        graph = Graph(size=10000, directed=True)
+        graph = GraphModel(size=10000, directed=True)
 
         # Populate the graph with its nodes and edges
         graph.fit(edges)
@@ -248,19 +246,6 @@ class TestHDLib(unittest.TestCase):
         edge_exists, dist = graph.edge_exists("2", "3", 0.2, threshold=threshold)
 
         self.assertTrue(edge_exists)
-
-    def test_parser(self):
-        """Unit tests for hdlib/parser.py"""
-
-        # Consider a dataset with 10 data points
-        classes = ["1", "2", "2", "2", "1", "1", "2", "1", "1", "2"]
-
-        # Report the indices of a selected 20% of the 10 points in the dataset
-        test_indices = percentage_split(classes, 20)
-
-        with self.subTest():
-            # 20% of 10 is 2
-            self.assertTrue(len(test_indices) == 2)
 
     def test_dollar_of_mexico(self):
         """Reproduce the "What is the Dollar of Mexico?"
