@@ -33,13 +33,14 @@ Please credit our work in your manuscript by citing:
 
 ```bibtex
 @article{cumbo2023hdlib,
-  title={Hdlib: A python library for designing vector-symbolic architectures},
-  author={Cumbo, Fabio and Weitschek, Emanuel and Blankenberg, Daniel},
-  journal={Journal of Open Source Software},
-  volume={8},
-  number={89},
-  pages={5704},
-  year={2023}
+  title   = {hdlib: A python library for designing Vector-Symbolic Architectures},
+  author  = {Cumbo, Fabio and Weitschek, Emanuel and Blankenberg, Daniel},
+  journal = {Journal of Open Source Software},
+  volume  = {8},
+  number  = {89},
+  pages   = {5704},
+  year    = {2023},
+  doi     = {10.21105/joss.05704}
 }
 ```
 
