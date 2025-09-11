@@ -23,8 +23,11 @@ Here is the table of content:
   - [Arithmetic operations](https://github.com/cumbof/hdlib/wiki/Vector-Symbolic-Architectures#arithmetic-operations)
 - [Examples](https://github.com/cumbof/hdlib/wiki/Examples)
   - [What is the Dollar of Mexico?](https://github.com/cumbof/hdlib/wiki/Examples#what-is-the-dollar-of-mexico)
-  - [Supervised Machine Learning Model](https://github.com/cumbof/hdlib/wiki/Examples#supervised-machine-learning-model)
+  - [Classification Model](https://github.com/cumbof/hdlib/wiki/Examples#classification-model)
   - [Stepwise Feature Selection](https://github.com/cumbof/hdlib/wiki/Examples#stepwise-feature-selection)
+  - [Graph Encoding](https://github.com/cumbof/hdlib/wiki/Examples#graph-encoding)
+  - [Regression Model](https://github.com/cumbof/hdlib/wiki/Examples#regression-model)
+  - [Clustering](https://github.com/cumbof/hdlib/wiki/Examples#clustering)
 - [Support and contributions](https://github.com/cumbof/hdlib/wiki/Support-and-contributions)
 
 ## Credits
