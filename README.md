@@ -31,7 +31,31 @@ Here is the table of content:
 
 Please credit our work in your manuscript by citing:
 
-> Cumbo et al., (2023). hdlib: A Python library for designing Vector-Symbolic Architectures. Journal of Open Source Software, 8(89), 5704, https://doi.org/10.21105/joss.05704
+```bibtex
+@article{cumbo2023hdlib,
+  title={Hdlib: A python library for designing vector-symbolic architectures},
+  author={Cumbo, Fabio and Weitschek, Emanuel and Blankenberg, Daniel},
+  journal={Journal of Open Source Software},
+  volume={8},
+  number={89},
+  pages={5704},
+  year={2023}
+}
+```
+
+## Other publications
+
+`hdlib` has been cited in the following selected publications. If you have used our library in your research, we would love to hear from you!
+
+> Cumbo et al., (2020). A brain-inspired hyperdimensional computing approach for classifying massive DNA methylation data of cancer. _Algorithms_, 13(9), 233. https://doi.org/10.3390/a13090233
+> 
+> Cumbo et al., (2025). Feature selection with vector-symbolic architectures: a case study on microbial profiles of shotgun metagenomic samples of colorectal cancer. _Briefings in Bioinformatics_, 26(2), bbaf177. https://doi.org/10.1093/bib/bbaf177
+>
+> Joshi et al., (2025). Large-scale classification of metagenomic samples: a comparative analysis of classical machine learning techniques vs a novel brain-inspired hyperdimensional computing approach. _bioRxiv_, 2025-07. https://doi.org/10.1101/2025.07.06.663394
+>
+> Cumbo et al., (2025). Hyperdimensional computing in biomedical sciences: a brief review. _PeerJ Computer Science_, 11, e2885. https://doi.org/10.7717/peerj-cs.2885
+>
+> Cumbo et al., (2025). A novel Vector-Symbolic Architecture for graph encoding and its application to viral pangenome-based species classification. _bioRxiv_, 2025-09. https://doi.org/10.1101/2025.09.08.674958
 
 ## Support and contributions
 
@@ -41,4 +65,4 @@ Please, (i) be sure that there are no existing issues/PR concerning the same bug
 
 For additional information about how to contribute, please visit the [CONTRIBUTING](https://github.com/cumbof/hdlib/blob/main/CONTRIBUTING.md) section.
 
-Copyright © 2022 [Fabio Cumbo](https://github.com/cumbof). See [LICENSE](https://github.com/cumbof/hdlib/blob/main/LICENSE) for additional details.
+Copyright © 2025 [Fabio Cumbo](https://github.com/cumbof). See [LICENSE](https://github.com/cumbof/hdlib/blob/main/LICENSE) for additional details.
