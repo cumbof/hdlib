@@ -1,6 +1,6 @@
 # hdlib
 
-Hyperdimensional Computing Library for building Vector Symbolic Architectures in Python 3.
+Hyperdimensional Computing Library for building Vector-Symbolic Architectures in Python 3.
 
 ![Conda](https://img.shields.io/conda/dn/conda-forge/hdlib?label=hdlib%20on%20Conda)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.05704/status.svg)](https://doi.org/10.21105/joss.05704)
