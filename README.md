@@ -4,6 +4,7 @@ Hyperdimensional Computing Library for building Vector-Symbolic Architectures in
 
 ![Conda](https://img.shields.io/conda/dn/conda-forge/hdlib?label=hdlib%20on%20Conda)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.05704/status.svg)](https://doi.org/10.21105/joss.05704)
+[![DOI](https://zenodo.org/badge/485488487.svg)](https://doi.org/10.5281/zenodo.7996502)
 
 Vector-Symbolic Architectures (VSA, a.k.a. Hyperdimensional Computing) is an emergent computing paradigm that works by combining vectors in a high-dimensional space for representing and processing information. This approach recently shown promise in various domains for dealing with different kind of computational problems, including artificial intelligence, cognitive science, robotics, natural language processing, bioinformatics, medical informatics, cheminformatics, and internet of things among other scientific disciplines.
 
