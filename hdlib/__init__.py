@@ -13,7 +13,4 @@ modules and how to use the library."""
 __author__ = ("Fabio Cumbo (fabio.cumbo@gmail.com)")
 
 __version__ = "2.0.0"
-__date__ = "Aug 24, 2025"
-
-from .space import Space
-from .vector import Vector
+__date__ = "Sep 23, 2025"
