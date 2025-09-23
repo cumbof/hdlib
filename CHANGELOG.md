@@ -6,7 +6,7 @@
 
 ## New features
 
-- The `Vector` class is not in `hdlib.vector`;
+- The `Vector` class is now in `hdlib.vector`;
 - `hdlib.model.MLModel` is now `hdlib.model.classification`;
 - `hdlib.graph.Graph` is now `hdlib.model.graph`;
 - The `hdlib.parser` module has been suppressed and its functions have been moved to [examples/chopin2/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2/chopin2.py);
