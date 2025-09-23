@@ -351,7 +351,7 @@ class GraphModel(object):
             node1_threshold = self.weight_to_node_specific_thresholds[weight_true].get(node1) if weight_true in self.weight_to_node_specific_thresholds else None
 
             # Search for the current edge
-            edge_exists, _, dist_threshold = self.edge_exists(node1, node2, weight, threshold=node1_threshold)
+            edge_exists, _, dist_threshold = self.edge_exists(node1, node2, weight_true, threshold=node1_threshold)
 
             if weight_true not in self.weight_to_node_specific_thresholds:
                 self.weight_to_node_specific_thresholds[weight_true] = dict()
@@ -363,7 +363,7 @@ class GraphModel(object):
                 # This is a false negative
                 false_negatives.add(edge)
 
-        return len(false_negatives) / len(edges), false_negatives
+        return len(false_negatives) / len(self.edges), false_negatives
 
     def error_mitigation(
         self,
