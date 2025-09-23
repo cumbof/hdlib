@@ -385,6 +385,8 @@ class ClassificationModel(object):
         sum_vector = None
 
         for value_position, value in enumerate(point):
+            level_count = 0
+
             if value == self.min_value:
                 level_count = 0
 
