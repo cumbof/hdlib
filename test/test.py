@@ -17,8 +17,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 # This is required to import the functions we need to test
 sys.path.append(ROOT_DIR)
 
-# Finally import the space, vector, arithmetic operators, model, and parser utilities
-from hdlib.space import Space, Vector
+from hdlib import Space, Vector
 from hdlib.arithmetic import bundle, bind, permute
 from hdlib.model import ClassificationModel, GraphModel
 
@@ -182,7 +181,7 @@ class TestHDLib(unittest.TestCase):
         # Collect the accuracy scores computed on each fold
         scores = list()
 
-        for y_indices, y_pred, _, _ in predictions:
+        for y_indices, y_pred, _, _, _ in predictions:
             y_true = [label for position, label in enumerate(classes) if position in y_indices]
             accuracy = accuracy_score(y_true, y_pred)
 
@@ -233,17 +232,17 @@ class TestHDLib(unittest.TestCase):
         graph.fit(edges)
 
         # Compute the error rate of the graph model based on its set of edge
-        error_rate, _, _ = graph.error_rate(edges)
+        error_rate, _ = graph.error_rate()
 
         if error_rate > 0.0:
             # Mitigate the error rate, up to 10 iterations
-            graph.error_mitigation(edges, max_iter=10)
+            graph.error_mitigation(max_iter=10)
 
         # Define the distance threshold to establish whether an edge exists in the graph model
         threshold = 0.7
 
         # Check whether the edge <2, 3> exists
-        edge_exists, dist = graph.edge_exists("2", "3", 0.2, threshold=threshold)
+        edge_exists, _, _ = graph.edge_exists("2", "3", 0.2, threshold=threshold)
 
         self.assertTrue(edge_exists)
 
