@@ -13,7 +13,7 @@ from pathlib import Path
 
 import tqdm
 
-from hdlib.graph import Graph
+from hdlib.model import GraphModel
 
 
 # Path to the mapping genome taxonomic label
@@ -113,7 +113,7 @@ for taxonomy in GENOMES:
 start_time = time.time()
 
 # Define the HD representation of a directed weighted graph
-graph = Graph(size=10000, directed=True, seed=0)
+graph = GraphModel(size=10000, directed=True, seed=0)
 
 print("Train edges {}".format(len(train_edges)))
 
@@ -144,7 +144,7 @@ if NPROC > 1:
     if NPROC > total_test_genomes:
         NPROC = total_test_genomes
 
-    if NPROC > os.cpu_count()
+    if NPROC > os.cpu_count():
         NPROC = os.cpu_count()
 
     predictions = dict()
