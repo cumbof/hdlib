@@ -10,7 +10,8 @@ from typing import Any, Optional, Set, Tuple
 import numpy as np
 
 from hdlib import __version__
-from hdlib.space import Space, Vector
+from hdlib.space import Space
+from hdlib.vector import Vector
 from hdlib.arithmetic import bind, permute
 
 # Private graph vector name

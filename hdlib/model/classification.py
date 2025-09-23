@@ -19,7 +19,8 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from sklearn.model_selection import StratifiedKFold
 
 from hdlib import __version__
-from hdlib.space import Space, Vector
+from hdlib.space import Space
+from hdlib.vector import Vector
 from hdlib.arithmetic import bundle, permute
 
 

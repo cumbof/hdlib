@@ -6,7 +6,7 @@ built according to the Hyperdimensional Computing (HDC) paradigm as described in
 import numpy as np
 from scipy.special import softmax
 
-from hdlib import Vector
+from hdlib.vector import Vector
 
 
 class RegressionEncoder:

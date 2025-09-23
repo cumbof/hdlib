@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import numpy as np
 
-from hdlib import Vector
+from hdlib.vector import Vector
 from hdlib.arithmetic import bundle
 
 

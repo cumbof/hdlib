@@ -17,7 +17,8 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 # This is required to import the functions we need to test
 sys.path.append(ROOT_DIR)
 
-from hdlib import Space, Vector
+from hdlib.space import Space
+from hdlib.vector import Vector
 from hdlib.arithmetic import bundle, bind, permute
 from hdlib.model import ClassificationModel, GraphModel
 
