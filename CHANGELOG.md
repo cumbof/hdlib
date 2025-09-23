@@ -1,8 +1,8 @@
 # Changelog
 
-## Version 0.2.0
+## Version 2.0.0
 
-[@cumbof/hdlib@0.2.0](https://github.com/cumbof/hdlib/releases/tag/0.2.0)
+[@cumbof/hdlib@2.0.0](https://github.com/cumbof/hdlib/releases/tag/2.0.0)
 
 ## New features
 
