@@ -17,7 +17,7 @@ authors:
     orcid: 0000-0002-6833-9049
     affiliation: "1, 3"
 affiliations:
-  - name: Genomic Medicine Institute, Lerner Research Institute, Cleveland Clinic, Cleveland, Ohio, United States of America
+  - name: Center for Computational Life Sciences, Cleveland Clinic Research, Cleveland Clinic, Cleveland, Ohio, United States of America
     index: 1
   - name: College of Engineering, Ohio State University, Columbus, Ohio, United States of America
     index: 2
