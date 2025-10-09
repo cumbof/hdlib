@@ -1,4 +1,4 @@
-"""Machine learning with hdlib.
+"""Classification with hdlib.
 
 It implements the __hdlib.model.classification.ClassificationModel__ class object which allows to generate, fit, and test a classification model
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
@@ -58,7 +58,7 @@ class ClassificationModel(object):
         >>> type(model)
         <class 'hdlib.model.ClassificationModel'>
 
-        This creates a new Model object around a Space that can host random bipolar Vector objects with size 10,000.
+        This creates a new ClassificationModel object around a Space that can host random bipolar Vector objects with size 10,000.
         It also defines the number of level vectors to 100.
         """
 
@@ -129,7 +129,7 @@ class ClassificationModel(object):
                 []
 
         Print the ClassificationModel object properties. By default, the size of vectors in space is 10,000,
-        their types is bipolar, and the number of level vectors is 2. The number of data points 
+        their type is bipolar, and the number of level vectors is 2. The number of data points 
         and the number of class labels are empty here since no dataset has been processed yet.
         """
 
@@ -249,7 +249,7 @@ class ClassificationModel(object):
     def fit(
         self,
         points: List[List[float]],
-        labels: Optional[List[str]]=None,
+        labels: List[str],
         seed: Optional[int]=None,
     ) -> None:
         """Build a vector-symbolic architecture. Define level vectors and encode samples.
@@ -258,9 +258,8 @@ class ClassificationModel(object):
         ----------
         points : list
             List of lists with numerical data (floats).
-        labels : list, optional
+        labels : list
             List with class labels. It has the same size of `points`.
-            Used in case of supervised learning only.
         seed : int, optional
             An optional seed for reproducibly generating the vectors numpy.ndarray randomly.
 
@@ -268,8 +267,8 @@ class ClassificationModel(object):
         ------
         Exception
             - if there are not enough data points (the length of `points` is < 3);
-            - if `labels` is not None and the length of `points` does not match the length of `labels`;
-            - if `labels` is not None and there is only one class label.
+            - if the length of `points` does not match the length of `labels`;
+            - if there is only one class label.
         """
 
         if len(points) < 3:
@@ -277,15 +276,13 @@ class ClassificationModel(object):
             # the classification model is 2, while 1 data point is enough for the test set
             raise Exception("Not enough data points")
 
-        if labels:
-            # Labels are optional here. They are used in case of supervised learning only
-            if len(points) != len(labels):
-                raise Exception("The number of data points does not match with the number of class labels")
+        if len(points) != len(labels):
+            raise Exception("The number of data points does not match with the number of class labels")
 
-            if len(set(labels)) < 2:
-                raise Exception("The number of unique class labels must be > 1")
+        if len(set(labels)) < 2:
+            raise Exception("The number of unique class labels must be > 1")
 
-            self.classes = set(labels)
+        self.classes = set(labels)
 
         # Initialize the hyperdimensional space so that it overwrites any existing space in Model
         self.space = Space(size=self.size, vtype=self.vtype)
@@ -365,9 +362,8 @@ class ClassificationModel(object):
             point_vector.name = "point_{}".format(point_position)
             self.space.insert(point_vector)
 
-            if labels:
-                # Tag vector with its class label
-                self.space.add_tag(name=point_vector.name, tag=labels[point_position])
+            # Tag vector with its class label
+            self.space.add_tag(name=point_vector.name, tag=labels[point_position])
 
     def _encode_point(self, point: List[float]) -> Vector:
         """Encode a single data point. It must be used after `fit()`.
