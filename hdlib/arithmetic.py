@@ -1,4 +1,4 @@
-"""Implementation of the arithmetic operators.
+"""Implementation of the MAP arithmetic operators.
 
 This library also provides the same set of arithmetic functions also accessible as _Vector_'s class methods. 
 However, while the result of calling these functions from a _Vector_ object woule be applied in place, 
