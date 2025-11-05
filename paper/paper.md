@@ -23,25 +23,25 @@ affiliations:
     index: 2
   - name: Department of Molecular Medicine, Cleveland Clinic Lerner College of Medicine, Case Western Reserve University, Cleveland, Ohio, United States of America
     index: 3
-date: 23 September 2025
+date: 4 November 2025
 bibliography: paper.bib
 ---
 
 # Summary
 
-Following the initial publication of _hdlib_ [@cumbo2023hdlib], a Python library for designing Vector-Symbolic Architectures (VSA), we introduce a major extension that significantly enhances its machine learning capabilities. VSA, also known as Hyperdimensional Computing, is a computing paradigm that represents and processes information using high-dimensional vectors. While the first version of _hdlib_ established a robust foundation for creating and manipulating these vectors, this update addresses the growing need for more advanced modeling within the VSA framework. We present four extensions: a regression model, a clustering model, a module for encoding graph-based data structures, and significant enhancements to the existing supervised classification model also enabling feature selection.
+Following the initial publication of _hdlib_ [@cumbo2023hdlib], a Python library for designing Vector-Symbolic Architectures (VSA), we introduce a major extension that significantly enhances its machine learning capabilities. VSA, also known as Hyperdimensional Computing, is a computing paradigm that represents and processes information using high-dimensional vectors. While the first version of _hdlib_ established a foundation for manipulating these vectors, this update addresses the growing need for more advanced modeling within the VSA framework. We present four extensions: a regression model, a clustering model, a module for encoding graph-based data structures, and significant enhancements to the existing supervised classification model also enabling feature selection.
 
-The library’s code remains open-source and available on GitHub at [https://github.com/cumbof/hdlib](https://github.com/cumbof/hdlib) under the MIT license, and is distributed through the Python Package Index (_pip install hdlib_) and Conda (_conda install -c conda-forge hdlib_).
+_hdlib_ remains open-source and available on GitHub at [https://github.com/cumbof/hdlib](https://github.com/cumbof/hdlib), and distributed through the Python Package Index (_pip install hdlib_) and Conda (_conda install -c conda-forge hdlib_).
 
 # Statement of need
 
 The successful application of VSA across diverse scientific domains has created a demand for more sophisticated machine learning models that go beyond basic classification. Researchers now require tools to tackle regression tasks, model complex relationships in structured data like graphs, and better optimize models by identifying the most salient features.
 
-This new version of _hdlib_ directly addresses this need. While other libraries provide foundational VSA operations [@simon2022hdtorch; @heddes2023torchhd; @kang2022openhd], _hdlib_ now introduces a cohesive toolkit for advanced machine learning that is, to our knowledge, unique in its integration of regression, clustering, graph encoding, and enhanced feature selection within a single, flexible VSA framework. These additions empower researchers to move from rapid prototyping of core VSA concepts to building and evaluating complex, end-to-end machine learning pipelines that are now used in the context of different problems in different scientific domains [@cumbo2025hyperdimensional; @cumbo2025feature; @joshi2025large; @cumbo2020brain; @cumbo2025novel; @cumbo2025predicting; @cumbo2025designing].
+This new version of _hdlib_ directly addresses this need. While other libraries provide foundational VSA operations [@simon2022hdtorch; @heddes2023torchhd; @kang2022openhd], _hdlib_ now introduces a cohesive toolkit for advanced machine learning that is, to our knowledge, unique in its integration of regression, clustering, graph encoding, and enhanced feature selection within a single framework. These additions empower researchers to move from rapid prototyping of core VSA concepts to building and evaluating complex machine learning pipelines that are now used in the context of different problems in different scientific domains [@cumbo2025hyperdimensional; @cumbo2025feature; @joshi2025large; @cumbo2020brain; @cumbo2025novel; @cumbo2025predicting; @cumbo2025designing].
 
 # Extending Machine Learning functionalities
 
-The primary contribution of this work is the expansion of the _hdlib.model_ module with new functionalities to enhance existing methods and the introduction of new modules for handling different data structures. The new architecture is summarized in \autoref{fig:overview}.
+The new architecture is summarized in \autoref{fig:overview}.
 
 ![An overview of the _hdlib_ 2.0 library architecture, highlighting the distinction between the original (top, transparent) and new components (bottom). Foundational classes from version 1.0 include `hdlib.space.Space` (Class 1), `hdlib.vector.Vector` (Class 2), `hdlib.arithmetic` module (Class 3), and the `hdlib.model.classification.ClassificationModel` (Class 4). This work introduces major new functionalities through the `hdlib.model` module comprising the new `clustering.ClusteringModel` (Class 5), `regression.RegressionEncoder` (Class 6) and `regression.RegressionModel` (Class 7), and `graph.GraphModel` (Class 8), creating a comprehensive toolkit for VSA-based machine learning.\label{fig:overview}](hdlib.pdf)
 
@@ -55,21 +55,21 @@ A key focus of this update was to provide more robust and automated tools for mo
 
 ## Clustering Model
 
-Here, we introduced a new `hdlib.model.clustering` module that provides a `ClusteringModel` class that implements a k-means clustering algorithm working accordingly with the Hyperdimensional Computing principles as defined in [@gupta2022store].
+A new `hdlib.model.clustering` module provides a `ClusteringModel` class that implements a k-means clustering algorithm as defined in [@gupta2022store].
 
-The algorithm operates by representing both the _k_ cluster centroids and the input data points as hypervectors. The iterative `fit` process closely mirrors the classic k-means algorithm but uses VSA operations. Data points are assigned to the cluster corresponding to the most similar centroid, determined by calculating the cosine distance. The centroid of each cluster is then recalculated by bundling all the hypervectors of the data points assigned to it. This process moves the centroid towards the center of its constituent points. This process continues until the cluster assignments stabilize or a maximum number of iterations is reached. Once the model is trained, the `predict` method can be used to assign a new, unseen data point to the most appropriate cluster.
+The _k_ cluster centroids and the input data points are represented as hypervectors. The iterative `fit` process mirrors the k-means algorithm using VSA operations. Data points are assigned to the cluster corresponding to the most similar centroid, determined by calculating the cosine distance. The centroid of each cluster is then recalculated by bundling all the hypervectors of the data points assigned to it. This process moves the centroid towards the center of its constituent points. It continues until convergence or till a maximum number of iterations is reached. The `predict` method can then be used to assign a new data point to the most appropriate cluster.
 
 ## Regression Model
 
-To address tasks involving the prediction of continuous variables, `hdlib` now implements a regression model based on the methodology described by [@hernandez2021reghd]. This implementation is split into two main components: a `RegressionEncoder` and a `RegressionModel` as part of the `hdlib.model.regression` module. The encoder maps input features into a high-dimensional space using a non-linear function that combines the input with a set of random base hypervectors and biases. This mapping is specifically designed to preserve the similarity relationships of the original feature space.
+`hdlib` also implements a regression model [@hernandez2021reghd]. This implementation is split into two components: a `RegressionEncoder` and a `RegressionModel` as part of the `hdlib.model.regression` module. The encoder maps input features into a high-dimensional space using a non-linear function that combines the input with a set of random base hypervectors and biases. This mapping is designed to preserve the similarity relationships of the original feature space.
 
-The `RegressionModel` employs a sophisticated multi-model strategy, maintaining a set of k parallel cluster models and regression models. During the iterative `fit` process, an encoded input vector is compared against all cluster models to compute a set of confidence scores via a `softmax` function. A final prediction is produced by a confidence-weighted sum of the outputs from all regression models. The prediction error is then used to update the models: all regression models are adjusted based on their confidence score, while only the most similar cluster model is refined.
+The `RegressionModel` employs a multi-model strategy, maintaining a set of _k_ parallel cluster models and regression models. During the iterative `fit` process, an encoded input vector is compared against all cluster models to compute a set of confidence scores via a `softmax` function. A final prediction is produced by a confidence-weighted sum of the outputs from all regression models that are then adjusted based on their confidence score, while only the most similar cluster model is refined.
 
 ## Graph Model
 
-A major extension in this release is the `hdlib.model.graph` module, which provides the `GraphModel` class for representing and reasoning with graph-based data. This implementation encodes an entire directed and undirected weighted graph into a single hyperdimensional vector, based on the methodology described by [@poduval2022graphd]. The process begins by assigning a unique random hypervector to each node and edge weight. The `fit` method then constructs the graph representation by creating a memory vector for each node that encodes its local neighborhood. The entire graph is finally compressed into one vector by bundling all node vectors, each binded with its corresponding memory vector.
+A major extension in this release is the `hdlib.model.graph` module, which provides the `GraphModel` class for representing and reasoning with graph-based data. This implementation encodes directed and undirected weighted graphs into single hyperdimensional vectors [@poduval2022graphd]. The process assigns a unique random hypervector to each node and edge weight. Then, the `fit` method constructs the graph representation by creating a memory vector for each node that encodes its local neighborhood. The entire graph is finally compressed into one vector by bundling all node vectors, each binded with its corresponding memory vector.
 
-Furthermore, the module includes a `predict` method for edge weight classification and an `error_mitigation` routine for iteratively refining the graph model to reduce prediction errors.
+Furthermore, the module includes a `predict` method for edge weight classification and an `error_mitigation` routine for reducing prediction errors by refining the graph model.
 
 With the integration of these modules, `hdlib` 2.0 provides the scientific community with a unified and powerful framework, paving the way for the development of novel, brain-inspired solutions to a broader spectrum of machine learning problems.
 
