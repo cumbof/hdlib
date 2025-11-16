@@ -1,5 +1,18 @@
 # Changelog
 
+## Version 2.1.0
+
+[@cumbof/hdlib@2.1.0](https://github.com/cumbof/hdlib/releases/tag/2.1.0)
+
+## New features
+
+- `Space` and `Vector` objects are not constrained on a 10,000 dimensionality anymore;
+- The `predict` function in `hdlib.model.classification.ClassificationModel` now returns the actual distances between the test samples and the class prototypes too;
+- The classical arithmetic has been moved to `hdlib.arithmetic`;
+- `hdlib.arithmetic.quantum` provides the quantum arithmetic at the base of Quantum Hyperdimensional Computing;
+- The `hdlib.model.classification` module now contains a new `QuantumClassificationModel` class;
+- New reasoning and classification examples about the [Quantum Hyperdimensional Computing](https://github.com/cumbof/hdlib/blob/main/examples/quantum) are available under the examples folder.
+
 ## Version 2.0.0
 
 [@cumbof/hdlib@2.0.0](https://github.com/cumbof/hdlib/releases/tag/2.0.0)
@@ -7,8 +20,8 @@
 ## New features
 
 - The `Vector` class is now in `hdlib.vector`;
-- `hdlib.model.MLModel` is now `hdlib.model.classification`;
-- `hdlib.graph.Graph` is now `hdlib.model.graph`;
+- `hdlib.model.MLModel` is now `hdlib.model.classification.ClassificationModel`;
+- `hdlib.graph.Graph` is now `hdlib.model.graph.GraphModel`;
 - The `hdlib.parser` module has been suppressed and its functions have been moved to [examples/chopin2/chopin2.py](https://github.com/cumbof/hdlib/blob/main/examples/chopin2/chopin2.py);
 - New `hdlib.model.graph.GraphModel._error_rate` and `hdlib.model.graph.GraphModel._predict` static methods for the estimation of the model error rate and the evaluation of a graph model in multiprocessing;
 - New `hdlib.model.regression.RegressionModel` and `hdlib.model.clustering.ClusteringModel` classes for building regression and clustering models respectively;
