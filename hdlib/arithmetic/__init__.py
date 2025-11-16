@@ -71,7 +71,13 @@ def bind(vector1: Vector, vector2: Vector) -> Vector:
     if vector1.vtype != vector2.vtype:
         raise Exception("Vector types are not compatible")
 
-    vector = vector1.vector * vector2.vector
+    if vector1.vtype == "bipolar":
+        # Element-wise multiplication
+        vector = vector1.vector * vector2.vector
+
+    elif vector1.vtype == "binary":
+        # Element-wise XOR
+        vector = vector1.vector.astype(int) ^ vector2.vector.astype(int)
 
     tags = set(vector1.tags).union(set(vector2.tags))
 
@@ -140,7 +146,13 @@ def bundle(vector1: Vector, vector2: Vector) -> Vector:
     if vector1.vtype != vector2.vtype:
         raise Exception("Vector types are not compatible")
 
-    vector = vector1.vector + vector2.vector
+    if vector1.vtype == "bipolar":
+        # Element-wise addition
+        vector = vector1.vector + vector2.vector
+
+    elif vector1.vtype == "binary":
+        # Element-wise majority vote
+        vector = ((vector1.vector + vector2.vector) > 1).astype(int)
 
     tags = set(vector1.tags).union(set(vector2.tags))
 
@@ -165,7 +177,8 @@ def subtraction(vector1: Vector, vector2: Vector) -> Vector:
     Raises
     ------
     Exception
-        If vectors have different sizes or different vector types.
+        - If vectors have different sizes or different vector types;
+        - If vectors type is binary.
 
     Examples
     --------
@@ -201,7 +214,12 @@ def subtraction(vector1: Vector, vector2: Vector) -> Vector:
     if vector1.vtype != vector2.vtype:
         raise Exception("Vector types are not compatible")
 
-    vector = vector1.vector - vector2.vector
+    if vector1.vtype == "bipolar":
+        # Element-wise subtraction
+        vector = vector1.vector - vector2.vector
+
+    elif vector1.vtype == "binary":
+        raise Exception("Subtraction is not available for binary vectors")
 
     return Vector(size=vector1.size, vector=vector, tags=vector1.tags, vtype=vector1.vtype, seed=vector1.seed)
 
