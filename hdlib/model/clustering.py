@@ -52,8 +52,8 @@ class ClusteringModel:
         if not isinstance(n_features, int) or n_features <= 0:
             raise ValueError("The number of features `n_features` must be a positive integer")
 
-        if not isinstance(size, int) or size < 1000: # Reduced for faster testing
-            raise ValueError("Vectors size must be an integer greater than or equal to 1000")
+        if not isinstance(size, int):
+            raise ValueError("Vectors size must be an integer")
 
         if not isinstance(max_iter, int) or max_iter <= 0:
             raise ValueError("The number of iterations `max_iter` must be a positive integer")

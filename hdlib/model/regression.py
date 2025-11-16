@@ -34,10 +34,10 @@ class RegressionEncoder:
         """
 
         if D <= 0 or not isinstance(D, int):
-            raise ValueError("Dimensionality D must be a positive integer.")
+            raise ValueError("Dimensionality must be a positive integer.")
 
         if n_features <= 0 or not isinstance(n_features, int):
-            raise ValueError("Number of features n_features must be a positive integer.")
+            raise ValueError("Number of features must be a positive integer.")
 
         self.D = D
         self.n_features = n_features

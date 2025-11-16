@@ -45,8 +45,6 @@ class GraphModel(object):
         ------
         TypeError
             If the vector size is not an integer number.
-        ValueError
-            If the vector size is lower than 1,000.
 
         Examples
         --------
@@ -60,9 +58,6 @@ class GraphModel(object):
 
         if not isinstance(size, int):
             raise TypeError("Vectors size must be an integer number")
-
-        if size < 1000:
-            raise ValueError("Vectors size must be greater than or equal to 1000")
 
         # Register vectors dimensionality
         self.size = size
@@ -139,26 +134,17 @@ class GraphModel(object):
         and the number of class labels are empty here since no dataset has been processed yet.
         """
 
-        return """
+        return f"""
             Class:    hdlib.model.graph.GraphModel
-            Version:  {}
-            Size:     {}
-            Type:     {}
-            Directed: {}
-            Weights:  {}
-            Nodes:    {}
-            Edges:    {}
-            Seed:     {}
-        """.format(
-            self.version,
-            self.size,
-            self.vtype,
-            self.directed,
-            len(self.weights),
-            self.nodes_counter,
-            self.edges_counter,
-            self.seed
-        )
+            Version:  {self.version}
+            Size:     {self.size}
+            Type:     {self.vtype}
+            Directed: {self.directed}
+            Weights:  {len(self.weights)}
+            Nodes:    {self.nodes_counter}
+            Edges:    {self.edges_counter}
+            Seed:     {self.seed}
+        """
 
     def _add_edge(
         self,
