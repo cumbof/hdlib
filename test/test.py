@@ -2,6 +2,7 @@
 """Unit tests for hdlib."""
 
 import errno
+import math
 import os
 import sys
 import tempfile
@@ -11,6 +12,9 @@ import numpy as np
 from sklearn import datasets
 from sklearn.metrics import accuracy_score
 
+from qiskit import QuantumCircuit
+from qiskit.quantum_info import Statevector
+
 # Define the hdlib root directory
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -19,9 +23,15 @@ sys.path.append(ROOT_DIR)
 
 from hdlib.space import Space
 from hdlib.vector import Vector
-from hdlib.arithmetic import bundle, bind, permute
 from hdlib.model import ClassificationModel, GraphModel
+from hdlib.arithmetic import bundle, bind, permute
 
+from hdlib.arithmetic.quantum import (
+    phase_oracle_gate,
+    bind as quantum_bind,
+    bundle as quantum_bundle,
+    permute as quantum_permute
+)
 
 class TestHDLib(unittest.TestCase):
     """Unit tests for hdlib"""
@@ -298,6 +308,150 @@ class TestHDLib(unittest.TestCase):
         closest = space.find(guess_pes)
 
         self.assertEqual(closest[0], "PES")
+
+    def test_quantum_encoding(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:phase_oracle_gate
+
+        Tests if the phase oracle correctly encodes a classical bipolar vector into the phases of a quantum state.
+        """
+
+        dimensionality = 16
+        num_qubits = int(log2(dimensionality))
+
+        # Classical encoding
+        v1_classical = Vector(size=dimensionality, vtype="bipolar")
+
+        # The expected quantum state is proportional to the classical vector
+        expected_state = (1 / math.sqrt(dimensionality)) * v1_classical.vector
+
+        # Quantum encoding
+        qc = QuantumCircuit(num_qubits)
+        qc.h(range(num_qubits)) # Create uniform superposition
+        oracle_gate = phase_oracle_gate(v1_classical.vector)
+        qc.append(oracle_gate, range(num_qubits))
+
+        # Get the resulting statevector
+        quantum_state = Statevector.from_instruction(qc).data
+
+        # Use np.allclose for safe floating-point comparison
+        self.assertTrue(np.allclose(quantum_state, expected_state))
+
+    def test_quantum_bind(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:bind
+
+        Tests if quantum binding (composing phase oracles) matches classical binding (element-wise multiplication).
+        """
+
+        dimensionality = 16
+        num_qubits = int(log2(dimensionality))
+
+        # Classical encoding
+        v1_classical = Vector(size=dimensionality, vtype="bipolar")
+        v2_classical = Vector(size=dimensionality, vtype="bipolar")
+        v_bound_classical = bind(v1_classical, v2_classical)
+        expected_state = (1 / math.sqrt(dimensionality)) * v_bound_classical.vector
+
+        # Quantum encoding
+        # Create a circuit for each oracle
+        oracle1_gate = phase_oracle_gate(v1_classical.vector, label="O1")
+        oracle2_gate = phase_oracle_gate(v2_classical.vector, label="O2")
+
+        circuit_vector1 = QuantumCircuit(num_qubits)
+        circuit_vector1.append(oracle1_gate, range(num_qubits))
+
+        circuit_vector2 = QuantumCircuit(num_qubits)
+        circuit_vector2.append(oracle2_gate, range(num_qubits))
+
+        # Apply the quantum bind function
+        bound_circuit_op = quantum_bind([circuit_vector1, circuit_vector2])
+
+        # Apply to a superposition state
+        circuit = QuantumCircuit(num_qubits)
+        circuit.h(range(num_qubits))
+        circuit.compose(bound_circuit_op, inplace=True)
+
+        quantum_state = Statevector.from_instruction(circuit).data
+
+        # Comparison
+        self.assertTrue(np.allclose(quantum_state, expected_state))
+
+    def test_quantum_bundle(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:bundle
+
+        Tests if quantum bundling (LCU+OAA) produces a state proportional to the classical bundle (element-wise addition).
+        """
+
+        dimensionality = 16
+        num_qubits = int(log2(dimensionality))
+
+        # Classical encoding
+        v1_classical = Vector(size=dimensionality, vtype="bipolar")
+        v2_classical = Vector(size=dimensionality, vtype="bipolar")
+        v_bundle_classical = bundle(v1_classical, v2_classical)
+
+        # The final state should be proportional to the sum, so we normalize it
+        # for comparison with the quantum state (which is always normalized).
+        norm = np.linalg.norm(v_bundle_classical.vector)
+        expected_state_normalized = v_bundle_classical.vector / norm
+
+        # Quantum encoding
+        # Create the unitary circuits that prepare the states |v1> and |v2>
+        circuit1 = QuantumCircuit(num_qubits, name="U_v1")
+        circuit1.h(range(num_qubits))
+        circuit1.append(phase_oracle_gate(v1_classical.vector))
+
+        circuit2 = QuantumCircuit(num_qubits, name="U_v2")
+        circuit2.h(range(num_qubits))
+        circuit2.append(phase_oracle_gate(v2_classical.vector))
+
+        # Apply the quantum bundle function
+        bundle_circuit, anc, sys = quantum_bundle([circuit1, circuit2], weights=[1.0] * 2, oaa_rounds=1)
+
+        # Get the final statevector and extract the system state
+        full_sv = Statevector.from_instruction(bundle_circuit)
+        quantum_state = extract_system_state_when_anc_zero(full_sv, anc, sys)
+
+        # Normalize the extracted state for fair comparison
+        quantum_state_normalized = quantum_state / np.linalg.norm(quantum_state)
+
+        # Comparison
+        # Note: The quantum state may have a different global phase.
+        # We check if the vectors are the same up to a global phase factor.
+        phase_diff = np.angle(quantum_state_normalized[0]) - np.angle(expected_state_normalized[0])
+
+        self.assertTrue(np.allclose(quantum_state_normalized, expected_state_normalized * np.exp(1j * phase_diff)))
+
+    def test_quantum_permute(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:permute
+
+        Tests if the quantum permutation circuit correctly performs a cyclic shift on a basis state.
+        """
+
+        dimensionality = 16
+        shift = 3
+
+        # Classical encoding
+        # We will shift the vector [1, 0, 0, ...], which corresponds to state |0>
+        v_base = np.zeros(dimensionality)
+        v_base[0] = 1
+        v_permuted_classical = permute(Vector(vector=v_base, vtype="binary"), rotate_by=shift)
+
+        # Quantum encoding
+        num_qubits = int(log2(dimensionality))
+        circuit = QuantumCircuit(num_qubits, name=f"Vector(shift={shift})")
+
+        # Add the phase oracle
+        oracle_gate = phase_oracle_gate(v_base, label="O_v")
+        circuit.append(oracle_gate, range(num_qubits))
+
+        # Add the QFT-based permutation
+        permute_gate = permute(num_qubits, shift=shift)
+        circuit.append(permute_gate, range(num_qubits))
+
+        quantum_state = Statevector.from_instruction(circuit).data
+
+        # Comparison
+        self.assertTrue(np.allclose(np.abs(quantum_state), v_permuted_classical.vector))
 
 
 if __name__ == "__main__":
