@@ -42,8 +42,7 @@ class Space(object):
         FileNotFoundError
             If `from_file` is not None but the file does not exist.
         ValueError
-            - if `vtype` is different than 'binary' or 'bipolar';
-            - if `size` is lower than 1,000.
+            If `vtype` is different than 'binary' or 'bipolar'.
 
         Examples
         --------
@@ -78,9 +77,6 @@ class Space(object):
         self.version = __version__
 
         self.size = size
-
-        if self.size < 1000:
-            raise ValueError("Size of vectors in space must be greater than or equal to 1000")
 
         self.vtype = vtype.lower()
 
@@ -168,7 +164,7 @@ class Space(object):
         vector is actually in the space by searching for its name.
         """
 
-        return True if vector in self.space else False
+        return vector in self.space
 
     def __len__(self) -> int:
         """Get the number of vectors in space.
@@ -227,27 +223,20 @@ class Space(object):
         The vector size and type are 10,000 and 'bipolar' by default.
         """
 
-        return """
+        return f"""
             Class:   hdlib.space.Space
-            Version: {}
-            Size:    {}
-            Type:    {}
-            Vectors: {}
+            Version: {self.version}
+            Size:    {self.size}
+            Type:    {self.vtype}
+            Vectors: {len(self.space)}
             Tags:
 
-            {}
+            {np.array(list(self.tags.keys()))}
 
             IDs:
 
-            {}
-        """.format(
-            self.version,
-            self.size,
-            self.vtype,
-            len(self.space),
-            np.array(list(self.tags.keys())),
-            np.array(list(self.space.keys()))
-        )
+            {np.array(list(self.space.keys()))}
+        """
 
     def memory(self) -> List[str]:
         """Return names or IDs of vectors in space.

@@ -34,7 +34,7 @@ class Vector(object):
         name : str, optional
             The unique identifier of the Vector object. A random UUID v4 is generated if not specified.
         size : int, optional, default 10000
-            The size of the vector. It is 10,000 by default and cannot be less than that.
+            The size of the vector. It is 10,000 by default.
         vector : numpy.ndarray, optional, default None
             The actual vector. A random vector is created if not specified.
         vtype : {'binary', 'bipolar'}, default 'bipolar'
@@ -65,28 +65,22 @@ class Vector(object):
             - if `vector` is not an instance of numpy.ndarray;
             - if `size` is not an integer number.
         ValueError
-            - if `vtype` is different than 'binary' or 'bipolar';
-            - if `size` is lower than 1,000.
+            If `vtype` is different than 'binary' or 'bipolar'.
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector = Vector()
         >>> type(vector)
-        <class 'hdlib.space.Vector'>
+        <class 'hdlib.vector.Vector'>
 
         A new bipolar vector with a size of 1,000 is created by default.
-
-        >>> vector = Vector(size=10)
-        ValueError: Vector size must be greater than or equal to 1000
-
-        This throws a ValueError since the vector size cannot be less than 1,000.
 
         >>> vector1 = Vector()
         >>> vector1.dump(to_file='~/my_vector.pkl')
         >>> vector2 = Vector(from_file='~/my_vector.pkl')
         >>> type(vector2)
-        <class 'hdlib.space.Vector'>
+        <class 'hdlib.vector.Vector'>
 
         This creates a random bipolar vector `vector1`, dumps the object to a pickle file under the home directory,
         and finally create a new vector object `vector2` from the pickle file.
@@ -135,23 +129,7 @@ class Vector(object):
 
             self.size = len(self.vector)
 
-            if self.size < 1000:
-                raise ValueError("Vector size must be greater than or equal to 1000")
-
             self.vtype = vtype
-
-            # Try to infer the vector type from the content of the vector itself
-            # only in the case where the elements are not all 1s
-            if not (self.vector == 1).all():
-                if ((self.vector == 0) | (self.vector == 1)).all():
-                    self.vtype = "binary"
-
-                elif ((self.vector == -1) | (self.vector == 1)).all():
-                    self.vtype = "bipolar"
-
-                else:
-                    if warning:
-                        print("Vector type can be binary or bipolar only")
 
         elif from_file:
             if not os.path.isfile(from_file):
@@ -171,14 +149,8 @@ class Vector(object):
                         print("Warning: the specified Vector has been created with a different version of hdlib")
 
         else:
-            # Conditions on vector size
-            # It must be an integer number greater than or equal to 10000
-            # This size makes sure that vectors are quasi-orthogonal in space
             if not isinstance(size, int):
                 raise TypeError("Vector size must be an integer number")
-
-            if size < 1000:
-                raise ValueError("Vector size must be greater than or equal to 1000")
 
             self.size = size
 
@@ -200,7 +172,7 @@ class Vector(object):
                 rand = np.random.default_rng(seed=self.seed)
 
             """
-            # Use the following statements to generate random vectors with real numbers
+            # Use the following instructions to generate random vectors with real numbers
             self.vector = rand.uniform(low=-1.0, high=1.0, size=(self.size,))
             self.vector /= np.linalg.norm(self.vector)
             """
@@ -222,7 +194,7 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector = Vector()
         >>> len(vector)
         10000
@@ -243,11 +215,11 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector = Vector()
         >>> print(vector)
 
-                Class:   hdlib.space.Vector
+                Class:   hdlib.vector.Vector
                 Version: 0.1.17
                 Name:    89ea628b-3d29-47e1-9d10-34bdbfce8d40
                 Seed:    None
@@ -266,29 +238,21 @@ class Vector(object):
         Thus, the set of vector tags is empty.
         """
 
-        return """
-            Class:   hdlib.space.Vector
-            Version: {}
-            Name:    {}
-            Seed:    {}
-            Size:    {}
-            Type:    {}
+        return f"""
+            Class:   hdlib.vector.Vector
+            Version: {self.version}
+            Name:    {self.name}
+            Seed:    {self.seed}
+            Size:    {self.size}
+            Type:    {self.vtype}
             Tags:
 
-            {}
+            {np.array(list(self.tags))}
 
             Vector:
 
-            {}
-        """.format(
-            self.version,
-            self.name,
-            self.seed,
-            self.size,
-            self.vtype,
-            np.array(list(self.tags)),
-            self.vector
-        )
+            {self.vector}
+        """
 
     def __add__(self, vector: "Vector") -> "Vector":
         """Implement the addition operator between two Vector objects as bundle.
@@ -305,12 +269,12 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector1 = Vector()
         >>> vector2 = Vector()
         >>> vector3 = vector1 + vector2
         >>> type(vector3)
-        <class 'hdlib.space.Vector'>
+        <class 'hdlib.vector.Vector'>
 
         The bundle function returns a new Vector object whose content is computed as the element-wise sum 
         of the two input vectors.
@@ -339,12 +303,12 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector1 = Vector()
         >>> vector2 = Vector()
         >>> vector3 = vector1 - vector2
         >>> type(vector3)
-        <class 'hdlib.space.Vector'>
+        <class 'hdlib.vector.Vector'>
 
         The subtraction operation returns a new Vector object whose content is computed as the element-wise 
         subtraction of the two input vectors.
@@ -373,12 +337,12 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector1 = Vector()
         >>> vector2 = Vector()
         >>> vector3 = vector1 * vector2
         >>> type(vector3)
-        <class 'hdlib.space.Vector'>
+        <class 'hdlib.vector.Vector'>
 
         The bind function returns a new Vector object whose content is computed as the element-wise 
         multiplication of the two input vectors.
@@ -414,7 +378,7 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector1 = Vector(seed=1)
         >>> vector2 = Vector(seed=2)
         >>> vector1.dist(vector2, method='cosine')
@@ -451,7 +415,7 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> from hdlib.arithmetic import bind
         >>> vector1 = Vector()
         >>> vector2 = Vector()
@@ -482,7 +446,7 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector1 = Vector()
         >>> vector2 = Vector()
         >>> vector1.bind(vector2)
@@ -506,7 +470,7 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector1 = Vector()
         >>> vector2 = Vector()
         >>> vector1.bundle(vector2)
@@ -530,7 +494,7 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector1 = Vector()
         >>> vector2 = Vector()
         >>> vector1.subtract(vector2)
@@ -554,7 +518,7 @@ class Vector(object):
 
         Examples
         --------
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector = Vector()
         >>> vector.permute(rotate_by=2)
 
@@ -605,7 +569,7 @@ class Vector(object):
         Examples
         --------
         >>> import os
-        >>> from hdlib.space import Vector
+        >>> from hdlib.vector import Vector
         >>> vector = Vector()
         >>> vector.dump(to_file='~/my_vector.pkl')
         >>> os.path.isfile('~/my_vector.pkl')
