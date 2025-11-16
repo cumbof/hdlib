@@ -3,8 +3,8 @@
 
 __author__ = ("Fabio Cumbo (fabio.cumbo@gmail.com)")
 
-__version__ = "1.1.0"
-__date__ = "Jul 16, 2023"
+__version__ = "1.1.1"
+__date__ = "Nov 7, 2025"
 
 import argparse as ap
 import errno
@@ -388,7 +388,7 @@ def chopin2():
 
     print("Class labels: {}\n".format(class_labels))
 
-    for fold, (y_indices, y_pred, retrainings, error_rate, _) in enumerate(predictions):
+    for fold, (y_indices, y_pred, _, retrainings, error_rate, _) in enumerate(predictions):
         # Produce the confusion matrix for each fold
         print("Fold {} ({} retrainings)".format(fold + 1, retrainings))
         retraining_iterations.append(retrainings)
