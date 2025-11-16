@@ -11,17 +11,42 @@ import itertools
 import multiprocessing as mp
 import os
 import statistics
+from math import log2
 from functools import partial
 from typing import Dict, List, Optional, Set, Tuple
+from contextlib import nullcontext
 
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold
+from qiskit import QuantumCircuit, QuantumRegister, transpile
+from qiskit.quantum_info import Statevector
+from qiskit_aer import AerSimulator
+from qiskit_aer.noise import NoiseModel
+from qiskit_ibm_runtime import (
+    QiskitRuntimeService,
+    Sampler,
+    SamplerOptions,
+    Session
+)
 
 from hdlib import __version__
 from hdlib.space import Space
 from hdlib.vector import Vector
 from hdlib.arithmetic import bundle, permute
+
+# Quantum functions
+from hdlib.arithmetic.quantum import (
+    apply_negative_phase,
+    bundle as quantum_bundle,
+    permute as quantum_permute,
+    extract_system_state_when_anc_zero,
+    phase_oracle_gate,
+    run_hadamard_test,
+    get_circuit_metrics,
+    prepare_real_state,
+    get_classical_vector_from_oracle_circuit
+)
 
 
 class ClassificationModel(object):
@@ -49,7 +74,7 @@ class ClassificationModel(object):
         TypeError
             If the vector size or the number of levels are not integer numbers.
         ValueError
-            If the vector size is lower than 1,000 or the number of level vectors is lower than 2.
+            If the number of level vectors is lower than 2.
 
         Examples
         --------
@@ -64,9 +89,6 @@ class ClassificationModel(object):
 
         if not isinstance(size, int):
             raise TypeError("Vectors size must be an integer number")
-
-        if size < 1000:
-            raise ValueError("Vectors size must be greater than or equal to 1000")
 
         # Register vectors dimensionality
         self.size = size
@@ -133,24 +155,17 @@ class ClassificationModel(object):
         and the number of class labels are empty here since no dataset has been processed yet.
         """
 
-        return """
+        return f"""
             Class:   hdlib.model.classification.ClassificationModel
-            Version: {}
-            Size:    {}
-            Type:    {}
-            Levels:  {}
-            Points:  {}
+            Version: {self.version}
+            Size:    {self.size}
+            Type:    {self.vtype}
+            Levels:  {self.levels}
+            Points:  {len(self.space.memory()) - self.levels if self.space is not None else 0}
             Classes:
 
-            {}
-        """.format(
-            self.version,
-            self.size,
-            self.vtype,
-            self.levels,
-            len(self.space.memory()) - self.levels if self.space is not None else 0,
-            np.array(list(self.classes))
-        )
+            {np.array(list(self.classes))}
+        """
 
     def _init_fit_predict(
         self,
@@ -234,7 +249,7 @@ class ClassificationModel(object):
         # For each prediction, compute the score and return the average
         scores = list()
 
-        for y_indices, y_pred, _, _, _ in predictions:
+        for y_indices, y_pred, _, _, _, _ in predictions:
             y_true = [label for position, label in enumerate(labels) if position in y_indices]
 
             if metric == "accuracy":
@@ -288,8 +303,9 @@ class ClassificationModel(object):
         self.space = Space(size=self.size, vtype=self.vtype)
 
         index_vector = range(self.size)
-        next_level = int((self.size / 2 / self.levels))
+
         change = int(self.size / 2)
+        next_level = int((self.size / 2 / self.levels))
 
         # Also define the interval level list
         self.level_list = list()
@@ -497,7 +513,7 @@ class ClassificationModel(object):
         test_indices: List[int],
         distance_method: str="cosine",
         retrain: int=0
-    ) -> Tuple[List[int], List[str], int, float, List[Vector]]:
+    ) -> Tuple[List[int], List[str], List[List[float]], int, float, List[Vector]]:
         """Supervised Learning. Predict the class labels of the data points in the test set.
 
         Parameters
@@ -514,8 +530,9 @@ class ClassificationModel(object):
         -------
         tuple
             A tuple with the input list `test_indices` in addition to a list with the predicted class labels with the 
-            same size of `test_indices`, the total number of retraining iterations used to retrain the classification model, 
-            the model error rate, and the retraining class vectors (i.e., the actual model).
+            same size of `test_indices`, the distances between the test vectors and classes, the total number of 
+            retraining iterations used to retrain the classification model, the model error rate, and the retrained 
+            class vectors (i.e., the actual model).
 
         Raises
         ------
@@ -635,18 +652,22 @@ class ClassificationModel(object):
                 retraining_iterations += 1
 
         prediction = list()
+        distances = list()
 
         for test_vector in sorted(test_vectors, key=lambda vector: test_indices.index(int(vector.name.split("_")[-1]))):
-            prediction.append(self._predict_vector(test_vector, retraining_class_vectors, distance_method=distance_method))
+            pred, dist = self._predict_vector(test_vector, retraining_class_vectors, distance_method=distance_method)
 
-        return test_indices, prediction, retraining_iterations, model_error_rate, retraining_class_vectors
+            prediction.append(pred)
+            distances.append(dist)
+
+        return test_indices, prediction, distances, retraining_iterations, model_error_rate, retraining_class_vectors
 
     def _predict_vector(
         self, 
         vector: Vector, 
         training_class_vectors: List[Vector], 
         distance_method: str="cosine"
-    ) -> str:
+    ) -> Tuple[str, List[float]]:
         """Predict the class of an input vector.
 
         Parameters
@@ -658,17 +679,21 @@ class ClassificationModel(object):
 
         Returns
         -------
-        str
-            The closest class as the prediction.
+        tuple
+            The closest class as the prediction and a list of vector to classes distances.
         """
 
         closest_class = None
         closest_dist = -np.inf
 
+        distances = list()
+
         for class_vector in training_class_vectors:
             # Compute the distance between the input vector and the hyperdimensional representations of classes
             with np.errstate(invalid="ignore", divide="ignore"):
                 distance = vector.dist(class_vector, method=distance_method)
+
+                distances.append(distance)
 
             if closest_class is None:
                 closest_class = list(class_vector.tags)[0]
@@ -679,7 +704,7 @@ class ClassificationModel(object):
                     closest_class = list(class_vector.tags)[0]
                     closest_dist = distance
 
-        return closest_class
+        return closest_class, distances
 
     def cross_val_predict(
         self,
@@ -750,13 +775,13 @@ class ClassificationModel(object):
             for _, test_indices in kf.split(points, labels):
                 test_indices = test_indices.tolist()
 
-                _, test_predictions, retraining_iterations, model_error_rate, training_class_vectors = self.predict(
+                _, test_predictions, test_distances, retraining_iterations, model_error_rate, training_class_vectors = self.predict(
                     test_indices,
                     distance_method=distance_method,
                     retrain=retrain
                 )
 
-                predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate, training_class_vectors))
+                predictions.append((test_indices, test_predictions, test_distances, retraining_iterations, model_error_rate, training_class_vectors))
 
         else:
             predict_partial = partial(
@@ -920,7 +945,7 @@ class ClassificationModel(object):
         distance_method: str="cosine",
         retrain: int=0,
         metric: str="accuracy"
-    ) -> Tuple[Set[float], float]:
+   ) -> Tuple[Set[float], float]:
         """Just a single iteration of the feature selection method.
 
         Parameters
@@ -1196,3 +1221,378 @@ class ClassificationModel(object):
         best_importance = sorted(scores.keys(), key=lambda imp: scores[imp])[-1]
 
         return importances, scores, best_importance, count_models
+
+
+class QuantumClassificationModel(object):
+    """Supervised Quantum Classification Model."""
+
+    def __init__(
+        self,
+        size: int=64,
+        levels: int=2,
+        seed: int=42,
+        shots: int=1024,
+        oaa_rounds: int=1,
+        classical_bundling: bool=False,
+        probabilistic_bundling: bool=False,
+        probabilistic_bundling_rounds: int=1,
+        channel: Optional[str]=None,
+        instance: Optional[str]=None,
+        backend: Optional[str]=None,
+        api_key: Optional[str]=None,
+        noise_model_from: Optional[str]=None
+    ) -> "QuantumClassificationModel":
+        """Initialize a QuantumClassificationModel object.
+        Run the classification model on a simulator with Qiskit by default.
+        It can interact with specific IBM channels, instances, and backends if specified (it requires an IBM account).
+
+        Parameters
+        ----------
+        size : int, default 64
+            The vectors dimensionality as power of 2.
+        levels : int, default 2
+            Number of level vectors.
+        seed : int, default 42
+            Seed for reproducibility.
+        shots : int, default 1024
+            The number of times to run the quantum circuit for the Hadamard test.
+        oaa_rounds : int, default 1
+            The number of rounds for the Oblivious Amplitude Amplification.
+        classical_bundling : bool, default False
+            Perform bundling as a classical element-wise addition (deactivate LCU+OAA).
+            Original vectors are automatically retrieved from circuit DiagonalGates and QFT gates.
+        probabilistic_bundling : bool, default False
+            Perform a probabilistic LCU by controlling only one unitary at a time.
+            It prevents the explosion in circuit's depth but heavily relies on `probabilistic_bundling_rounds`.
+        probabilistic_bundling_rounds : int, default 1
+            The number of rounds for the probabilistic LCU.
+        channel : str, default None, optional
+            IBM channel.
+        instance : str, default None, optional
+            IBM instance. Required in case of specific channel only.
+        backend : str, default None, optional
+            IBM backend (e.g., "ibm_cleveland"). Required in case of specific instance only.
+            If `instance` is not None, this is "least_busy" by default.
+        api_key : str, default None, optional
+            IBM API key. Required in case of specific backend only.
+        noise_model_from : str, default None, optional
+            The name of a real IBM backend (e.g., "ibm_cleveland") to build a noise model from the simulation.
+            If provided, `api_key` is required. This parameter is ignored if `channel`, `instance`, and `backend` are provided for hardware execution.
+            Noise models are retrieved from the "ibm_quantum_platform" channel.
+
+        Raises
+        ------
+        ValueError
+            If the vector dimensionality `size` is not a power of 2.
+        TypeError
+            If seed is not an integer.
+
+        Examples
+        --------
+        >>> from hdlib.model import QuantumClassificationModel
+        >>> model = QuantumClassificationModel(size=32, levels=2, oaa_rounds=2)
+        >>> type(model)
+        <class 'hdlib.model.QuantumClassificationModel'>
+
+        This creates a new QuantumClassificationModel object with random bipolar vectors with size 32.
+        It also defines the number of level vectors to 2 and the number of OAA rounds to 2.
+        """
+
+        if not ((size > 0) and ((size & (size - 1)) == 0)):
+            # Check if a the vector dimensionality is a power of 2.
+            raise ValueError("The vector dimensionality must be a power of 2.")
+
+        self.size = size
+        self.levels = levels
+        self.shots = shots
+        self.oaa_rounds = oaa_rounds
+        self.classical_bundling = classical_bundling
+        self.probabilistic_bundling = probabilistic_bundling
+        self.probabilistic_bundling_rounds = probabilistic_bundling_rounds
+
+        # Vectors must be bipolar here
+        self.vtype = "bipolar"
+
+        # Keep track of the level vectors
+        self.level_hvs = list()
+
+        # Keep track of class prototype vectors
+        # This is filled up during `fit`
+        self.prototypes = list()
+
+        if channel is None:
+            # Use a simulator if no channel is specified
+            noise_model = None
+
+            if noise_model_from:
+                if not api_key:
+                    raise ValueError("`api_key` must be provided to fetch backend properties for a noise model.")
+
+                # Initialize a temporary service connection
+                # Always use "ibm_quantum_platform" to fetch the backend properties
+                noise_service = QiskitRuntimeService(channel="ibm_quantum_platform", token=api_key)
+
+                # Retrieve a backend
+                # We only need its noise model
+                backend_for_noise = noise_service.backend(noise_model_from)
+
+                # Finally, define the noise model
+                noise_model = NoiseModel.from_backend(backend_for_noise)
+
+            # Use a simulator if no channel is specified
+            # This can be noise-free or use a specific noise model
+            self.backend = AerSimulator(noise_model=noise_model)
+
+        else:
+            # Initialize a quantum runtime service for a specific IBM QC channel, instance, and backend
+            service = QiskitRuntimeService(channel=channel, token=api_key, instance=instance)
+
+            # The backend is the "least_busy" by default
+            if backend is None:
+                self.backend = service.least_busy(operational=True, simulator=False)
+
+            else:
+                self.backend = service.backend(backend)
+
+        # Conditions on random seed for reproducibility
+        # numpy allows integers as random seeds
+        if not isinstance(seed, int):
+            raise TypeError("Seed must be an integer number")
+
+        self.seed = seed
+
+        # Keep track of hdlib version
+        self.version = __version__
+
+    def __str__(self) -> str:
+        """Print the QuantumClassificationModel object properties.
+
+        Returns
+        -------
+        str
+            A description of the QuantumClassificationModel object. It reports the vectors size, the vector type,
+            the number of level vectors, the number of shots, and the number of OAA rounds.
+
+        Examples
+        --------
+        >>> from hdlib.model import QuantumClassificationModel
+        >>> model = QuantumClassificationModel()
+        >>> print(model)
+
+                Class:      hdlib.model.classification.QuantumClassificationModel
+                Version:    2.0.0
+                Size:       64
+                Type:       bipolar
+                Levels:     2
+                Shots:      1024
+                OAA Rounds: 1
+
+        Print the QuantumClassificationModel object properties.
+        """
+
+        return f"""
+            Class:      hdlib.model.classification.QuantumClassificationModel
+            Version:    {self.version}
+            Size:       {self.size}
+            Type:       {self.vtype}
+            Levels:     {self.levels}
+            Shots:      {self.shots}
+            OAA Rounds: {self.oaa_rounds}
+        """
+
+    def _build_quantum_sample_encoder(self, sample_row: List[float], level_vectors: List[np.ndarray], D: int) -> List[QuantumCircuit]:
+        """Creates a single quantum circuit that encodes one real-valued sample by quantumly permuting its feature vectors.
+
+        Parameters
+        ----------
+        sample_row : list
+            Single sample as list of numerical values (float).
+        level_vectors : list
+            List of level vector.
+        D : int
+            Vector dimensionality.
+
+        Returns
+        -------
+        List[QuantumCircuit]
+            The list of quantum feature circuits for encoding the input sample.
+        """
+
+        num_qubits = int(log2(D))
+        feature_circuits = list()
+
+        for i, value in enumerate(sample_row):
+            level_index = int(value * (len(level_vectors) - 1))
+            level_vec = level_vectors[level_index]
+
+            # Create a quantum circuit for this single feature
+            feature_qc = QuantumCircuit(num_qubits, name=f"Feature_{i}")
+
+            # 1. Prepare the state for the unpermuted level vector
+            feature_qc.h(range(num_qubits))
+            feature_qc.append(phase_oracle_gate(level_vec), range(num_qubits))
+
+            # 2. Apply the quantum permutation for the feature's position
+            feature_qc.append(quantum_permute(num_qubits, shift=i), range(num_qubits))
+
+            # Report circuit metrics
+            #print(f"Positional permutation metrics: {get_circuit_metrics(feature_qc, num_qubits, self.backend, optimization_level=3)}")
+
+            feature_circuits.append(feature_qc)
+
+        # The feature circuits are bundled all together with the feature circuits of the other samples
+        # belonging to the same class to build the circuit representation of that class.
+        return feature_circuits
+
+    def fit(
+        self,
+        train_points: List[List[float]],
+        train_labels: List[str]
+    ) -> None:
+        """Build a vector-symbolic architecture. Define level vectors, encode samples, and build prototypes.
+
+        Parameters
+        ----------
+        train_points : list
+            List of lists with numerical data points (floats).
+        train_labels : list
+            List with class labels. It has the same size of `points`.
+        """
+
+        def _generate_level_vectors(D, num_levels, rng):
+            """Generates a set of bipolar vectors for discretizing real numbers.
+            """
+
+            level_vectors = [rng.choice([-1, 1], size=D)]
+
+            change = int(D / 2)
+            next_level = int((D / 2 / num_levels))
+
+            for i in range(1, num_levels):
+                prev_vec = level_vectors[i-1].copy()
+
+                if i-1 == 0:
+                    flip_indices = rng.choice(D, size=change, replace=False)
+
+                else:
+                    flip_indices = rng.choice(D, size=next_level, replace=False)
+
+                prev_vec[flip_indices] *= -1
+                level_vectors.append(prev_vec)
+
+            return level_vectors
+
+        rand = np.random.default_rng(seed=self.seed)
+
+        # Create level vectors
+        self.level_hvs = _generate_level_vectors(self.size, self.levels, rand)
+
+        self.classes_ = sorted(list(set(train_labels)))
+        self.prototypes = list()
+
+        for c in self.classes_:
+            # Building quantum prototype for Class `c`
+            class_samples = [sample for pos, sample in enumerate(train_points) if train_labels[pos] == c]
+
+            # Building quantum samples' feature encoder circuits
+            sample_encoders = [encoder for sample in class_samples for encoder in self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)]
+
+            # Bundling (LCU + OAA)
+            # Building class LCU from sample encoders
+            # Applying OAA to generate final prototype
+            oaa_class, anc_c, sys_c = quantum_bundle(
+                sample_encoders,
+                [1.0] * len(sample_encoders),
+                oaa_rounds=self.oaa_rounds,
+                optimize_rounds=True,
+                classical_computation=self.classical_bundling,
+                probabilistic=self.probabilistic_bundling,
+                probabilistic_rounds=self.probabilistic_bundling_rounds
+            )
+
+            # Report circuit metrics
+            #print(f"Class prototype bundling metrics: {get_circuit_metrics(oaa_class, int(log2(self.size)), self.backend, optimization_level=3)}")
+
+            # The prototype is the circuit that prepares the state
+            self.prototypes.append(oaa_class)
+
+    def predict(self, test_points: List[List[float]]) -> Tuple[List[str], List[List[float]]]:
+        """Predict the class labels of the data points in the test set.
+
+        Parameters
+        ----------
+        test_points : list
+            Test data points.
+
+        Returns
+        -------
+        Tuple
+            A list with the predicted class labels in the same order of data points in `test_points`,
+            and a list of similarities between the test samples and the class prototypes.
+
+        Raises
+        ------
+        RuntimeError
+            If `predict` is called before `fit`.
+        """
+
+        if not hasattr(self, "classes_"):
+            raise RuntimeError("You must call fit before calling predict.")
+
+        # Check whether the test should be performed on a simulator or on the quantum hardware
+        is_simulated = isinstance(self.backend, AerSimulator)
+
+        predictions = list()
+        similarities = list()
+
+        # For hardware, manage a single session for all prediction tasks
+        with Session(backend=self.backend) if not is_simulated else nullcontext() as session:
+            sampler = None
+
+            # Use the session-based Sampler if on hardware
+            if session:
+                options = SamplerOptions()
+
+                # Set the default number of shots
+                options.default_shots = self.shots
+
+                # Enable dynamical decoupling
+                options.dynamical_decoupling.enable = True
+                options.dynamical_decoupling.sequence_type = "XpXm"
+
+                # Enable gate twirling
+                options.twirling.enable_gates = True
+
+                sampler = Sampler(mode=session, options=options)
+
+            for sample in test_points:
+                # Get the list of feature circuits for the test sample
+                sample_features_circuits = self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)
+
+                # Bundle them into a single query circuit
+                query_circuit, _, _ = quantum_bundle(
+                    sample_features_circuits,
+                    [1.0] * len(sample_features_circuits),
+                    oaa_rounds=self.oaa_rounds,
+                    optimize_rounds=True,
+                    classical_computation=self.classical_bundling,
+                    probabilistic=self.probabilistic_bundling,
+                    probabilistic_rounds=self.probabilistic_bundling_rounds
+                )
+
+                # Report circuit metrics
+                #print(f"Query bundling metrics: {get_circuit_metrics(query_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
+
+                sample_similarities = list()
+
+                # Run the Hadamard test between the query circuit and the class prototypes
+                for prototype in self.prototypes:
+                    # Prototype is a QuantumCircuit
+                    similarity, _ = run_hadamard_test(query_circuit, prototype, self.backend, shots=self.shots, seed=self.seed, sampler=sampler)
+
+                    sample_similarities.append(similarity)
+
+                predictions.append(self.classes_[int(np.argmax(sample_similarities))])
+                similarities.append(sample_similarities)
+
+        return predictions, similarities
