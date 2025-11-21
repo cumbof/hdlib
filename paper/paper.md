@@ -3,6 +3,8 @@ title: 'hdlib 2.0: extending machine learning capabilities of Vector-Symbolic Ar
 tags:
   - Vector-Symbolic Architectures
   - Hyperdimensional Computing
+  - Machine Learning
+  - Quantum Machine Learning
   - Python
   - Library
 authors:
@@ -23,13 +25,13 @@ affiliations:
     index: 2
   - name: Department of Molecular Medicine, Cleveland Clinic Lerner College of Medicine, Case Western Reserve University, Cleveland, Ohio, United States of America
     index: 3
-date: 4 November 2025
+date: 20 November 2025
 bibliography: paper.bib
 ---
 
 # Summary
 
-Following the initial publication of _hdlib_ [@cumbo2023hdlib], a Python library for designing Vector-Symbolic Architectures (VSA), we introduce a major extension that significantly enhances its machine learning capabilities. VSA, also known as Hyperdimensional Computing, is a computing paradigm that represents and processes information using high-dimensional vectors. While the first version of _hdlib_ established a foundation for manipulating these vectors, this update addresses the growing need for more advanced modeling within the VSA framework. We present four extensions: a regression model, a clustering model, a module for encoding graph-based data structures, and significant enhancements to the existing supervised classification model also enabling feature selection.
+Following the initial publication of _hdlib_ [@cumbo2023hdlib], a Python library for designing Vector-Symbolic Architectures (VSA), we introduce a major extension that significantly enhances its machine learning capabilities. VSA, also known as Hyperdimensional Computing, is a computing paradigm that represents and processes information using high-dimensional vectors. While the first version of _hdlib_ established a foundation for manipulating these vectors, this update addresses the growing need for more advanced modeling within the VSA framework. Here, we present four extensions: significant enhancements to the existing supervised classification model also enabling feature selection, and new regression, clustering, and graph-based learning models. Furthermore, we propose the first implementation ever of Quantum Hyperdimensional Computing with quantum-powered arithmetic operations and a new Quantum Machine Learning model for supervised learning [@cumbo2025qhdc].
 
 _hdlib_ remains open-source and available on GitHub at [https://github.com/cumbof/hdlib](https://github.com/cumbof/hdlib), and distributed through the Python Package Index (_pip install hdlib_) and Conda (_conda install -c conda-forge hdlib_).
 
@@ -45,31 +47,31 @@ The new architecture is summarized in \autoref{fig:overview}.
 
 ![An overview of the _hdlib_ 2.0 library architecture, highlighting the distinction between the original (top, transparent) and new components (bottom). Foundational classes from version 1.0 include `hdlib.space.Space` (Class 1), `hdlib.vector.Vector` (Class 2), `hdlib.arithmetic` module (Class 3), and the `hdlib.model.classification.ClassificationModel` (Class 4). This work introduces major new functionalities through the `hdlib.model` module comprising the new `clustering.ClusteringModel` (Class 5), `regression.RegressionEncoder` (Class 6) and `regression.RegressionModel` (Class 7), and `graph.GraphModel` (Class 8), creating a comprehensive toolkit for VSA-based machine learning.\label{fig:overview}](hdlib.pdf)
 
-## Classification Model
+We have significantly expanded `hdlib.model` to cover a broader spectrum of learning paradigms:
 
-A key focus of this update was to provide more robust and automated tools for model optimization:
+- __Classification__: the `ClassificationModel` now features advanced model optimization tools. We introduced an improved stepwise regression method for identifying feature importance and an `auto_tune` method that performs parameter sweeps to optimize vector dimensionality and level vectors;
 
-- __Enhanced feature selection__: the original `hdlib.model.Model` class (now `hdlib.model.classification.ClassificationModel`) provided a `stepwise_regression` instance method for feature selection. This functionality has been significantly enhanced to offer greater control over the selection process, improved performance, and more detailed reporting on feature importance;
+- __Clustering__: the new `ClusteringModel` implements k-means clustering in hyperspace [@gupta2022store]. It iteratively refines centroids by bundling constituent data hypervectors, using cosine similarity to assign points to clusters until convergence;
 
-- __Advanced hyperparameter tuning__: the library now includes an `auto_tune` instance method for performing a parameter sweep analysis on vector dimensionality and the number of level vectors.
+- __Regression__: we implemented a `RegressionModel` and `RegressionEncoder` based on the RegHD algorithm [@hernandez2021reghd]. This module maps inputs to a high-dimensional manifold and employs a multi-model strategy, where final predictions are a confidence-weighted sum of multiple regression models trained on distinct clusters of the data;
 
-## Clustering Model
+- __Graphs__: the `GraphModel` encodes directed and undirected weighted graphs into single hypervectors [@poduval2022graphd]. By compressing node neighborhoods and edge weights into a unified representation, this model enables efficient graph classification and includes an error mitigation routine to refine the graph representation.
 
-A new `hdlib.model.clustering` module provides a `ClusteringModel` class that implements a k-means clustering algorithm as defined in [@gupta2022store].
+# Quantum Hyperdimensional Computing
 
-The _k_ cluster centroids and the input data points are represented as hypervectors. The iterative `fit` process mirrors the k-means algorithm using VSA operations. Data points are assigned to the cluster corresponding to the most similar centroid, determined by calculating the cosine distance. The centroid of each cluster is then recalculated by bundling all the hypervectors of the data points assigned to it. This process moves the centroid towards the center of its constituent points. It continues until convergence or till a maximum number of iterations is reached. The `predict` method can then be used to assign a new data point to the most appropriate cluster.
+We introduce Quantum Hyperdimensional Computing (QHDC), a foundational paradigm designed to run on quantum devices [@cumbo2025qhdc]. The `hdlib.arithmetic.quantum` module implements the QHDC arithmetic using IBM's Qiskit framework [@javadiabhari2024quantumcomputingqiskit]:
 
-## Regression Model
+- __Encoding__: we employ a phase encoding strategy where bipolar hypervectors are mapped to the relative phases of a uniform superposition state, enabling efficient algebraic manipulation;
 
-`hdlib` also implements a regression model [@hernandez2021reghd]. This implementation is split into two components: a `RegressionEncoder` and a `RegressionModel` as part of the `hdlib.model.regression` module. The encoder maps input features into a high-dimensional space using a non-linear function that combines the input with a set of random base hypervectors and biases. This mapping is designed to preserve the similarity relationships of the original feature space.
+- __Binding__: realized via quantum phase oracles that map element-wise multiplication to the sequential application of phases;
 
-The `RegressionModel` employs a multi-model strategy, maintaining a set of _k_ parallel cluster models and regression models. During the iterative `fit` process, an encoded input vector is compared against all cluster models to compute a set of confidence scores via a `softmax` function. A final prediction is produced by a confidence-weighted sum of the outputs from all regression models that are then adjusted based on their confidence score, while only the most similar cluster model is refined.
+- __Bundling__: implemented as a quantum-native averaging process using a Linear Combination of Unitaries (LCU) [@chakraborty2024implementing] followed by Oblivious Amplitude Amplification (OAA) [@guerreschi2019repeat];
 
-## Graph Model
+- __Permutation__: achieved using the Quantum Fourier Transform (QFT) [@weinstein2001implementation] to induce cyclic shifts in the computational basis;
 
-A major extension in this release is the `hdlib.model.graph` module, which provides the `GraphModel` class for representing and reasoning with graph-based data. This implementation encodes directed and undirected weighted graphs into single hyperdimensional vectors [@poduval2022graphd]. The process assigns a unique random hypervector to each node and edge weight. Then, the `fit` method constructs the graph representation by creating a memory vector for each node that encodes its local neighborhood. The entire graph is finally compressed into one vector by bundling all node vectors, each binded with its corresponding memory vector.
+- __Similarity__: computed via the Hadamard Test to estimate the real part of the inner product (cosine similarity) between quantum states.
 
-Furthermore, the module includes a `predict` method for edge weight classification and an `error_mitigation` routine for reducing prediction errors by refining the graph model.
+Finally, we provide a `QuantumClassificationModel` for supervised learning as a totally new approach to Quantum Machine Learning.
 
 With the integration of these modules, `hdlib` 2.0 provides the scientific community with a unified and powerful framework, paving the way for the development of novel, brain-inspired solutions to a broader spectrum of machine learning problems.
 
