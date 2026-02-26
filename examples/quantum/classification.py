@@ -385,21 +385,18 @@ if __name__ == "__main__":
         start_time_q128 = time.perf_counter()
 
         # Noise-free simulation
-        model_q128 = QuantumClassificationModel(size=128, levels=2, shots=10000, oaa_rounds=0, classical_bundling=True)
+        model_q128 = QuantumClassificationModel(size=128, levels=2, shots=10000)
 
         # Simulation with noise model
-        #model_q128 = QuantumClassificationModel(size=128, levels=2, shots=10000, oaa_rounds=0, classical_bundling=True, api_key=API_KEY, noise_model_from=BACKEND)
+        #model_q128 = QuantumClassificationModel(size=128, levels=2, shots=10000, api_key=API_KEY, noise_model_from=BACKEND)
 
         # Quantum hardware
-        #model_q128 = QuantumClassificationModel(size=128, levels=2, shots=10000, oaa_rounds=0, classical_bundling=True, channel=CHANNEL, instance=INSTANCE, backend=BACKEND, api_key=API_KEY)
+        #model_q128 = QuantumClassificationModel(size=128, levels=2, shots=10000, channel=CHANNEL, instance=INSTANCE, backend=BACKEND, api_key=API_KEY)
 
         # One-shot learning
         model_q128.fit(X_train_fold, y_train_fold) # Quantum model uses standard fit/predict
 
         print("Evaluating Quantum Model (D=128)...")
-        # *** ASSUMPTION ***
-        # Assuming model.predict() now returns (predictions, scores)
-        # where scores is a list of [score_for_class_0, score_for_class_1]
         y_pred_q128, scores_q128 = model_q128.predict(X_test_fold)
         end_time_q128 = time.perf_counter()
 
@@ -409,7 +406,6 @@ if __name__ == "__main__":
         fold_matrix_q128 = confusion_matrix(y_test_fold, y_pred_q128, labels=[0, 1]) # Ensure consistent label order
 
         # Store ROC data points (True Label, Score for Class 1)
-        # This assumes 'scores_q128' is a list of [score_0, score_1] pairs
         fold_roc_data_q128 = list()
         for true_label, score_pair in zip(y_test_fold, scores_q128):
             score_for_class_1 = score_pair[1] # Using score for positive class (Digit 3)
