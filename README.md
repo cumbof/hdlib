@@ -61,6 +61,8 @@ Please credit our work in your manuscript by citing:
 > Cumbo et al., (2025). Hyperdimensional computing in biomedical sciences: a brief review. _PeerJ Computer Science_, 11, e2885. https://doi.org/10.7717/peerj-cs.2885
 >
 > Cumbo et al., (2025). A novel Vector-Symbolic Architecture for graph encoding and its application to viral pangenome-based species classification. _bioRxiv_, 2025-09. https://doi.org/10.1101/2025.09.08.674958
+>
+> Cumbo et al., (2025). Quantum Hyperdimensional Computing: a foundational paradigm for quantum neuromorphic architectures. _arXiv_, 2025-11. https://doi.org/10.48550/arXiv.2511.12664
 
 ## Support and contributions
 
