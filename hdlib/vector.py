@@ -410,7 +410,7 @@ class Vector(object):
 
         Raises
         ------
-        Exception
+        ValueError
             If the vector type is not supported (i.e., is different from binary and bipolar).
 
         Examples
@@ -429,12 +429,31 @@ class Vector(object):
         its vector type.
         """
 
-        if self.vtype not in ("bipolar", "binary"):
-            raise Exception("Vector type is not supported")
+        if self.vtype == "bipolar":
+            # np.sign returns -1, 0, or 1
+            self.vector = np.sign(self.vector)
 
-        self.vector[self.vector > 0] = 1
+            # Force 0 -> 1
+            self.vector[self.vector == 0] = 1
 
-        self.vector[self.vector <= 0] = 0 if self.vtype == "binary" else -1
+        elif self.vtype == "binary":
+            # Find the scale (max value)
+            max_val = np.max(self.vector)
+
+            if max_val > 0:
+                # Normalize (element / max) and threshold at 0.5
+                # Equivalent to: element > max_val * 0.5
+                self.vector = np.where((self.vector / max_val) > 0.5, 1, 0)
+
+            else:
+                # If max is 0 (empty, null vector), ensure it stays 0
+                self.vector[:] = 0
+
+        else:
+            raise ValueError(f"Vector type '{self.vtype}' is not supported")
+
+        # Ensure the array remains integers
+        self.vector = self.vector.astype(int)
 
     def bind(self, vector: "Vector") -> None:
         """Bind the current vector with another vector object inplace.
