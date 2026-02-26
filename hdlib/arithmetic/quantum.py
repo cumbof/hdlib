@@ -1,5 +1,6 @@
 """Quantum implementation of the MAP arithmetic operators."""
 
+import re
 from math import atan2, sqrt, ceil, log2, pi
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -15,12 +16,58 @@ from qiskit_aer import AerSimulator
 from qiskit_ibm_runtime import Sampler
 
 
-def phase_oracle_gate(vec_bipolar: np.ndarray, label: str="O_v") -> DiagonalGate:
-    """Creates an efficient diagonal unitary gate that imparts phases based on a bipolar vector.
+def statevector_to_bipolar(circuit: QuantumCircuit) -> np.ndarray:
+    """Extracts a classical bipolar vector from the phases of a quantum statevector.
 
-    This function is a core component for encoding classical bipolar vectors into the phase
-    of a quantum state. A `DiagonalGate` is highly efficient as it corresponds to a
-    diagonal matrix, which only requires single-qubit Z rotations to implement.
+    This function provides a method to decode a quantum state back into a classical vector. 
+    It assumes the information is encoded in the sign of the real part of the amplitudes, 
+    mapping positive signs to +1 and negative signs to -1.
+
+    Automatically detects if the data is in standard (0/pi) or symmetric (+/- delta) encoding
+    and rotates if necessary.
+
+    Parameters
+    ----------
+    circuit : QuantumCircuit
+        A quantum circuit to simulate and retrieve the classical bipolar vector from.
+
+    Returns
+    -------
+    numpy.ndarray
+        The corresponding classical bipolar vector of integers (+1 or -1).
+    """
+
+    statevector = Statevector.from_instruction(circuit.decompose())
+    statevector_data = np.asarray(statevector.data)
+
+    # Heuristic: determine encoding based on the presence of negative real components.
+    # Standard encoding (0/pi): has amplitudes ~ +1 and ~ -1. Min real < -0.5.
+    # Symmetric encoding (+/- delta): has amplitudes e^(+id) and e^(-id).
+    # For small delta, real part is cos(d) ~ 1 (always positive).
+    min_real = np.min(np.real(statevector_data))
+
+    # Adapt
+    data = statevector_data
+
+    # If all real parts are non-negative, the information must be in the phase.
+    # Rotate by -90 degrees to project phase (imag) onto real axis for decoding.
+    if min_real > -1e-5:
+        data = statevector_data * -1j
+
+    # Decode
+    reals = np.real(data)
+    tolerance = 1e-9
+
+    vec = np.ones(len(reals), dtype=int)
+
+    # Positive real +1, negative real -1
+    vec[reals < -tolerance] = -1
+
+    return vec.astype(int)
+
+def encode(vec_bipolar: np.ndarray, label: str="O_v") -> QuantumCircuit:
+    """Creates a circuit containing a diagonal phase oracle.
+    This function is a core component for encoding classical bipolar vectors into the phase of a quantum state.
 
     Parameters
     ----------
@@ -31,9 +78,8 @@ def phase_oracle_gate(vec_bipolar: np.ndarray, label: str="O_v") -> DiagonalGate
 
     Returns
     -------
-    qiskit.circuit.library.DiagonalGate
-        A unitary gate that, when applied to a state in the computational basis,
-        multiplies the amplitude of each basis state `|i>` by `vec_bipolar[i]`.
+    qiskit.QuantumCircuit
+        A quantum circuit containing the diagonal gate.
 
     Raises
     ------
@@ -46,17 +92,40 @@ def phase_oracle_gate(vec_bipolar: np.ndarray, label: str="O_v") -> DiagonalGate
     if not np.all(np.isin(vec, [-1, 1])):
         raise ValueError("Bipolar vector must contain only -1 or +1.")
 
+    num_qubits = int(ceil(log2(len(vec))))
+
+    # Pad vector if necessary to match 2^N
+    if len(vec) < 2**num_qubits:
+        padding = np.ones(2**num_qubits - len(vec))
+        vec = np.concatenate([vec, padding])
+
     # Convert to complex diagonal entries
     gate = DiagonalGate(vec.tolist())
     gate.label = label
 
-    return gate
+    qc = QuantumCircuit(num_qubits, name=label)
+    qc.append(gate, range(num_qubits))
+
+    return qc
 
 def bind(circuits: List[QuantumCircuit]) -> QuantumCircuit:
     """Applies a sequence of quantum circuits to perform binding.
     This function only accepts a list of QuantumCircuit objects as input.
 
     It assumes all inputs logically operate on the same number of qubits.
+
+    Warning: Composability limit!
+    Trying to bind two vectors that are already symmetric bundles would fail.
+
+    Parameters
+    ----------
+    circuits : list[QuantumCircuit]
+        List of feature circuits to bind.
+
+    Returns
+    -------
+    QuantumCircuit
+        A state preparation circuit for Bind.
     """
 
     if not circuits:
@@ -64,7 +133,7 @@ def bind(circuits: List[QuantumCircuit]) -> QuantumCircuit:
 
     # Infer the number of qubits from the first circuit in the list.
     num_qubits = circuits[0].num_qubits
-    qc = QuantumCircuit(num_qubits, name="Phase_Bind_Op")
+    qc = QuantumCircuit(num_qubits, name="Bind_Op")
 
     # Sequentially compose each circuit.
     for circuit in circuits:
@@ -79,269 +148,40 @@ def bind(circuits: List[QuantumCircuit]) -> QuantumCircuit:
 
     return qc
 
-def bundle(
-    unitary_circuits: List[QuantumCircuit], 
-    weights: List[float], 
-    oaa_rounds: int=1,
-    optimize_rounds: bool=False,
-    classical_computation: bool=False,
-    probabilistic: bool=False,
-    probabilistic_rounds: int=1
-) -> Tuple[QuantumCircuit, QuantumRegister, QuantumRegister]:
-    """High-level function for quantum bundling using LCU and OAA.
+def bundle(circuits: list[QuantumCircuit], method: str="incremental_delta", fixed_delta: float=0.1) -> QuantumCircuit:
+    """Bundles circuits symbolically using Phase Accumulation.
 
-    This function encapsulates the two-stage process of quantum bundling. First, it
-    constructs a Linear Combination of Unitaries (LCU) circuit to prepare a state
-    that is a weighted superposition of the states prepared by each input circuit.
-    Second, it applies Oblivious Amplitude Amplification (OAA) to amplify the
-    component of this state corresponding to the successful preparation, effectively
-    creating the bundled prototype.
+    This function constructs a new circuit that represents the 'Bundle' (Sum) of the input circuits.
+    It uses a 'Sandwich' logic to inject scaled phases into the correct basis states defined by the circuit structure.
 
-    Parameters
-    ----------
-    unitary_circuits : list[qiskit.QuantumCircuit]
-        A list of quantum circuits, each preparing a state to be bundled.
-    weights : list[float]
-        A list of weights corresponding to each circuit for the LCU superposition.
-    oaa_rounds : int, default 1
-        The number of amplification rounds for the OAA algorithm.
-    optimize_rounds : bool, default False
-        Search for the optimal number of rounds if `optimize_rounds=True and oaa_rounds>1`.
-    classical_computation : bool, default False
-        If enabled, it performs the bundling classically, without performing LCU+OAA.
-    probabilistic : bool, default False
-        If enabled, it performs a probabilistic LCU by controlling only one unitary at a time.
-        It prevents the explosion in circuit's depth but heavily relies on `probabilistic_rounds`.
-    probabilistic_rounds : int, default 1
-        The number of rounds for the probabilistic LCU.
+    Key Features:
+    1. Handles Binding: Accumulates raw phases from all DiagonalGates first (XOR logic), then maps to symmetric.
+    2. Handles Permutation: Wraps the phase injection between Structure and InverseStructure.
+    3. Symmetric Encoding: Maps binary +1/-1 to symmetric phases (+pi/2, -pi/2) to preserve Majority Rule direction.
 
-    Returns
-    -------
-    tuple[qiskit.QuantumCircuit, qiskit.QuantumRegister, qiskit.QuantumRegister]
-        A tuple containing:
-        - The final quantum circuit that prepares the bundled state.
-        - The quantum register for the LCU ancilla qubits.
-        - The quantum register for the system qubits.
+    Parameters:
+    -----------
+    circuits : list[QuantumCircuit]
+        List of feature circuits to bundle.
+    method : str
+        "classical": Perform the bundling classically, no quantum operations involved;
+        "average": Scales phases by 1/N (Exact arithmetic mean);
+        "incremental_delta": Scales by `fixed_delta` (Streaming accumulation).
+    fixed_delta : float
+        The scaling factor for incremental mode.
+
+    Returns:
+    --------
+    QuantumCircuit
+        A state preparation circuit for the Bundle.
     """
 
-    def build_lcu_from_unitaries(
-        unitary_circuits: List[QuantumCircuit], 
-        weights: List[float],
-        probabilistic: bool=False,
-        rounds: int=1,
-        seed: int=42
-    ) -> Tuple[QuantumCircuit, QuantumRegister, QuantumRegister]:
-        """Builds a Linear Combination of Unitaries (LCU) operator from a list of circuits.
+    if not circuits:
+        raise ValueError("Circuit list cannot be empty")
 
-        This function constructs the core operator for the LCU algorithm. It prepares a
-        state `|psi>` such that `|psi> = A |0...0>`, where `A` is the LCU operator.
-        The state `|psi>` is a superposition of states, where each component corresponds
-        to one of the input unitary circuits acting on the system qubits, controlled by
-        the state of an ancilla register.
-
-        The operator A is constructed as the sandwich A = (V_inv @ I) * C-U * (V @ I).
-
-        It can optionally build a shallow probabilistic LCU operator by controlling 
-        only one unitary at a time. This prevents the explosion of the circuit's depth, 
-        but it's probabilistic and heavily depends on the number of rounds.
-        """
-
-        K = len(unitary_circuits)
-
-        if K == 0:
-            raise ValueError("List of unitary circuits cannot be empty.")
-
-        if probabilistic:
-            rng = np.random.default_rng(seed)
-
-            n_sys = unitary_circuits[0].num_qubits
-
-            # Single ancilla for probabilistic control
-            anc = QuantumRegister(1, "anc")  
-            sys_reg = QuantumRegister(n_sys, "sys")
-            circ = QuantumCircuit(anc, sys_reg, name="Shallow_LCU")
-
-            for r in range(rounds):
-                # Pick one unitary according to weights
-                idx = rng.choice(K, p=np.array(weights)/np.sum(weights))
-                unitary = unitary_circuits[idx]
-
-                # Convert to single-qubit controlled gate (controlled on ancilla)
-                cu_gate = unitary.to_gate(label=f"U_{idx}").control(1)
-                circ.h(anc)
-                circ.append(cu_gate, [anc[0]] + sys_reg[:])
-                circ.h(anc)
-
-            return circ, anc, sys_reg
-
-        n = unitary_circuits[0].num_qubits
-        m = int(ceil(log2(K))) or 1
-
-        anc = QuantumRegister(m, "anc")
-        sys = QuantumRegister(n, "sys")
-        circ = QuantumCircuit(anc, sys, name="A_from_U")
-
-        # Create the V (prepare) operator as a separate circuit
-        amp_anc = np.zeros(2**m, dtype=float)
-        amp_anc[:K] = np.sqrt(np.asarray(weights, dtype=float))
-
-        # We build V on its own qubits to easily invert it
-        v_circuit = QuantumCircuit(m, name="V")
-        prepare_real_state(v_circuit, v_circuit.qubits, amp_anc)
-        v_gate = v_circuit.to_gate()
-        v_inv_gate = v_circuit.inverse().to_gate(label="V_inv")
-
-        # Assemble the full LCU operator: A = (V_inv) * (C-U) * (V)
-        # 1. Apply V to the ancilla register
-        circ.append(v_gate, anc)
-
-        # 1b. Prepare the system in the uniform superposition |+..._>
-        # This ensures the unitaries (oracles) are applied to the |+> state, not the |0> state.
-        circ.h(sys)
-
-        # 2. Apply the controlled-Unitaries (C-U)
-        for k, unitary in enumerate(unitary_circuits):
-            if unitary.num_qubits != n:
-                raise ValueError("All unitary circuits must act on the same number of qubits.")
-
-            controlled_unitary_gate = unitary.to_gate(label=f"U_{k}").control(num_ctrl_qubits=m, ctrl_state=k)
-            circ.append(controlled_unitary_gate, anc[:] + sys[:])
-
-        # 3. Apply V_inv to the ancilla register
-        circ.append(v_inv_gate, anc)
-
-        return circ, anc, sys
-
-    def choose_oaa_rounds(lcu_circ, anc_reg, sys_reg, p_target=0.99, max_rounds=100):
-        """Given an LCU circuit `lcu_circ` and its anc/sys registers, estimate initial success amplitude and 
-        choose number of OAA rounds to reach target ancilla success probability p_target.
-        """
-
-        # Simulate once to get the initial proto amplitude
-        sv = Statevector.from_instruction(lcu_circ)
-        proto = extract_system_state_when_anc_zero(sv, anc_reg, sys_reg)
-
-        # Amplitude (not squared)
-        alpha = np.linalg.norm(proto)
-        p0_initial = alpha**2
-
-        if p0_initial >= p_target:
-            return 0, p0_initial, alpha
-
-        # If alpha is zero, no amount of rounds will help (degenerate)
-        if alpha <= 0.0:
-            return 0, p0_initial, alpha
-
-        theta = np.arcsin(min(1.0, alpha))
-
-        # Analytic r
-        r_est = int(np.floor(np.pi/(4*theta) - 0.5))
-        r_est = max(0, r_est)
-
-        # Clamp
-        r = min(r_est, max_rounds)
-
-        # Optionally test nearby r to pick best under rounding
-        best_r, best_p = 0, p0_initial
-
-        for rr in range(max(0, r-2), min(max_rounds, r+3)+1):
-            # Skip round 0, we already have its probability
-            if rr == 0:
-                continue
-
-            # Build OAA with rr rounds using your build_oaa_circuit helper
-            full_circ = build_oaa_circuit(lcu_circ, anc_reg, sys_reg, rounds=rr)
-            sv_rr = Statevector.from_instruction(full_circ)
-            proto_rr = extract_system_state_when_anc_zero(sv_rr, anc_reg, sys_reg)
-            p0_rr = np.linalg.norm(proto_rr)**2
-
-            if p0_rr > best_p:
-                best_p = p0_rr
-                best_r = rr
-
-            if best_p >= p_target:
-                break
-
-        #print(f"[OAA] Best rounds: {best_r}; Best prob: {best_p:.4f}; Initial alpha: {alpha:.4f}")
-        return best_r, best_p, alpha
-
-    def build_oaa_circuit(lcu_operator_circ: QuantumCircuit, anc_qubits: QuantumRegister, sys_qubits: QuantumRegister, rounds: int=1) -> QuantumCircuit:
-        """Builds the full Oblivious Amplitude Amplification (OAA) circuit.
-
-        OAA is a variant of Grover's algorithm used to amplify the probability of a
-        desired "good" state. In the LCU context, the "good" state is the one where
-        the ancilla register is in the |0...0> state. This circuit applies the OAA
-        operator `Q = -A S_0 A^-1 S_psi` for a specified number of rounds to amplify
-        the probability of measuring the ancilla as all zeros.
-
-        Parameters
-        ----------
-        lcu_operator_circ : qiskit.QuantumCircuit
-            The LCU circuit `A` that prepares the initial state.
-        anc_qubits : qiskit.QuantumRegister
-            The register of ancilla qubits used in the LCU operator.
-        sys_qubits : qiskit.QuantumRegister
-            The register of system qubits.
-        rounds : int, default 1
-            The number of amplification rounds to apply.
-
-        Returns
-        -------
-        qiskit.QuantumCircuit
-            The complete quantum circuit that first applies `A` and then `Q` for the
-            specified number of `rounds`.
-        """
-
-        def reflection_about_zero(qc, qubits):
-            """Implements the S0 = I - 2|0><0| operator on the given list/register of qubits.
-            """
-
-            if not qubits:
-                return
-
-            qc.x(qubits)
-
-            if len(qubits) == 1:
-                qc.z(qubits[0])
-
-            else:
-                qc.h(qubits[-1])
-                qc.mcx(list(qubits[:-1]), qubits[-1])
-                qc.h(qubits[-1])
-
-            qc.x(qubits)
-
-        if rounds == 0:
-            # No OAA is applied here
-            return lcu_operator_circ
-
-        circ = QuantumCircuit(anc_qubits, sys_qubits, name="OAA_Prototype")
-
-        A_gate = lcu_operator_circ.to_gate(label="A")
-        A_inv_gate = lcu_operator_circ.inverse().to_gate(label="A_inv")
-
-        # Start with A
-        circ.append(A_gate, circ.qubits)
-
-        # Apply OAA rounds
-        for _ in range(rounds):
-            # Reflection on ancilla being |0>
-            reflection_about_zero(circ, anc_qubits)
-
-            # A_inverse
-            circ.append(A_inv_gate, circ.qubits)
-
-            # Reflection about the initial state |0...0> on all qubits of circ
-            reflection_about_zero(circ, circ.qubits)
-
-            # A
-            circ.append(A_gate, circ.qubits)
-
-        return circ
-
-    if classical_computation:
+    if method == "classical":
         # Recover the original bipolar vectors from each feature circuit
-        vectors = [get_classical_vector_from_oracle_circuit(circ) for circ in unitary_circuits]
+        vectors = [statevector_to_bipolar(circ) for circ in circuits]
 
         # Element-wise sum (keep magnitude and sign)
         vector_bundled = np.sum(vectors, axis=0)
@@ -365,195 +205,147 @@ def bundle(
         # Build the circuit
         n_sys = int(log2(len(vector_bundled)))
         sys_reg = QuantumRegister(n_sys, "sys")
-        bundling_circuit = QuantumCircuit(sys_reg, name="Hybrid_Prototype")
-        bundling_circuit.append(oracle_gate, sys_reg)
+        qc = QuantumCircuit(sys_reg, name="Hybrid_Prototype")
+        qc.append(oracle_gate, sys_reg)
 
-        return bundling_circuit, None, sys_reg
+        return qc
 
-    # 1. Build the LCU operator from the provided unitaries
-    lcu_op, anc, sys = build_lcu_from_unitaries(
-        unitary_circuits,
-        weights,
-        probabilistic=probabilistic,
-        rounds=probabilistic_rounds
-    )
+    def get_indices(qubits):
+        return [input_circ.find_bit(q).index for q in qubits]
 
-    if optimize_rounds and oaa_rounds > 1:
-        # 2. Estimate a proper number of OAA rounds adaptively (optional)
-        oaa_rounds, _, _ = choose_oaa_rounds(lcu_op, anc, sys, p_target=0.98, max_rounds=oaa_rounds)
+    N = circuits[0].num_qubits
+    M = len(circuits)
 
-    # 3. Build the full OAA circuit to amplify the bundled state
-    bundling_circuit = build_oaa_circuit(lcu_op, anc, sys, rounds=oaa_rounds)
+    qc = QuantumCircuit(N, name="Bundle_Op")
+    qc.h(range(N))
 
-    return bundling_circuit, anc, sys
+    scale = (1.0 / M) if method == "average" else fixed_delta
 
-def permute(num_qubits: int, shift: int) -> Gate:
+    for i, input_circ in enumerate(circuits):
+        # Accumulate raw phases (binding logic)
+        term_raw_angles = np.zeros(2**N)
+        post_structure_ops = list()
+        found_any_diagonal = False
+
+        for instr in input_circ.data:   
+            op, qargs, cargs = instr.operation, instr.qubits, instr.clbits
+
+            if isinstance(op, DiagonalGate):
+                found_any_diagonal = True
+                diag_complex = np.array(op.params, dtype=complex)
+                angles = np.angle(diag_complex)
+                term_raw_angles += angles
+
+            else:
+                post_structure_ops.append((op, qargs))
+
+        if not found_any_diagonal:
+            continue
+
+        # Normalize to symmetric domain (composability)
+        # We need to map whatever the input is to a "vote" of +/- 1.
+
+        # Resolve binding (XOR)
+        # cos(sum) is +1 for 0/2pi, -1 for pi
+        # If input was already symmetric small angles, sum is small, cos is +1
+        # This preserves the sign of small inputs too
+
+        # We need to detect the sign of small angles
+        # We use a hybrid check on the Net Angle `theta`:
+        # If cos(theta) < -0.5  -> it's pi-like -> vote -1
+        # Else if sin(theta) < -1e-5 -> it's neg-delta -> vote -1
+        # Else -> vote +1
+        net_complex = np.exp(1j * term_raw_angles)
+        votes = np.ones(2**N)
+
+        # Detect pi-like (standard negative)
+        votes[np.real(net_complex) < -0.1] = -1
+
+        # Detect negative-delta (symmetric negative)
+        # Only check this if not pi-like (to avoid boundary issues)
+        mask_small_angle = np.real(net_complex) > 0.1
+        votes[mask_small_angle & (np.imag(net_complex) < -1e-9)] = -1
+
+        # Scale & inject
+        # Now we have a clean +/- 1 vote vector
+        # Map to Symmetric Target (+pi/2, -pi/2) for the new bundle
+        symmetric_target = votes * (np.pi / 2)
+
+        scaled_phases = symmetric_target * scale
+        new_diag_entries = np.exp(1j * scaled_phases)
+        scaled_diagonal_op = DiagonalGate(new_diag_entries.tolist())
+
+        # Sandwich
+        for op, qargs in post_structure_ops:
+            qc.append(op, get_indices(qargs))
+
+        qc.append(scaled_diagonal_op, range(N))
+
+        for op, qargs in reversed(post_structure_ops):
+            try:
+                inv_op = op.inverse()
+
+            except:
+                inv_op = op
+
+            qc.append(inv_op, get_indices(qargs))
+
+    return qc
+
+def permute(qc: QuantumCircuit, num_qubits: int, shift: int=0) -> QuantumCircuit:
     """Creates a synthesizable circuit gate that implements a cyclic permutation.
 
     This function implements a cyclic shift on the computational basis states using
     the Quantum Fourier Transform (QFT). The algorithm leverages the property that a
     cyclic shift in the time/computational domain is equivalent to a linear phase
+    shift in the frequency/Fourier domain.
 
-    shift in the frequency/Fourier domain. This method is highly efficient and
-    decomposes into standard gates, making it suitable for any backend.
+    Sequence: QFT -> PhaseShift -> IQFT
 
     Parameters
     ----------
+    qc : QuantumCircuit
+        The circuit to apply the cyclic shift to.
     num_qubits : int
         The number of qubits in the register to be permuted. The dimension is 2**num_qubits.
-    shift : int
+    shift : int, default 0
         The number of positions to cyclically shift the basis states.
 
     Returns
     -------
-    qiskit.circuit.Gate
-        A Qiskit gate that implements the specified cyclic permutation.
+    QuantumCircuit
+        A state preparation circuit for Permute.
     """
 
-    qc = QuantumCircuit(num_qubits, name=f"Perm(>>{shift})")
-    D = 2**num_qubits
+    if qc is None:
+        # Create a new circuit representing just the permutation operation
+        # if no quantum circuit is provided
+        qc = QuantumCircuit(num_qubits, name=f"Perm(>>{shift})")
 
-    # A shift of 0 is just an identity operation.
     if shift == 0:
-        return qc.to_gate()
+        return qc
 
-    # 1. Go to the Fourier basis
-    qc.append(QFT(num_qubits, inverse=True, do_swaps=True).to_gate(), range(num_qubits))
+    D = 2**num_qubits
+    
+    # 1. Forward QFT (Time -> Frequency)
+    qc.append(QFT(num_qubits, do_swaps=True), range(num_qubits))
 
-    # 2. Apply the phase shifts
+    # 2. Phase Gradients
     for j in range(num_qubits):
-        angle = (-2 * pi * shift / D) * (2**j)
+        # Phase(k) = exp(2*pi*i * s * k / D)
+        angle = (2 * np.pi * shift / D) * (2**j)
 
         if abs(angle) > 1e-12:
             qc.p(angle, j)
 
-    # 3. Return to the computational basis
-    qc.append(QFT(num_qubits, do_swaps=True).to_gate(), range(num_qubits))
+    # 3. Inverse QFT (Frequency -> Time)
+    qc.append(QFT(num_qubits, inverse=True, do_swaps=True), range(num_qubits))
 
-    return qc.to_gate()
-
-def prepare_real_state(qc: QuantumCircuit, qubits: List[Qubit], amplitudes: np.ndarray) -> None:
-    """Efficiently prepares a quantum state with real-valued amplitudes.
-
-    This function uses a recursive decomposition method to prepare an arbitrary quantum
-    state with only real amplitudes. It is more efficient than Qiskit's generic
-    `initialize` for this specific case, as it uses a sequence of controlled-Y
-    rotations. The input amplitudes are automatically normalized.
-
-    Parameters
-    ----------
-    qc : qiskit.QuantumCircuit
-        The quantum circuit where the state preparation will be applied.
-    qubits : list[qiskit.circuit.Qubit]
-        The list of qubits that will hold the prepared state.
-    amplitudes : numpy.ndarray
-        A NumPy array of real-valued amplitudes for the desired quantum state.
-        The length must be 2**len(qubits).
-
-    Raises
-    ------
-    ValueError
-        If the length of the `amplitudes` array does not match the number of qubits.
-    """
-
-    a = np.array(amplitudes, dtype=float)
-    norm = np.linalg.norm(a)
-
-    if norm < 1e-12:
-        return
-
-    a = a / norm
-    n = len(qubits)
-
-    if len(a) != 2**n:
-        raise ValueError("Amplitudes length must match qubit register size.")
-
-    def _prep(qc, qlist, amps):
-        if not qlist:
-            return
-
-        if len(qlist) == 1:
-            # If the second amplitude is non-negligible, apply the rotation.
-            if abs(amps[1]) > 1e-12:
-                theta = 2 * atan2(amps[1], amps[0])
-                qc.ry(theta, qlist[0])
-
-            return
-
-        half = len(amps) // 2
-        norm0 = np.linalg.norm(amps[:half])
-        norm1 = np.linalg.norm(amps[half:])
-
-        # Rotate last qubit to prepare the branch weights
-        if (norm0 + norm1) > 1e-12:
-            theta = 0.0
-            if norm0 > 1e-12 or norm1 > 1e-12:
-                theta = 2 * atan2(norm1, norm0)
-
-            qc.ry(theta, qlist[-1])
-
-        # Prepare lower-level amplitudes conditioned on the last qubit
-        if norm0 > 1e-12:
-            _prep(qc, qlist[:-1], amps[:half] / norm0)
-
-        if norm1 > 1e-12:
-            qc.x(qlist[-1])
-            _prep(qc, qlist[:-1], amps[half:] / norm1)
-            qc.x(qlist[-1])
-
-    _prep(qc, list(qubits), a)
-
-def extract_system_state_when_anc_zero(statevector: Statevector, anc_reg: QuantumRegister, sys_reg: QuantumRegister) -> np.ndarray:
-    """Extracts system state amplitudes corresponding to the ancilla being in the |0...0> state.
-
-    This is a classical post-processing function used in simulation. Given the final
-    statevector of an LCU/OAA circuit, it filters for the component where the
-    ancilla was successfully measured as all zeros and returns the corresponding
-    unnormalized state of the system qubits.
-
-    Parameters
-    ----------
-    statevector : qiskit.quantum_info.Statevector
-        The final statevector of the combined system (ancilla + system).
-    anc_reg : qiskit.QuantumRegister
-        The ancilla register.
-    sys_reg : qiskit.QuantumRegister
-        The system register.
-
-    Returns
-    -------
-    numpy.ndarray
-        A complex-valued NumPy array representing the unnormalized state of the
-        system qubits, conditioned on the ancilla being |0...0>.
-    """
-
-    if anc_reg is None:
-        # If `anc_reg` is None, it means no ancillas were used (it comes from the bundling using `classical_computation=True`).
-        # The statevector is already the pure system state.
-        return np.asarray(statevector.data)
-
-    num_anc = len(anc_reg)
-    num_sys = len(sys_reg)
-
-    if num_sys == 0:
-        return np.array([1.0], dtype=complex)
-
-    sv = np.asarray(statevector.data)
-
-    # For Qiskit's little-endian ordering where anc are the least-significant bits,
-    # the index in the full vector that corresponds to system basis index `s` and anc==0 is:
-    # full_index = (s << num_anc)
-    proto = np.zeros(2**num_sys, dtype=complex)
-
-    for s in range(2**num_sys):
-        idx = s << num_anc
-        proto[s] = sv[idx]
-
-    return proto
+    return qc
 
 def apply_negative_phase(circuit: QuantumCircuit) -> QuantumCircuit:
     """Applies a global phase of pi to a circuit.
-    If applied before LCU+OAA, it has the same effect of performing the element-wise subtraction.
+    If applied before bundling, it has the same effect of performing the element-wise subtraction.
 
     Parameters
     ----------
@@ -664,8 +456,19 @@ def run_hadamard_test(
     # We want to compute Re(<psi_L_padded | psi_R>)
     # |psi_L_padded> = (state_left_circ @ I_anc) |0>
     # |psi_R> = state_right_circ |0>
-    v_l_padded_gate = state_left_circ.to_gate(label="Prep_L_Pad")
-    v_r_gate = state_right_circ.to_gate(label="Prep_R")
+    try:
+        v_l_padded_gate = state_left_circ.to_gate(label="Prep_L_Pad")
+
+    except:
+        t_left = transpile(state_left_circ, basis_gates=["u", "cx"], optimization_level=0)
+        v_l_padded_gate = t_left.to_gate(label="Prep_L")
+
+    try:
+        v_r_gate = state_right_circ.to_gate(label="Prep_R")
+
+    except:
+        t_right = transpile(state_right_circ, basis_gates=["u", "cx"], optimization_level=0)
+        v_r_gate = t_right.to_gate(label="Prep_L")
 
     anc = QuantumRegister(1, "anc_had")
     sys = QuantumRegister(n_total, "sys")
@@ -728,73 +531,6 @@ def run_hadamard_test(
 
     return similarity, counts
 
-def get_classical_vector_from_oracle_circuit(circuit: QuantumCircuit) -> np.ndarray:
-    """Extracts the classical bipolar vector from a quantum oracle circuit.
-
-    This function traverses the given circuit, applying the effect of DiagonalGates (interpreted as ±1 phases) and
-    any permutation gates encoded as 'Perm(>>k)'. The resulting vector is rolled according to all permutations.
-
-    Warning: it does not work on the QuantumCircuit resulting from the fully quantum LCU.
-
-    Parameters
-    ----------
-    circuit : QuantumCircuit
-        A Qiskit quantum circuit containing one DiagonalGate (the phase oracle) and optional permutation gates 'Perm(>>k)'.
-
-    Returns
-    -------
-    np.ndarray
-        The recovered classical bipolar vector of dtype int.
-    """
-
-    diag_gate = None
-    total_shift = 0
-
-    # Traverse the circuit instructions
-    for inst, _, _ in circuit.data:
-        if isinstance(inst, DiagonalGate) and diag_gate is None:
-            diag_gate = inst
-
-        elif inst.name.startswith("Perm(>>"):
-            shift = int(inst.name.split(">>")[1].split(")")[0])
-            total_shift += shift
-
-    if diag_gate is None:
-        raise ValueError("Circuit contains no DiagonalGate")
-
-    # Recover the bipolar vector from the first DiagonalGate only
-    diag = np.array(diag_gate.params, dtype=complex)
-    vec = np.sign(np.real(diag))
-
-    if total_shift != 0:
-        # Apply the total shift (permutation)
-        vec = np.roll(vec, total_shift)
-
-    return vec.astype(int)
-
-def statevector_to_bipolar(statevector_data: np.ndarray) -> np.ndarray:
-    """Extracts a classical bipolar vector from the phases of a quantum statevector.
-
-    This function provides a method to decode a quantum state back into a classical HDC vector. 
-    It assumes the information is encoded in the sign of the real part of the amplitudes, 
-    mapping positive signs to +1 and negative signs to -1.
-
-    Parameters
-    ----------
-    statevector_data : numpy.ndarray
-        A complex-valued NumPy array representing the amplitudes of a quantum state.
-
-    Returns
-    -------
-    numpy.ndarray
-        The corresponding classical bipolar vector of integers (+1 or -1).
-    """
-
-    vec = np.sign(np.real(statevector_data))
-    vec[vec == 0] = 1
-
-    return vec.astype(int)
-
 def get_circuit_metrics(circuit: QuantumCircuit, num_system_qubits: int, backend: Backend, optimization_level: int=3) -> Dict[str, int]:
     """Analyzes a quantum circuit for key computational expense metrics.
 
@@ -852,3 +588,48 @@ def get_circuit_metrics(circuit: QuantumCircuit, num_system_qubits: int, backend
         "cnot_count": cnot_count,
         "ops_count": ops_count
     }
+
+def calibrate_shift_direction(dimensionality: int):
+    """Determines if Quantum Shift +1 corresponds to numpy.roll +1 or -1.
+    This aligns the classical ground truth with Qiskit's QFT definition.
+
+    Parameters
+    ----------
+    dimensionality : int
+        Classical vector dimensionality.
+
+    Returns
+    -------
+    int
+        The direction of the cyclic shift.
+    """
+
+    probe = [-1] * dimensionality
+    probe[0] = 1
+
+    # Encode the probe vector
+    qc = encode(probe)
+    N = qc.num_qubits
+
+    # Apply a permutation
+    qc = permute(qc, N, shift=1)
+
+    # Transpile needed for QFT decomposition
+    gate_qc = transpile(qc, basis_gates=['u', 'cx'], optimization_level=0)
+
+    test_qc = QuantumCircuit(qc.num_qubits)
+    test_qc.h(range(qc.num_qubits))
+    test_qc.append(gate_qc.to_gate(), range(qc.num_qubits))
+
+    sv = Statevector.from_instruction(test_qc)
+
+    # Extract signal location (Real part is roughly +1 at the shifted index)
+    # We ignore global phase here because we just want the index
+    mags = np.abs(np.real(sv.data))
+    peak_idx = np.argmax(mags)
+
+    if peak_idx == 1:
+        return 1
+
+    else:
+        return -1

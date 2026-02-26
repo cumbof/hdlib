@@ -4,7 +4,10 @@ It implements the __hdlib.model.classification.ClassificationModel__ class objec
 built according to the Hyperdimensional Computing (HDC) paradigm as described in _Cumbo et al. 2020_ https://doi.org/10.3390/a13090233.
 
 It also implements a stepwise regression model as backward and forward variable elimination techniques for selecting
-relevant features in a dataset according to the same HDC paradigm."""
+relevant features in a dataset according to the same HDC paradigm.
+
+The quantum version of this classification model is also provided here in __hdlib.model.classification.QuantumClassificationModel__
+as described in _Cumbo et al. 2025_ https://doi.org/10.48550/arXiv.2511.12664."""
 
 import copy
 import itertools
@@ -37,15 +40,11 @@ from hdlib.arithmetic import bundle, permute
 
 # Quantum functions
 from hdlib.arithmetic.quantum import (
-    apply_negative_phase,
+    encode as quantum_encode,
     bundle as quantum_bundle,
     permute as quantum_permute,
-    extract_system_state_when_anc_zero,
-    phase_oracle_gate,
     run_hadamard_test,
     get_circuit_metrics,
-    prepare_real_state,
-    get_classical_vector_from_oracle_circuit
 )
 
 
@@ -802,9 +801,9 @@ class ClassificationModel(object):
 
                 # Get results from jobs
                 for job in jobs:
-                    test_indices, test_predictions, retraining_iterations, model_error_rate, training_class_vectors = job.get()
+                    test_indices, test_predictions, test_distances, retraining_iterations, model_error_rate, training_class_vectors = job.get()
 
-                    predictions.append((test_indices, test_predictions, retraining_iterations, model_error_rate, training_class_vectors))
+                    predictions.append((test_indices, test_predictions, test_distances, retraining_iterations, model_error_rate, training_class_vectors))
 
         return predictions
 
@@ -1002,7 +1001,7 @@ class ClassificationModel(object):
         threshold: float=0.6,
         uncertainty: float=5.0,
         stop_if_worse: bool=False
-    ) -> Tuple[Dict[str, int], Dict[int, float], int]:
+    ) -> Tuple[Dict[str, int], Dict[int, float], int, int]:
         """Stepwise regression as backward variable elimination or forward variable selection.
 
         Parameters
@@ -1232,10 +1231,6 @@ class QuantumClassificationModel(object):
         levels: int=2,
         seed: int=42,
         shots: int=1024,
-        oaa_rounds: int=1,
-        classical_bundling: bool=False,
-        probabilistic_bundling: bool=False,
-        probabilistic_bundling_rounds: int=1,
         channel: Optional[str]=None,
         instance: Optional[str]=None,
         backend: Optional[str]=None,
@@ -1256,16 +1251,6 @@ class QuantumClassificationModel(object):
             Seed for reproducibility.
         shots : int, default 1024
             The number of times to run the quantum circuit for the Hadamard test.
-        oaa_rounds : int, default 1
-            The number of rounds for the Oblivious Amplitude Amplification.
-        classical_bundling : bool, default False
-            Perform bundling as a classical element-wise addition (deactivate LCU+OAA).
-            Original vectors are automatically retrieved from circuit DiagonalGates and QFT gates.
-        probabilistic_bundling : bool, default False
-            Perform a probabilistic LCU by controlling only one unitary at a time.
-            It prevents the explosion in circuit's depth but heavily relies on `probabilistic_bundling_rounds`.
-        probabilistic_bundling_rounds : int, default 1
-            The number of rounds for the probabilistic LCU.
         channel : str, default None, optional
             IBM channel.
         instance : str, default None, optional
@@ -1294,8 +1279,7 @@ class QuantumClassificationModel(object):
         >>> type(model)
         <class 'hdlib.model.QuantumClassificationModel'>
 
-        This creates a new QuantumClassificationModel object with random bipolar vectors with size 32.
-        It also defines the number of level vectors to 2 and the number of OAA rounds to 2.
+        This creates a new QuantumClassificationModel object with random bipolar vectors with size 32 and 2 level vectors.
         """
 
         if not ((size > 0) and ((size & (size - 1)) == 0)):
@@ -1305,10 +1289,6 @@ class QuantumClassificationModel(object):
         self.size = size
         self.levels = levels
         self.shots = shots
-        self.oaa_rounds = oaa_rounds
-        self.classical_bundling = classical_bundling
-        self.probabilistic_bundling = probabilistic_bundling
-        self.probabilistic_bundling_rounds = probabilistic_bundling_rounds
 
         # Vectors must be bipolar here
         self.vtype = "bipolar"
@@ -1426,14 +1406,10 @@ class QuantumClassificationModel(object):
             level_vec = level_vectors[level_index]
 
             # Create a quantum circuit for this single feature
-            feature_qc = QuantumCircuit(num_qubits, name=f"Feature_{i}")
+            feature_qc = quantum_encode(level_vec, label=f"Feature_{i}")
 
-            # 1. Prepare the state for the unpermuted level vector
-            feature_qc.h(range(num_qubits))
-            feature_qc.append(phase_oracle_gate(level_vec), range(num_qubits))
-
-            # 2. Apply the quantum permutation for the feature's position
-            feature_qc.append(quantum_permute(num_qubits, shift=i), range(num_qubits))
+            # Apply the permutation based in the feature index
+            feature_qc = quantum_permute(feature_qc, num_qubits, shift=i)
 
             # Report circuit metrics
             #print(f"Positional permutation metrics: {get_circuit_metrics(feature_qc, num_qubits, self.backend, optimization_level=3)}")
@@ -1497,24 +1473,15 @@ class QuantumClassificationModel(object):
             # Building quantum samples' feature encoder circuits
             sample_encoders = [encoder for sample in class_samples for encoder in self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)]
 
-            # Bundling (LCU + OAA)
-            # Building class LCU from sample encoders
-            # Applying OAA to generate final prototype
-            oaa_class, anc_c, sys_c = quantum_bundle(
-                sample_encoders,
-                [1.0] * len(sample_encoders),
-                oaa_rounds=self.oaa_rounds,
-                optimize_rounds=True,
-                classical_computation=self.classical_bundling,
-                probabilistic=self.probabilistic_bundling,
-                probabilistic_rounds=self.probabilistic_bundling_rounds
-            )
+            # Bundling
+            prototype_circuit = quantum_bundle(sample_encoders, method="average")
+            prototype_circuit.name = f"Prototype_{c}"
 
             # Report circuit metrics
-            #print(f"Class prototype bundling metrics: {get_circuit_metrics(oaa_class, int(log2(self.size)), self.backend, optimization_level=3)}")
+            #print(f"Class prototype bundling metrics: {get_circuit_metrics(prototype_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
 
             # The prototype is the circuit that prepares the state
-            self.prototypes.append(oaa_class)
+            self.prototypes.append(prototype_circuit)
 
     def predict(self, test_points: List[List[float]]) -> Tuple[List[str], List[List[float]]]:
         """Predict the class labels of the data points in the test set.
@@ -1570,15 +1537,7 @@ class QuantumClassificationModel(object):
                 sample_features_circuits = self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)
 
                 # Bundle them into a single query circuit
-                query_circuit, _, _ = quantum_bundle(
-                    sample_features_circuits,
-                    [1.0] * len(sample_features_circuits),
-                    oaa_rounds=self.oaa_rounds,
-                    optimize_rounds=True,
-                    classical_computation=self.classical_bundling,
-                    probabilistic=self.probabilistic_bundling,
-                    probabilistic_rounds=self.probabilistic_bundling_rounds
-                )
+                query_circuit = quantum_bundle(sample_features_circuits, method="average")
 
                 # Report circuit metrics
                 #print(f"Query bundling metrics: {get_circuit_metrics(query_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
