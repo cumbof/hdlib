@@ -9,7 +9,7 @@ import numpy as np
 from mthree import M3Mitigation
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.circuit import Gate, Qubit
-from qiskit.circuit.library import DiagonalGate, QFT
+from qiskit.circuit.library import DiagonalGate, XGate
 from qiskit.quantum_info import Statevector
 from qiskit.providers.backend import Backend
 from qiskit_aer import AerSimulator
@@ -64,6 +64,51 @@ def statevector_to_bipolar(circuit: QuantumCircuit) -> np.ndarray:
     vec[reals < -tolerance] = -1
 
     return vec.astype(int)
+
+def compress_circuit(circuit: QuantumCircuit) -> QuantumCircuit:
+    """Compresses a deep phase-encoded quantum circuit into a shallow circuit with one DiagonalGate.
+
+    This acts as a quantum compiler for Vector-Symbolic Architectures.
+    It calculates the noise-free phase accumulation of the deep circuit
+    and reconstructs an identical quantum state using a single layer of
+    Hadamard gates and one DiagonalGate.
+
+    Parameters
+    ----------
+    circuit : QuantumCircuit
+        The deep quantum circuit (e.g., a series of bundled veectors with hundreds of gates).
+
+    Returns
+    -------
+    QuantumCircuit
+        A mathematically identical shallow circuit.
+    """
+
+    num_qubits = circuit.num_qubits
+
+    # 1. Mathematically evaluate the exact state of the deep circuit
+    # This captures the pure quantum phase accumulation without noise
+    state = Statevector.from_instruction(circuit.decompose())
+
+    # 2. Extract the relative phases of the quantum state
+    # Since vectors are encoded in the phase of a uniform superposition,
+    # the amplitudes are all 1/sqrt(2^N), so we only need the angles.
+    phases = np.angle(state.data)
+
+    # 3. Create the compressed diagonal operator using the extracted phases
+    diagonal_elements = np.exp(1j * phases)
+    diag_gate = DiagonalGate(diagonal_elements.tolist())
+
+    # 4. Build the shallow circuit
+    compressed_qc = QuantumCircuit(num_qubits, name=f"{circuit.name}_compressed")
+
+    # Initialize the uniform superposition
+    compressed_qc.h(range(num_qubits))
+
+    # Apply all accumulated phases in a single operation
+    compressed_qc.append(diag_gate, range(num_qubits))
+
+    return compressed_qc
 
 def encode(vec_bipolar: np.ndarray, label: str="O_v") -> QuantumCircuit:
     """Creates a circuit containing a diagonal phase oracle.
@@ -148,7 +193,7 @@ def bind(circuits: List[QuantumCircuit]) -> QuantumCircuit:
 
     return qc
 
-def bundle(circuits: list[QuantumCircuit], method: str="incremental_delta", fixed_delta: float=0.1) -> QuantumCircuit:
+def bundle(circuits: list[QuantumCircuit], method: str="average") -> QuantumCircuit:
     """Bundles circuits symbolically using Phase Accumulation.
 
     This function constructs a new circuit that represents the 'Bundle' (Sum) of the input circuits.
@@ -166,9 +211,6 @@ def bundle(circuits: list[QuantumCircuit], method: str="incremental_delta", fixe
     method : str
         "classical": Perform the bundling classically, no quantum operations involved;
         "average": Scales phases by 1/N (Exact arithmetic mean);
-        "incremental_delta": Scales by `fixed_delta` (Streaming accumulation).
-    fixed_delta : float
-        The scaling factor for incremental mode.
 
     Returns:
     --------
@@ -219,7 +261,7 @@ def bundle(circuits: list[QuantumCircuit], method: str="incremental_delta", fixe
     qc = QuantumCircuit(N, name="Bundle_Op")
     qc.h(range(N))
 
-    scale = (1.0 / M) if method == "average" else fixed_delta
+    scale = (1.0 / M)
 
     for i, input_circ in enumerate(circuits):
         # Accumulate raw phases (binding logic)
@@ -295,12 +337,9 @@ def bundle(circuits: list[QuantumCircuit], method: str="incremental_delta", fixe
 def permute(qc: QuantumCircuit, num_qubits: int, shift: int=0) -> QuantumCircuit:
     """Creates a synthesizable circuit gate that implements a cyclic permutation.
 
-    This function implements a cyclic shift on the computational basis states using
-    the Quantum Fourier Transform (QFT). The algorithm leverages the property that a
-    cyclic shift in the time/computational domain is equivalent to a linear phase
-    shift in the frequency/Fourier domain.
-
-    Sequence: QFT -> PhaseShift -> IQFT
+    This function implements a cyclic shift using a Modulo 2^N Quantum Adder.
+    It shifts the basis states strictly cyclically, matching the classical np.roll property exactly,
+    but uses entirely digital gates (X and MCX) with O(N) depth.
 
     Parameters
     ----------
@@ -322,47 +361,120 @@ def permute(qc: QuantumCircuit, num_qubits: int, shift: int=0) -> QuantumCircuit
         # if no quantum circuit is provided
         qc = QuantumCircuit(num_qubits, name=f"Perm(>>{shift})")
 
+    # Ensure the shift is within the cyclic bounds (Modulo D)
+    shift = shift % (2**num_qubits)
+
     if shift == 0:
         return qc
 
-    D = 2**num_qubits
-    
-    # 1. Forward QFT (Time -> Frequency)
-    qc.append(QFT(num_qubits, do_swaps=True), range(num_qubits))
+    # Convert shift to binary string and reverse it so that index 'k' correctly corresponds to the 2^k bit
+    shift = bin(shift)[2:][::-1]
 
-    # 2. Phase Gradients
-    for j in range(num_qubits):
-        # Phase(k) = exp(2*pi*i * s * k / D)
-        angle = (2 * np.pi * shift / D) * (2**j)
+    for k, bit in enumerate(shift):
+        if bit == "1":
+            # Apply a +2^k quantum incrementer
+            # This acts as a standard binary adder starting only at the k-th qubit, 
+            # leaving lower significant qubits completely untouched.
+            for i in range(num_qubits - 1, k, -1):
+                # Target bit 'i' is flipped only if all lower bits from 'k' to 'i-1' are 1
+                controls = list(range(k, i))
 
-        if abs(angle) > 1e-12:
-            qc.p(angle, j)
+                if len(controls) == 1:
+                    qc.cx(controls[0], i)
 
-    # 3. Inverse QFT (Frequency -> Time)
-    qc.append(QFT(num_qubits, inverse=True, do_swaps=True), range(num_qubits))
+                else:
+                    mcx_gate = XGate().control(len(controls))
+                    qc.append(mcx_gate, controls + [i])
+
+            # Finally, unconditionally flip the k-th bit
+            qc.x(k)
 
     return qc
 
-def apply_negative_phase(circuit: QuantumCircuit) -> QuantumCircuit:
-    """Applies a global phase of pi to a circuit.
-    If applied before bundling, it has the same effect of performing the element-wise subtraction.
+def negate_circuits(circuits: List[QuantumCircuit]) -> List[QuantumCircuit]:
+    """Flips the bipolar phase of the circuits for subtraction.
+    Multiplying the complex eigenvalues of the DiagonalGate by -1 reflects the vector.
 
     Parameters
     ----------
-    circuit : QuantumCircuit
-        The input circuit.
+    circuits : list
+        The input circuits.
 
     Returns
     -------
-    QuantumCircuit
-        The output flipped circuit.
+    list
+        List of phase-flipped circuits.
     """
 
-    phased_circ = QuantumCircuit(*circuit.qregs, name=f"{circuit.name}_phased")
-    phased_circ.global_phase = np.pi
-    phased_circ.append(circuit.to_gate(), circuit.qubits)
+    negated = list()
 
-    return phased_circ
+    for circuit in circuits:
+        neg_circuit = QuantumCircuit(*circuit.qregs, name=f"{circuit.name}_neg")
+
+        for instr in circuit.data:
+            if isinstance(instr.operation, DiagonalGate):
+                # -1 inverts the bipolar phases
+                new_phases = np.array(instr.operation.params, dtype=complex) * -1.0
+                neg_circuit.append(DiagonalGate(new_phases.tolist()), instr.qubits)
+
+            else:
+                neg_circuit.append(instr)
+
+        negated.append(neg_circuit)
+
+    return negated
+
+def __get_measured_physical_qubits(transpiled_circuit: QuantumCircuit, measured_register: ClassicalRegister) -> list[int]:
+    """Returns the list of physical qubits that correspond to the measured classical bits.
+    """
+
+    # 1. Create a dictionary to map classical bits to the physical qubits measured into them
+    meas_map = dict()
+
+    for inst in transpiled_circuit.data:
+        if inst.operation.name == "measure":
+            qbit = inst.qubits[0] # The qubit being measured
+            cbit = inst.clbits[0] # The classical bit receiving the result
+
+            # Find the actual physical index of this qubit in the transpiled circuit
+            qbit_idx = transpiled_circuit.find_bit(qbit).index
+            meas_map[cbit] = qbit_idx
+
+    # 2. Extract the physical qubits in the exact order of the measured_register
+    physical_qubits = list()
+
+    for cbit in measured_register:
+        if cbit in meas_map:
+            # The index of the physical qubit in the transpiled circuit
+            physical_qubits.append(meas_map[cbit])
+
+        else:
+            raise ValueError(f"Classical bit {cbit} does not have a measurement mapped to it.")
+
+    return physical_qubits
+
+def __mitigate_counts(counts, backend, shots, measured_qubits, mitigator: Optional[M3Mitigation]=None):
+    """Apply readout error mitigation using mthree to a single-qubit measurement.
+    """
+
+    if mitigator is None:
+        # Initialize mitigator from backend
+        mitigator = M3Mitigation(backend)
+        mitigator.cals_from_system(qubits=measured_qubits)
+
+    # Apply correction to get mitigated probabilities
+    probs = mitigator.apply_correction(counts, qubits=measured_qubits)
+
+    # Dynamically convert all output states back to pseudo-counts
+    mitigated_pseudo_counts = dict()
+
+    for state, prob in probs.items():
+        # Use max(0, prob) because M3 can sometimes output tiny negative quasi-probabilities
+        safe_prob = max(0.0, prob)
+        mitigated_pseudo_counts[state] = int(round(safe_prob * shots))
+
+    # Return mitigated probabilities as pseudo-counts
+    return mitigated_pseudo_counts
 
 def run_hadamard_test(
     state_left_circ: QuantumCircuit,
@@ -408,38 +520,6 @@ def run_hadamard_test(
         - If qubit dimensions are incompatible (n_total < n_sys).
         - If a Sampler is not provided for hardware execution.
     """
-
-    def get_measured_physical_qubits(transpiled_circuit: QuantumCircuit, measured_register: ClassicalRegister) -> list[int]:
-        """Returns the list of physical qubits that correspond to the measured classical bits.
-        """
-
-        physical_qubits = list()
-
-        for creg_index in range(len(measured_register)):
-            # Find the classical bit object
-            cbit = measured_register[creg_index]
-
-            # Get the qubit that is measured into this classical bit
-            qbit = transpiled_circuit.find_bit(cbit)
-
-            # The index of the physical qubit in the transpiled circuit
-            physical_qubits.append(qbit.index)
-
-        return physical_qubits
-
-    def mitigate_counts(counts, backend, shots, measured_qubits):
-        """Apply readout error mitigation using mthree to a single-qubit measurement.
-        """
-
-        # Initialize mitigator from backend
-        mit = M3Mitigation(backend)
-        mit.cals_from_system(qubits=measured_qubits)
-
-        # Apply correction to get mitigated probabilities
-        probs = mit.apply_correction(counts, qubits=measured_qubits)
-
-        # Return mitigated probabilities as counts
-        return {"0": int(round(probs.get("0", 0) * shots)), "1": int(round(probs.get("1", 0) * shots))}
 
     is_simulated = isinstance(backend, AerSimulator)
     n_total = state_right_circ.num_qubits
@@ -518,10 +598,14 @@ def run_hadamard_test(
         counts = {"0": counts_0, "1": counts_1}
 
         # Automatically detect measured qubits
-        measured_qubits = get_measured_physical_qubits(tqc, creg)
+        measured_qubits = __get_measured_physical_qubits(tqc, creg)
+
+        # Initialize mitigator from backend
+        mitigator = M3Mitigation(backend)
+        mitigator.cals_from_system(qubits=measured_qubits)
 
         # Apply readout error mitigation
-        counts = mitigate_counts(counts, backend, shots, measured_qubits)
+        counts = __mitigate_counts(counts, backend, shots, measured_qubits, mitigator=mitigator)
 
     # Calculation
     # Re(<psi_L|psi_R>) = P(0) - P(1)
@@ -530,6 +614,104 @@ def run_hadamard_test(
     similarity = p0 - p1
 
     return similarity, counts
+
+def run_compute_uncompute_test(
+    state_left_circs: List[QuantumCircuit],
+    state_right_circs: List[QuantumCircuit],
+    backend: Backend,
+    shots: int=1024,
+    seed: int=42,
+    sampler: Optional[Sampler]=None
+) -> Tuple[List[List[float]], List[dict]]:
+    """Performs a Compute-Uncompute (Inversion) test to measure |<L|R>|^2 in batch mode.
+
+    This avoids all controlled operations, making it exponentially cheaper
+    to transpile and execute compared to the Hadamard Test.
+    """
+
+    is_simulated = isinstance(backend, AerSimulator)
+    n_sys = state_right_circs[0].num_qubits
+
+    if state_left_circs[0].num_qubits != n_sys:
+        raise ValueError("Left and Right circuits must have the exact same number of qubits for Inversion test.")
+
+    sys = QuantumRegister(n_sys, "sys")
+    creg = ClassicalRegister(n_sys, "c_meas")
+
+    qcs = list()
+
+    for query_circ in state_left_circs:
+        for prototype_circ in state_right_circs:
+            qc = QuantumCircuit(sys, creg)
+
+            # 1. Compute: Apply query state (R)
+            qc.compose(query_circ, qubits=sys, inplace=True)
+
+            # 2. Uncompute: Apply inverse of prototype state (L)
+            qc.compose(prototype_circ.inverse(), qubits=sys, inplace=True)
+
+            # 3. Measure all qubits
+            qc.measure(sys, creg)
+
+            qcs.append(qc)
+
+    if is_simulated:
+        tqcs = transpile(qcs, backend, optimization_level=1)
+        counts = backend.run(tqcs, shots=shots, seed_simulator=seed).result().get_counts()
+
+        if not isinstance(counts, list):
+            counts = [counts]
+
+    else:
+        if not sampler:
+            raise ValueError("A Sampler object must be provided for hardware execution.")
+
+        tqcs = transpile(qcs, backend, optimization_level=3)
+        job = sampler.run(tqcs, shots=shots)
+        results = job.result()
+
+        counts = list()
+
+        # Gather all unique physical qubits used across all circuits
+        all_measured_qubits = set()
+        circuit_measured_qubits = list()
+
+        for tqc in tqcs:
+            # Automatically detect measured qubits
+            phys_qubits = __get_measured_physical_qubits(tqcs, creg)
+            all_measured_qubits.update(phys_qubits)
+            circuit_measured_qubits.append(phys_qubits)
+
+        # Initialize mitigator from backend
+        mitigator = M3Mitigation(backend)
+        mitigator.cals_from_system(qubits=list(all_measured_qubits))
+
+        for i, res in enumerate(results):
+            counts_res = res.data.c_meas.get_counts()
+
+            # Apply readout error mitigation
+            counts.append(__mitigate_counts(counts_res, backend, shots, circuit_measured_qubits[i], mitigator=mitigator))
+
+    # Group similarities back into a 2D list
+    similarities = list()
+    idx = 0
+
+    # Dynamically define the all-zeros target state based on system size
+    target_state = "0" * n_sys
+
+    for _ in state_left_circs:
+        query_sims = list()
+
+        for _ in state_right_circs:
+            # Because both simulator and mitigated brances output integers/pseudo-counts
+            # that sum to 'shots', dividing by 'shots' here correctly yields the probability.
+            query_sims.append(counts[idx].get(target_state, 0) / shots)
+
+            idx += 1
+
+        similarities.append(query_sims)
+
+    return similarities, counts
 
 def get_circuit_metrics(circuit: QuantumCircuit, num_system_qubits: int, backend: Backend, optimization_level: int=3) -> Dict[str, int]:
     """Analyzes a quantum circuit for key computational expense metrics.
@@ -588,48 +770,3 @@ def get_circuit_metrics(circuit: QuantumCircuit, num_system_qubits: int, backend
         "cnot_count": cnot_count,
         "ops_count": ops_count
     }
-
-def calibrate_shift_direction(dimensionality: int):
-    """Determines if Quantum Shift +1 corresponds to numpy.roll +1 or -1.
-    This aligns the classical ground truth with Qiskit's QFT definition.
-
-    Parameters
-    ----------
-    dimensionality : int
-        Classical vector dimensionality.
-
-    Returns
-    -------
-    int
-        The direction of the cyclic shift.
-    """
-
-    probe = [-1] * dimensionality
-    probe[0] = 1
-
-    # Encode the probe vector
-    qc = encode(probe)
-    N = qc.num_qubits
-
-    # Apply a permutation
-    qc = permute(qc, N, shift=1)
-
-    # Transpile needed for QFT decomposition
-    gate_qc = transpile(qc, basis_gates=['u', 'cx'], optimization_level=0)
-
-    test_qc = QuantumCircuit(qc.num_qubits)
-    test_qc.h(range(qc.num_qubits))
-    test_qc.append(gate_qc.to_gate(), range(qc.num_qubits))
-
-    sv = Statevector.from_instruction(test_qc)
-
-    # Extract signal location (Real part is roughly +1 at the shifted index)
-    # We ignore global phase here because we just want the index
-    mags = np.abs(np.real(sv.data))
-    peak_idx = np.argmax(mags)
-
-    if peak_idx == 1:
-        return 1
-
-    else:
-        return -1
