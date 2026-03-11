@@ -43,7 +43,9 @@ from hdlib.arithmetic.quantum import (
     encode as quantum_encode,
     bundle as quantum_bundle,
     permute as quantum_permute,
-    run_hadamard_test,
+    compress_circuit,
+    negate_circuits,
+    run_compute_uncompute_test,
     get_circuit_metrics,
 )
 
@@ -1423,7 +1425,8 @@ class QuantumClassificationModel(object):
     def fit(
         self,
         train_points: List[List[float]],
-        train_labels: List[str]
+        train_labels: List[str],
+        chunk_size: Optional[int]=None
     ) -> None:
         """Build a vector-symbolic architecture. Define level vectors, encode samples, and build prototypes.
 
@@ -1433,6 +1436,9 @@ class QuantumClassificationModel(object):
             List of lists with numerical data points (floats).
         train_labels : list
             List with class labels. It has the same size of `points`.
+        chunk_size : int, default None, optional
+            The number of samples to bundle together into a single quantum chunk.
+            If None, all samples for a given class are bundled into a single chunk for the definition of the class prototype.
         """
 
         def _generate_level_vectors(D, num_levels, rng):
@@ -1464,24 +1470,40 @@ class QuantumClassificationModel(object):
         self.level_hvs = _generate_level_vectors(self.size, self.levels, rand)
 
         self.classes_ = sorted(list(set(train_labels)))
-        self.prototypes = list()
+
+        # Dictionaries to hold chunks and their raw encoders
+        self.prototypes = {c: list() for c in self.classes_}
+        self._chunk_encoders = {c: list() for c in self.classes_}
 
         for c in self.classes_:
             # Building quantum prototype for Class `c`
             class_samples = [sample for pos, sample in enumerate(train_points) if train_labels[pos] == c]
 
-            # Building quantum samples' feature encoder circuits
-            sample_encoders = [encoder for sample in class_samples for encoder in self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)]
+            if chunk_size is None or chunk_size < 1:
+                # Bundle all samples into a single chunk
+                chunk_size = len(class_samples)
 
-            # Bundling
-            prototype_circuit = quantum_bundle(sample_encoders, method="average")
-            prototype_circuit.name = f"Prototype_{c}"
+            else:
+                # Shuffle samples to avoid clustering bias
+                rand.shuffle(class_samples)
 
-            # Report circuit metrics
-            #print(f"Class prototype bundling metrics: {get_circuit_metrics(prototype_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
+            # Break the class samples into smaller chunks
+            for i in range(0, len(class_samples), chunk_size):
+                chunk_samples = class_samples[i : i + chunk_size]
 
-            # The prototype is the circuit that prepares the state
-            self.prototypes.append(prototype_circuit)
+                # Building quantum samples' feature encoder circuits
+                sample_encoders = [encoder for sample in chunk_samples for encoder in self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)]
+
+                # Bundling
+                prototype_circuit = compress_circuit(quantum_bundle(sample_encoders))
+                prototype_circuit.name = f"Prototype_{c}" if chunk_size == len(class_samples) else f"Prototype_{c}_Chunk_{i // chunk_size}"
+
+                # Report circuit metrics
+                #print(f"Class prototype bundling metrics: {get_circuit_metrics(prototype_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
+
+                # The prototype is the circuit that prepares the state
+                self.prototypes[c].append(prototype_circuit)
+                self._chunk_encoders[c].append(sample_encoders)
 
     def predict(self, test_points: List[List[float]]) -> Tuple[List[str], List[List[float]]]:
         """Predict the class labels of the data points in the test set.
@@ -1532,26 +1554,138 @@ class QuantumClassificationModel(object):
 
                 sampler = Sampler(mode=session, options=options)
 
+            # 1. Flatten the dictionary of chunks into a 1D list for batching
+            chunks = list()
+            chunk_class_map = list()
+
+            for c in self.classes_:
+                for chunk_circuit in self.prototypes[c]:
+                    chunks.append(chunk_circuit)
+                    chunk_class_map.append(c)
+
+            # 2. Build all query circuits
+            queries = list()
+
             for sample in test_points:
                 # Get the list of feature circuits for the test sample
                 sample_features_circuits = self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)
 
                 # Bundle them into a single query circuit
-                query_circuit = quantum_bundle(sample_features_circuits, method="average")
+                query_circuit = compress_circuit(quantum_bundle(sample_features_circuits))
 
                 # Report circuit metrics
                 #print(f"Query bundling metrics: {get_circuit_metrics(query_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
 
+                queries.append(query_circuit)
+
+            # 3. Evaluate all queries against all chunks in safe hardware batch mode to prevent IBM memory overflow
+            # https://ibm.biz/error_codes#6073
+            batch_similarities = list()
+
+            max_queries_per_job = 5
+
+            for i in range(0, len(queries), max_queries_per_job):
+                query_batch = queries[i : i + max_queries_per_job]
+
+                sims, _ = run_compute_uncompute_test(query_batch, chunks, self.backend, shots=self.shots, seed=self.seed, sampler=sampler)
+                batch_similarities.extend(sims)
+
+            # 4. Group the results by class for each sample
+            for sample_batch_sim in batch_similarities:
+                class_similarity = {c: list() for c in self.classes_}
+
+                for sim, c in zip(sample_batch_sim, chunk_class_map):
+                    class_similarity[c].append(sim)
+
                 sample_similarities = list()
 
-                # Run the Hadamard test between the query circuit and the class prototypes
-                for prototype in self.prototypes:
-                    # Prototype is a QuantumCircuit
-                    similarity, _ = run_hadamard_test(query_circuit, prototype, self.backend, shots=self.shots, seed=self.seed, sampler=sampler)
-
-                    sample_similarities.append(similarity)
+                for c in self.classes_:
+                    # Average the probabilities across the chunks for this class
+                    sample_similarities.append(statistics.mean(class_similarity[c]))
 
                 predictions.append(self.classes_[int(np.argmax(sample_similarities))])
                 similarities.append(sample_similarities)
 
         return predictions, similarities
+
+    def retrain(self, train_points: List[List[float]], train_labels: List[str], epochs: int=10) -> Tuple[float, int]:
+        """Retrain the model by adjusting class prototypes based on misclassified samples.
+        """
+
+        if not hasattr(self, "classes_"):
+            raise RuntimeError("You must call fit before calling retrain.")
+
+        # 1. Evaluate the base model before any retraining to establish a baseline
+        predictions, similarities = self.predict(train_points)
+
+        best_error = sum(1 for p, t in zip(predictions, train_labels) if p != t) / len(train_labels)
+
+        print(f"\tepoch 0: {best_error}")
+
+        if best_error == 0.0:
+            return best_error, 0
+
+        # Save a backup of the best circuits
+        best_prototypes = {c: [qc.copy() for qc in chunks] for c, chunks in self.prototypes.items()}
+        best_chunk_encoders = {c: [list(chunk_list) for chunk_list in class_chunks] for c, class_chunks in self._chunk_encoders.items()}
+
+        final_epoch = 0
+
+        for epoch in range(1, epochs + 1):
+            final_epoch = epoch
+
+            bundle_circuits = False
+
+            # 2. Apply updates based on the current predictions
+            for i, (pred, true_label) in enumerate(zip(predictions, train_labels)):
+                if pred != true_label:
+                    # Encode the misclassified sample
+                    sample_features = self._build_quantum_sample_encoder(train_points[i], self.level_hvs, self.size)
+
+                    # Precompute the negated features once for efficiency
+                    negated_features = negate_circuits(sample_features)
+
+                    # Add to the true class
+                    true_idx = int(np.argmax(similarities[i][true_label]))
+                    self._chunk_encoders[true_label][true_idx].extend(sample_features)
+
+                    # Remove from the incorrectly predicted class (apply the inverse)
+                    pred_idx = int(np.argmax(similarities[i][pred]))
+                    self._chunk_encoders[pred][pred_idx].extend(negated_features)
+
+                    # Bundle and compress circuits in case of at least one misclassification
+                    bundle_circuits = True
+
+            if bundle_circuits:
+                # 3. Compress the updated prototypes once after preprocessing all samples
+                for label in self.prototypes:
+                    # Iterate over chunks
+                    for idx in range(len(self.prototypes[label])):
+                        self.prototypes[label][idx] = compress_circuit(quantum_bundle(self._chunk_encoders[label][idx]))
+
+            # 4. Evaluate the newly updated model
+            predictions, similarities = self.predict(train_points)
+
+            current_error = sum(1 for p, t in zip(predictions, train_labels) if p != t) / len(train_labels)
+
+            print(f"\tepoch {epoch}: {current_error}")
+
+            # 5. Check early stopping condition
+            if current_error >= best_error:
+                # The updates made the model worse (or it stopped improving).
+                # Revert to the best known state and exit!
+                self.prototypes = best_prototypes
+                self._chunk_encoders = best_chunk_encoders
+
+                break
+
+            # 6. Improvement found! Update the best error and save the new state
+            best_error = current_error
+
+            best_prototypes = {c: [qc.copy() for qc in chunks] for c, chunks in self.prototypes.items()}
+            best_chunk_encoders = {c: [list(chunk_list) for chunk_list in class_chunks] for c, class_chunks in self._chunk_encoders.items()}
+
+            if best_error == 0.0:
+                break
+
+        return best_error, final_epoch
