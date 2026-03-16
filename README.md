@@ -46,6 +46,16 @@ Please credit our work in your manuscript by citing:
   year    = {2023},
   doi     = {10.21105/joss.05704}
 }
+
+@misc{cumbo2026hdlib,
+  title         = {hdlib 2.0: Extending Machine Learning Capabilities of Vector-Symbolic Architectures}, 
+  author        = {Fabio Cumbo and Kabir Dhillon and Daniel Blankenberg},
+  year          = {2026},
+  eprint        = {2601.02509},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2601.02509}
+}
 ```
 
 ## Other publications
@@ -63,6 +73,8 @@ Please credit our work in your manuscript by citing:
 > Cumbo et al., (2025). A novel Vector-Symbolic Architecture for graph encoding and its application to viral pangenome-based species classification. _bioRxiv_, 2025-09. https://doi.org/10.1101/2025.09.08.674958
 >
 > Cumbo et al., (2025). Quantum Hyperdimensional Computing: a foundational paradigm for quantum neuromorphic architectures. _arXiv_, 2025-11. https://doi.org/10.48550/arXiv.2511.12664
+>
+> Cumbo et al., (2026). Designing vector-symbolic architectures for biomedical applications: ten tips and common pitfalls. _PeerJ Computer Science_, 12, e3682. https://doi.org/10.7717/peerj-cs.3682
 
 ## Support and contributions
 
