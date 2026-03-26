@@ -517,13 +517,19 @@ def run_compute_uncompute_test(
         for prototype_circ in state_right_circs:
             qc = QuantumCircuit(sys, creg)
 
-            # 1. Compute: Apply query state (R)
+            # 1. Initialize uniform superposition
+            qc.h(sys)
+
+            # 2. Compute: Apply query state (R)
             qc.compose(query_circ, qubits=sys, inplace=True)
 
-            # 2. Uncompute: Apply inverse of prototype state (L)
+            # 3. Uncompute: Apply inverse of prototype state (L)
             qc.compose(prototype_circ.inverse(), qubits=sys, inplace=True)
 
-            # 3. Measure all qubits
+            # 4. Map phases back to amplitudes for measurement
+            qc.h(sys)
+
+            # 5. Measure all qubits
             qc.measure(sys, creg)
 
             qcs.append(qc)
