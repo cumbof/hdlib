@@ -249,7 +249,6 @@ def bundle(circuits: list[QuantumCircuit], method: str="average") -> QuantumCirc
         sys_reg = QuantumRegister(n_sys, "sys")
 
         qc = QuantumCircuit(sys_reg, name="Hybrid_Prototype")
-        qc.h(sys_reg)
         qc.append(oracle_gate, sys_reg)
 
         return qc
@@ -261,7 +260,6 @@ def bundle(circuits: list[QuantumCircuit], method: str="average") -> QuantumCirc
     M = len(circuits)
 
     qc = QuantumCircuit(N, name="Bundle_Op")
-    qc.h(range(N))
 
     scale = (1.0 / M)
 
