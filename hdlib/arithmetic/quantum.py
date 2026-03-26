@@ -37,7 +37,14 @@ def statevector_to_bipolar(circuit: QuantumCircuit) -> np.ndarray:
         The corresponding classical bipolar vector of integers (+1 or -1).
     """
 
-    statevector = Statevector.from_instruction(circuit.decompose())
+    # Create a temporary evaluation circuit to read the oracle
+    num_qubits = circuit.num_qubits
+    eval_circ = QuantumCircuit(num_qubits)
+    eval_circ.h(range(num_qubits))
+    eval_circ.compose(circuit, inplace=True)
+
+    # Simulate the fully prepared state
+    statevector = Statevector.from_instruction(eval_circ.decompose())
     statevector_data = np.asarray(statevector.data)
 
     # Heuristic: determine encoding based on the presence of negative real components.
