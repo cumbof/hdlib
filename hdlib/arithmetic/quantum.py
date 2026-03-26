@@ -83,36 +83,35 @@ def compress_circuit(circuit: QuantumCircuit) -> QuantumCircuit:
     Parameters
     ----------
     circuit : QuantumCircuit
-        The deep quantum circuit (e.g., a series of bundled veectors with hundreds of gates).
+        The deep quantum circuit (e.g., a series of bundled vectors with hundreds of gates).
 
     Returns
     -------
     QuantumCircuit
-        A mathematically identical shallow circuit.
+        A mathematically identical shallow circuit oracle.
     """
 
     num_qubits = circuit.num_qubits
 
-    # 1. Mathematically evaluate the exact state of the deep circuit
-    # This captures the pure quantum phase accumulation without noise
-    state = Statevector.from_instruction(circuit.decompose())
+    # 1. Create a temporary evaluation circuit to read the deep oracle
+    eval_circ = QuantumCircuit(num_qubits)
+    eval_circ.h(range(num_qubits))
+    eval_circ.compose(circuit, inplace=True)
+
+    # Mathematically evaluate the exact state to capture phase accumulation
+    state = Statevector.from_instruction(eval_circ.decompose())
 
     # 2. Extract the relative phases of the quantum state
-    # Since vectors are encoded in the phase of a uniform superposition,
-    # the amplitudes are all 1/sqrt(2^N), so we only need the angles.
     phases = np.angle(state.data)
 
     # 3. Create the compressed diagonal operator using the extracted phases
     diagonal_elements = np.exp(1j * phases)
     diag_gate = DiagonalGate(diagonal_elements.tolist())
 
-    # 4. Build the shallow circuit
+    # 4. Build the shallow oracle circuit
     compressed_qc = QuantumCircuit(num_qubits, name=f"{circuit.name}_compressed")
 
-    # Initialize the uniform superposition
-    compressed_qc.h(range(num_qubits))
-
-    # Apply all accumulated phases in a single operation
+    # Apply all accumulated phases in a single operation to return a pure oracle.
     compressed_qc.append(diag_gate, range(num_qubits))
 
     return compressed_qc
