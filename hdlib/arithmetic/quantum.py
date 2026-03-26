@@ -247,7 +247,9 @@ def bundle(circuits: list[QuantumCircuit], method: str="average") -> QuantumCirc
         # Build the circuit
         n_sys = int(log2(len(vector_bundled)))
         sys_reg = QuantumRegister(n_sys, "sys")
+
         qc = QuantumCircuit(sys_reg, name="Hybrid_Prototype")
+        qc.h(sys_reg)
         qc.append(oracle_gate, sys_reg)
 
         return qc
@@ -428,6 +430,14 @@ def __get_measured_physical_qubits(transpiled_circuit: QuantumCircuit, measured_
     """Returns the list of physical qubits that correspond to the measured classical bits.
     """
 
+    try:
+        # Qiskit's transpiler recreates bits. Looking up pre-transpiled Clbit identity
+        # will cause a hash mismatch and throw an error. We map via the transpiled circuit's registers.
+        transpiled_creg = next(reg for reg in transpiled_circuit.cregs if reg.name == measured_register.name)
+
+    except:
+        raise ValueError(f"Register {measured_register.name} not found in transpiled circuit.")
+
     # 1. Create a dictionary to map classical bits to the physical qubits measured into them
     meas_map = dict()
 
@@ -443,7 +453,7 @@ def __get_measured_physical_qubits(transpiled_circuit: QuantumCircuit, measured_
     # 2. Extract the physical qubits in the exact order of the measured_register
     physical_qubits = list()
 
-    for cbit in measured_register:
+    for cbit in transpiled_creg:
         if cbit in meas_map:
             # The index of the physical qubit in the transpiled circuit
             physical_qubits.append(meas_map[cbit])
@@ -451,7 +461,10 @@ def __get_measured_physical_qubits(transpiled_circuit: QuantumCircuit, measured_
         else:
             raise ValueError(f"Classical bit {cbit} does not have a measurement mapped to it.")
 
-    return physical_qubits
+    # Qiskit results return bitstrings from MSB to LSB (left to right = c_{N-1} ... c_0).
+    # M3 mitigation expects the passed physical_qubits list to identically match that string's left-to-right order.
+    # Therefore, we must reverse the physical qubits list here to avoid applying the wrong error profile to the wrong bits.
+    return physical_qubits[::-1]
 
 def __mitigate_counts(counts, backend, shots, measured_qubits, mitigator: Optional[M3Mitigation]=None):
     """Apply readout error mitigation using mthree to a single-qubit measurement.
@@ -469,151 +482,13 @@ def __mitigate_counts(counts, backend, shots, measured_qubits, mitigator: Option
     mitigated_pseudo_counts = dict()
 
     for state, prob in probs.items():
-        # Use max(0, prob) because M3 can sometimes output tiny negative quasi-probabilities
-        safe_prob = max(0.0, prob)
+        # Clamp quasi-probabilities to strictly between 0.0 and 1.0
+        # M3 can sometimes output tiny negative values or values slightly above 1.0
+        safe_prob = min(1.0, max(0.0, prob))
         mitigated_pseudo_counts[state] = int(round(safe_prob * shots))
 
     # Return mitigated probabilities as pseudo-counts
     return mitigated_pseudo_counts
-
-def run_hadamard_test(
-    state_left_circ: QuantumCircuit,
-    state_right_circ: QuantumCircuit,
-    backend: Backend,
-    shots: int=1024,
-    seed: int=42,
-    sampler: Optional[Sampler]=None
-) -> Tuple[float, dict]: 
-    """Performs a Hadamard test to measure the real part of the inner product
-    between two quantum states: Re(<L|R>).
-
-    The states |L> and |R> are prepared by state_left_circ and state_right, respectively.
-    This circuit measures P(0) - P(1), which equals Re(<L|R>).
-
-    Parameters
-    ----------
-    state_left_circ : qiskit.QuantumCircuit
-        The circuit that prepares the first quantum state |L> (the "target").
-        In the reasoning test, this has n_sys qubits.
-    state_right_circ : qiskit.QuantumCircuit
-        The circuit that prepares the second quantum state |R> (the "query").
-    backend : qiskit.providers.backend.Backend
-        The Qiskit backend (simulator or real hardware) on which to run the test.
-    shots : int, default 1024
-        The number of times to run the circuit to estimate probabilities.
-    seed : int, default 42
-        A seed for reproducibility of simulation and transpilation.
-    sampler : qiskit_ibm_runtime.Sampler, optional
-        An optional, pre-configured Sampler object for efficient hardware execution
-        within a Session.
-
-    Returns
-    -------
-    tuple[float, dict]
-        A tuple containing:
-        - The calculated similarity (Re(<L|R>) = P(0) - P(1)).
-        - A dictionary of the measurement counts ('0' and '1').
-
-    Raises
-    ------
-    ValueError
-        - If qubit dimensions are incompatible (n_total < n_sys).
-        - If a Sampler is not provided for hardware execution.
-    """
-
-    is_simulated = isinstance(backend, AerSimulator)
-    n_total = state_right_circ.num_qubits
-
-    # Total qubits (sys + anc) from larger circuit
-    n_sys = state_left_circ.num_qubits
-
-    # System-only qubits from smaller circuit
-    if n_total < n_sys:
-        raise ValueError(f"Right circuit qubits ({n_total}) < Left circuit qubits ({n_sys}).")
-
-    num_anc_pad = n_total - n_sys
-
-    # We want to compute Re(<psi_L_padded | psi_R>)
-    # |psi_L_padded> = (state_left_circ @ I_anc) |0>
-    # |psi_R> = state_right_circ |0>
-    try:
-        v_l_padded_gate = state_left_circ.to_gate(label="Prep_L_Pad")
-
-    except:
-        t_left = transpile(state_left_circ, basis_gates=["u", "cx"], optimization_level=0)
-        v_l_padded_gate = t_left.to_gate(label="Prep_L")
-
-    try:
-        v_r_gate = state_right_circ.to_gate(label="Prep_R")
-
-    except:
-        t_right = transpile(state_right_circ, basis_gates=["u", "cx"], optimization_level=0)
-        v_r_gate = t_right.to_gate(label="Prep_L")
-
-    anc = QuantumRegister(1, "anc_had")
-    sys = QuantumRegister(n_total, "sys")
-    creg = ClassicalRegister(1, "c_had")
-    qc = QuantumCircuit(anc, sys, creg)
-
-    # 1. Start ancilla in |+>
-    qc.h(anc)
-
-    # 2. Apply C-V_L_padded
-    # State is 1/sqrt(2) * (|0>|0> + |1>|psi_L_padded>)
-    system_qubits_on_sys = sys[num_anc_pad:]
-    qc.append(v_l_padded_gate.control(1), [anc[0]] + system_qubits_on_sys)
-
-    # 3. Apply X to ancilla
-    # State is 1/sqrt(2) * (|1>|0> + |0>|psi_L_padded>)
-    qc.x(anc)
-
-    # 4. Apply C-V_R
-    # State is 1/sqrt(2) * (|1>|psi_R> + |0>|psi_L_padded>)
-    qc.append(v_r_gate.control(1), anc[:] + sys[:])
-
-    # 5. End with H on ancilla (measures in X basis)
-    qc.h(anc)
-    qc.measure(anc, creg)
-
-    # Report circuit metrics
-    #print(f"Hadamard Test metrics: {get_circuit_metrics(qc, n_sys, backend, optimization_level=3)}")
-
-    if is_simulated:
-        tqc = transpile(qc, backend)
-        counts = backend.run(tqc, shots=shots, seed_simulator=seed).result().get_counts()
-
-    else:
-        if not sampler:
-            raise ValueError("A Sampler object must be provided for hardware execution.")
-
-        tqc = transpile(qc, backend, optimization_level=3)
-
-        job = sampler.run([tqc], shots=shots)
-        result = job.result()
-
-        bit_array_data = result[0].data.c_had
-
-        counts_1 = np.count_nonzero(bit_array_data.array == 1)
-        counts_0 = shots - counts_1
-        counts = {"0": counts_0, "1": counts_1}
-
-        # Automatically detect measured qubits
-        measured_qubits = __get_measured_physical_qubits(tqc, creg)
-
-        # Initialize mitigator from backend
-        mitigator = M3Mitigation(backend)
-        mitigator.cals_from_system(qubits=measured_qubits)
-
-        # Apply readout error mitigation
-        counts = __mitigate_counts(counts, backend, shots, measured_qubits, mitigator=mitigator)
-
-    # Calculation
-    # Re(<psi_L|psi_R>) = P(0) - P(1)
-    p0 = counts.get("0", 0) / shots
-    p1 = counts.get("1", 0) / shots
-    similarity = p0 - p1
-
-    return similarity, counts
 
 def run_compute_uncompute_test(
     state_left_circs: List[QuantumCircuit],
@@ -678,7 +553,7 @@ def run_compute_uncompute_test(
 
         for tqc in tqcs:
             # Automatically detect measured qubits
-            phys_qubits = __get_measured_physical_qubits(tqcs, creg)
+            phys_qubits = __get_measured_physical_qubits(tqc, creg)
             all_measured_qubits.update(phys_qubits)
             circuit_measured_qubits.append(phys_qubits)
 
@@ -703,9 +578,13 @@ def run_compute_uncompute_test(
         query_sims = list()
 
         for _ in state_right_circs:
-            # Because both simulator and mitigated brances output integers/pseudo-counts
+            # Because both simulator and mitigated branches output integers/pseudo-counts
             # that sum to 'shots', dividing by 'shots' here correctly yields the probability.
-            query_sims.append(counts[idx].get(target_state, 0) / shots)
+            raw_prob = counts[idx].get(target_state, 0) / shots
+
+            # The compute-uncompute test measures |<L|R>|^2
+            # We took the square root to return the similarity magnitude |<L|R>|
+            query_sims.append(sqrt(raw_prob))
 
             idx += 1
 
@@ -760,7 +639,10 @@ def get_circuit_metrics(circuit: QuantumCircuit, num_system_qubits: int, backend
     # Get metrics from the transpiled circuit
     depth = t_circ.depth()
     ops_count = t_circ.count_ops()
-    cnot_count = ops_count.get('cx', 0)
+
+    # Added fallback counters for "ecr" and "cz". IBM backends map "cx" to "ecr" 
+    # natively during transpilation, which used to cause "cx" count to report as 0.
+    cnot_count = ops_count.get("cx", 0) + ops_count.get("ecr", 0) + ops_count.get("cz", 0)
 
     return {
         "num_qubits_total": num_qubits_total,
