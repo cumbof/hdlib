@@ -14,6 +14,7 @@ from sklearn.metrics import accuracy_score
 
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
+from qiskit_aer import AerSimulator
 
 # Define the hdlib root directory
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -31,6 +32,7 @@ from hdlib.arithmetic.quantum import (
     bind as quantum_bind,
     bundle as quantum_bundle,
     permute as quantum_permute,
+    run_compute_uncompute_test as quantum_similarity,
     negate_circuits,
     statevector_to_bipolar
 )
@@ -307,7 +309,6 @@ class TestHDLib(unittest.TestCase):
         """
 
         dimensionality = 16
-        num_qubits = int(math.log2(dimensionality))
 
         # Classical encoding
         v_classical = Vector(size=dimensionality, vtype="bipolar")
@@ -317,12 +318,8 @@ class TestHDLib(unittest.TestCase):
         # we must apply it to a uniform superposition
         oracle_circ = quantum_encode(v_classical.vector, label="Test_Vector")
 
-        qc = QuantumCircuit(num_qubits)
-        qc.h(range(num_qubits))
-        qc.append(oracle_circ, range(num_qubits))
-
         # Decode
-        v_recovered = statevector_to_bipolar(qc)
+        v_recovered = statevector_to_bipolar(oracle_circ)
 
         self.assertTrue(np.array_equal(v_classical.vector, v_recovered))
 
@@ -333,7 +330,6 @@ class TestHDLib(unittest.TestCase):
         """
 
         dimensionality = 16
-        num_qubits = int(math.log2(dimensionality))
 
         # Classical encoding
         v1_classical = Vector(size=dimensionality, vtype="bipolar")
@@ -348,12 +344,8 @@ class TestHDLib(unittest.TestCase):
         # Apply binding
         bound_op = quantum_bind([oracle_circ1, oracle_circ2])
 
-        qc = QuantumCircuit(num_qubits)
-        qc.h(range(num_qubits))
-        qc.append(bound_op, range(num_qubits))
-
         # Decode
-        v_recovered = statevector_to_bipolar(qc)
+        v_recovered = statevector_to_bipolar(bound_op)
 
         self.assertTrue(np.array_equal(v_bound_classical.vector, v_recovered))
 
@@ -364,7 +356,6 @@ class TestHDLib(unittest.TestCase):
         """
 
         dimensionality = 16
-        num_qubits = int(math.log2(dimensionality))
 
         # Classical encoding
         v1_classical = Vector(size=dimensionality, vtype="bipolar")
@@ -389,7 +380,6 @@ class TestHDLib(unittest.TestCase):
         """
 
         dimensionality = 16
-        num_qubits = int(math.log2(dimensionality))
 
         # Classical encoding
         v_classical = Vector(size=dimensionality, vtype="bipolar")
@@ -421,18 +411,42 @@ class TestHDLib(unittest.TestCase):
         v_permuted_classical = permute(v_classical, rotate_by=shift)
 
         # Quantum encoding
-        qc = QuantumCircuit(num_qubits)
-        qc.h(range(num_qubits))
-        qc.append(quantum_encode(v_classical.vector), range(num_qubits))
+        oracle_circ = quantum_encode(v_classical.vector)
 
         # Apply permute
-        qc = quantum_permute(qc, num_qubits, shift=shift)
+        qc = quantum_permute(oracle_circ, num_qubits, shift=shift)
 
         # Decode
         v_recovered = statevector_to_bipolar(qc)
 
         self.assertTrue(np.array_equal(v_permuted_classical.vector, v_recovered))
 
+    def test_quantum_similarity(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:run_compute_uncompute_test
+
+        Tests if the quantum similarity function correctly estimate the similarity between two oracle circuits.
+        """
+
+        dimensionality = 16
+
+        v1_classical = Vector(size=dimensionality, vtype="bipolar")
+        v2_classical = Vector(size=dimensionality, vtype="bipolar", vector=v1_classical.vector)
+
+        # Compute the cosine distance and transform it back to similarity
+        classical_similarity = 1 - v1_classical.dist(v2_classical, method="cosine")
+
+        # Quantum encoding
+        v1_oracle_circ = quantum_encode(v1_classical.vector)
+        v2_oracle_circ = quantum_encode(v2_classical.vector)
+
+        # Initialize simulator
+        backend = AerSimulator()
+
+        # Compute-Uncompute
+        cu_matrix = quantum_similarity([v1_oracle_circ], [v2_oracle_circ], backend=backend, shots=10000)
+        compute_uncompute_similarity = cu_matrix[0][0]
+
+        self.assertAlmostEqual(compute_uncompute_similarity, abs(classical_similarity), delta=0.05)
 
 if __name__ == "__main__":
     unittest.main()
