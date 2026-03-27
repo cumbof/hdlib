@@ -116,10 +116,13 @@ if __name__ == "__main__":
     print("--- 1. Preparing MNIST Dataset ---")
 
     # Retrieve the MNIST dataset
-    (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
+    (X_train_raw, y_train_raw), (X_test_raw, y_test_raw) = tf.keras.datasets.mnist.load_data()
+
+    X_raw_pool = np.concatenate((X_train_raw, X_test_raw))
+    y_raw_pool = np.concatenate((y_train_raw, y_test_raw))
 
     # Rescale the images from [0,255] to the [0.0,1.0] range
-    X_train, X_test = X_train[..., np.newaxis] / 255.0, X_test[..., np.newaxis] / 255.0
+    X_raw_pool = X_raw_pool[..., np.newaxis] / 255.0
 
     # Filter the dataset to keep just the 3s and 6s, remove the other classes
     def filter_3_6(X, y):
@@ -129,16 +132,13 @@ if __name__ == "__main__":
         y = (y == 3).astype(int)
         return X, y
 
-    X_train, y_train = filter_3_6(X_train, y_train)
-    X_test, y_test = filter_3_6(X_test, y_test)
+    X_filtered, y_filtered = filter_3_6(X_raw_pool, y_raw_pool)
 
-    print(f"Filtered training set size: {len(X_train)}")
-    print(f"Filtered test set size: {len(X_test)}")
+    print(f"Filtered pool size: {len(X_filtered)}")
 
     # Downscale the images
-    # An image size of 28x28 is much too large for current quantum computers. Resize the image down to 4x4
-    X_train_small = tf.image.resize(X_train, (4, 4)).numpy()
-    X_test_small = tf.image.resize(X_test, (4, 4)).numpy()
+    # An image size of 28x28 is much too large for current quantum computers. Resize the image down to 8x8
+    X_small = tf.image.resize(X_filtered, (8, 8)).numpy()
 
     # Remove contradictory examples
     # Filter the dataset to remove images that are labeled as belonging to both classes
@@ -166,70 +166,46 @@ if __name__ == "__main__":
 
     # This is not a standard machine-learning procedure, but it is included in the interest of following the paper:
     # Farhi, E et al. "Classification with quantum neural networks on near term processors". arXiv (2018). https://doi.org/10.48550/arXiv.1802.06002
-    X_train_nocon, y_train_nocon = remove_contradicting(X_train_small, y_train)
+    X_nocon, y_nocon = remove_contradicting(X_small, y_filtered)
 
-    print(f"Training set size after removing contradictions: {len(X_train_nocon)}")
+    print(f"Pool size after removing contradictions: {len(X_nocon)}")
 
     print("\n--- 2. Binarizing Images and Formatting Data ---")
 
     # Convert grayscale images to black and white
     # Apply a threshold to binarize the pixel values
     threshold = 0.5
-    X_train_bin = (X_train_nocon >= threshold).astype(float)
-    X_test_bin = (X_test_small >= threshold).astype(float)
+    X_bin = (X_nocon >= threshold).astype(float)
 
     print(f"Pixel values binarized using a {threshold} threshold")
 
     # Our QuantumClassificationModel expects a flat list of features for each sample
-    # Reshape the (4, 4, 1) images into (16,) vectors
-    X_train_flat = X_train_bin.reshape(X_train_bin.shape[0], -1)
-    X_test_flat = X_test_bin.reshape(X_test_bin.shape[0], -1)
-
-    # The model's fit/predict methods expect lists, not numpy arrays
-    X_train_list = X_train_flat.tolist()
-    y_train_list = y_train_nocon.tolist()
-    X_test_list = X_test_flat.tolist()
+    # Reshape the (8, 8, 1) images into (64,) vectors
+    X_flat = X_bin.reshape(X_bin.shape[0], -1)
 
     print("Data formatting complete. Sample features are now 16-element vectors of 0s and 1s")
 
     print("\n--- 3. Subsampling Data and Preparing for Cross-Validation ---")
 
-    # Define the number of samples to keep for training and testing
-    n_train = 100
-    n_test = 50
+    # Define the total number of samples to keep for cross validation
+    total_cv_samples = 150
 
     # Use a fixed seed for reproducibility shuffling
     np.random.seed(42)
 
     # Shuffle the training data to ensure randomness
-    shuffle_indices_train = np.random.permutation(len(X_train_list))
+    shuffle_indices = np.random.permutation(len(X_flat))
+    cv_indices = shuffle_indices[:total_cv_samples]
 
     # Apply shuffle to both data and labels
-    X_train_shuffled = [X_train_list[i] for i in shuffle_indices_train]
-    y_train_shuffled = [y_train_list[i] for i in shuffle_indices_train]
-
-    # Take a small slice of the data for the final training set
-    X_train_sub = X_train_shuffled[:n_train]
-    y_train_sub = y_train_shuffled[:n_train]
-
-    # Shuffle and slice the test data as well
-    shuffle_indices_test = np.random.permutation(len(X_test_list))
-    X_test_shuffled = [X_test_list[i] for i in shuffle_indices_test]
-    y_test_shuffled = [y_test[i] for i in shuffle_indices_test]
-
-    # Take a small slice of the data for the final test set
-    X_test_sub = X_test_shuffled[:n_test]
-    y_test_sub = [int(l) for l in y_test_shuffled[:n_test]] # Ensure labels are int
-
-    # Combine subsampled train and test sets for cross-validation
-    X_final = X_train_sub + X_test_sub
-    y_final = y_train_sub + y_test_sub
+    X_cv_pool = [X_flat[i].tolist() for i in cv_indices]
+    y_cv_pool = [int(y_nocon[i]) for i in cv_indices]
 
     # Convert to numpy array for KFold splitting, though models expect lists
-    X_final_np = np.array(X_final)
-    y_final_np = np.array(y_final)
+    X_cv_pool_np = np.array(X_cv_pool)
+    y_cv_pool_np = np.array(y_cv_pool)
 
-    print(f"Combined dataset for cross-validation: {len(X_final)} samples")
+    print(f"Combined dataset for cross-validation: {len(X_cv_pool_np)} samples")
 
     # --- 4. Running 5-Fold Cross-Validation ---
     print("\n--- 4. Initializing 5-Fold Cross-Validation ---")
@@ -240,10 +216,10 @@ if __name__ == "__main__":
     # Lists to store results from each fold
     classical_10k_reports = list()
     classical_10k_matrices = list()
-    classical_8_reports = list()
-    classical_8_matrices = list()
-    quantum_8_reports = list()
-    quantum_8_matrices = list()
+    classical_reports = list()
+    classical_matrices = list()
+    quantum_reports = list()
+    quantum_matrices = list()
     vqc_reports = list()
     vqc_matrices = list()
     qsvc_reports = list()
@@ -251,21 +227,23 @@ if __name__ == "__main__":
 
     # Lists to store timing for each fold
     classical_10k_times = list()
-    classical_8_times = list()
-    quantum_8_times = list()
+    classical_times = list()
+    quantum_times = list()
     vqc_times = list()
     qsvc_times = list()
 
     # New lists to store (true_label, score) tuples for ROC curve data
     classical_10k_roc_data = list()
-    classical_8_roc_data = list()
-    quantum_8_roc_data = list()
+    classical_roc_data = list()
+    quantum_roc_data = list()
     vqc_roc_data = list()
     qsvc_roc_data = list()
 
+    dimensionality = 128
+
     fold_num = 1
 
-    for train_index, test_index in kf.split(X_final_np):        
+    for train_index, test_index in kf.split(X_cv_pool_np):        
         checkpoint_file = f"fold_{fold_num}_results.json"
 
         # --- Checkpoint Loading ---
@@ -282,17 +260,17 @@ if __name__ == "__main__":
             classical_10k_times.append(fold_data['c10k_time'])
             classical_10k_roc_data.extend(fold_data['c10k_roc_data'])
 
-            # Load and append C8 data
-            classical_8_reports.append(fold_data['c8_report'])
-            classical_8_matrices.append(np.array(fold_data['c8_matrix']))
-            classical_8_times.append(fold_data['c8_time'])
-            classical_8_roc_data.extend(fold_data['c8_roc_data'])
+            # Load and append C data
+            classical_reports.append(fold_data['c_report'])
+            classical_matrices.append(np.array(fold_data['c_matrix']))
+            classical_times.append(fold_data['c_time'])
+            classical_roc_data.extend(fold_data['c_roc_data'])
 
-            # Load and append Q8 data
-            quantum_8_reports.append(fold_data['q8_report'])
-            quantum_8_matrices.append(np.array(fold_data['q8_matrix']))
-            quantum_8_times.append(fold_data['q8_time'])
-            quantum_8_roc_data.extend(fold_data['q8_roc_data'])
+            # Load and append Q data
+            quantum_reports.append(fold_data['q_report'])
+            quantum_matrices.append(np.array(fold_data['q_matrix']))
+            quantum_times.append(fold_data['q_time'])
+            quantum_roc_data.extend(fold_data['q_roc_data'])
 
             # Load and append VQC data
             vqc_reports.append(fold_data['vqc_report'])
@@ -315,15 +293,15 @@ if __name__ == "__main__":
 
         # Create list-based data for this fold
         # The models expect lists, not numpy arrays
-        X_train_fold = [X_final[i] for i in train_index]
-        y_train_fold = [y_final[i] for i in train_index]
-        X_test_fold = [X_final[i] for i in test_index]
-        y_test_fold = [y_final[i] for i in test_index]
+        X_train_fold = [X_cv_pool[i] for i in train_index]
+        y_train_fold = [y_cv_pool[i] for i in train_index]
+        X_test_fold = [X_cv_pool[i] for i in test_index]
+        y_test_fold = [y_cv_pool[i] for i in test_index]
 
         # Create numpy versions for Qiskit models
-        X_train_fold_np = X_final_np[train_index]
-        y_train_fold_np = y_final_np[train_index]
-        X_test_fold_np = X_final_np[test_index]
+        X_train_fold_np = X_cv_pool_np[train_index]
+        y_train_fold_np = y_cv_pool_np[train_index]
+        X_test_fold_np = X_cv_pool_np[test_index]
         # y_test_fold_np is y_test_fold (already a list of ints)
 
         # Prepare data for the classical model's specific fit/predict format
@@ -358,66 +336,66 @@ if __name__ == "__main__":
                 score_for_class_1 = 0.5
             fold_roc_data_c10k.append((true_label, float(score_for_class_1)))
 
-        # --- Classical Model (Dimensionality=8) ---
-        print("\nTraining Classical Model (D=8)...")
-        start_time_c8 = time.perf_counter()
-        model_c8 = ClassificationModel(size=8, levels=2)
-        model_c8.fit(X_all_fold, y_all_fold) # Uses same X_all_fold, y_all_fold, test_idx_fold
+        # --- Classical Model ---
+        print(f"\nTraining Classical Model (D={dimensionality})...")
+        start_time_c = time.perf_counter()
+        model_c = ClassificationModel(size=dimensionality, levels=2)
+        model_c.fit(X_all_fold, y_all_fold) # Uses same X_all_fold, y_all_fold, test_idx_fold
 
-        print("Evaluating Classical Model (D=8)...")
+        print(f"Evaluating Classical Model (D={dimensionality})...")
         # Capture the 'similarities' output (index 2)
-        _, y_pred_c8, similarities_c8, _, _, _ = model_c8.predict(test_idx_fold, retrain=0)
-        end_time_c8 = time.perf_counter()
+        _, y_pred_c, similarities_c, _, _, _ = model_c.predict(test_idx_fold, retrain=0)
+        end_time_c = time.perf_counter()
 
         # Store this fold's results in variables
-        fold_time_c8 = end_time_c8 - start_time_c8
-        fold_report_c8 = classification_report(y_test_fold, y_pred_c8, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-        fold_matrix_c8 = confusion_matrix(y_test_fold, y_pred_c8, labels=[0, 1]) # Ensure consistent label order
+        fold_time_c = end_time_c - start_time_c
+        fold_report_c = classification_report(y_test_fold, y_pred_c, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+        fold_matrix_c = confusion_matrix(y_test_fold, y_pred_c, labels=[0, 1]) # Ensure consistent label order
 
         # Store ROC data points (True Label, Score for Class 1)
-        fold_roc_data_c8 = list()
-        for true_label, sim_pair in zip(y_test_fold, similarities_c8):
+        fold_roc_data_c = list()
+        for true_label, sim_pair in zip(y_test_fold, similarities_c):
             # Invert distance (0 to 1) to create a score (0 to 1), where 1 is a perfect match
             score_for_class_1 = 1.0 - sim_pair[1] # Using 1.0 - distance_to_positive_class
             if math.isnan(score_for_class_1):
                 score_for_class_1 = 0.5
-            fold_roc_data_c8.append((true_label, float(score_for_class_1)))
+            fold_roc_data_c.append((true_label, float(score_for_class_1)))
 
-        # --- Quantum Model (Dimensionality=8) ---
-        print("\nTraining Quantum Model (D=8; chunk_size=5)...")
-        start_time_q8 = time.perf_counter()
+        # --- Quantum Model ---
+        print(f"\nTraining Quantum Model (D={dimensionality}; chunk_size=5)...")
+        start_time_q = time.perf_counter()
 
         # Noise-free simulation
-        model_q8 = QuantumClassificationModel(size=8, levels=2, shots=10000)
+        model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000)
 
         # Simulation with noise model
-        #model_q8 = QuantumClassificationModel(size=8, levels=2, shots=10000, api_key=API_KEY, noise_model_from=BACKEND)
+        #model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000, api_key=API_KEY, noise_model_from=BACKEND)
 
         # Quantum hardware
-        #model_q8 = QuantumClassificationModel(size=8, levels=2, shots=10000, channel=CHANNEL, instance=INSTANCE, backend=BACKEND, api_key=API_KEY)
+        #model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000, channel=CHANNEL, instance=INSTANCE, backend=BACKEND, api_key=API_KEY)
 
         # One-shot learning
-        model_q8.fit(X_train_fold, y_train_fold, chunk_size=5) # Quantum model uses standard fit/predict
+        model_q.fit(X_train_fold, y_train_fold, chunk_size=5) # Quantum model uses standard fit/predict
 
-        print("Retraining Quantum Model (D=8; epochs=10)...")
-        error_rate, epochs = model_q8.retrain(X_train_fold, y_train_fold, epochs=10)
+        print(f"Retraining Quantum Model (D={dimensionality}; epochs=10)...")
+        error_rate, epochs = model_q.retrain(X_train_fold, y_train_fold, epochs=10)
 
-        print("\nEvaluating Quantum Model (D=8)...")
-        y_pred_q8, scores_q8 = model_q8.predict(X_test_fold)
-        end_time_q8 = time.perf_counter()
+        print(f"\nEvaluating Quantum Model (D={dimensionality})...")
+        y_pred_q, scores_q = model_q.predict(X_test_fold)
+        end_time_q = time.perf_counter()
 
         # Store this fold's results in variables
-        fold_time_q8 = end_time_q8 - start_time_q8
-        fold_report_q8 = classification_report(y_test_fold, y_pred_q8, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-        fold_matrix_q8 = confusion_matrix(y_test_fold, y_pred_q8, labels=[0, 1]) # Ensure consistent label order
+        fold_time_q = end_time_q - start_time_q
+        fold_report_q = classification_report(y_test_fold, y_pred_q, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+        fold_matrix_q = confusion_matrix(y_test_fold, y_pred_q, labels=[0, 1]) # Ensure consistent label order
 
         # Store ROC data points (True Label, Score for Class 1)
-        fold_roc_data_q8 = list()
-        for true_label, score_pair in zip(y_test_fold, scores_q8):
+        fold_roc_data_q = list()
+        for true_label, score_pair in zip(y_test_fold, scores_q):
             score_for_class_1 = score_pair[1] # Using score for positive class (Digit 3)
             if math.isnan(score_for_class_1):
                 score_for_class_1 = 0.5
-            fold_roc_data_q8.append((true_label, float(score_for_class_1)))
+            fold_roc_data_q.append((true_label, float(score_for_class_1)))
 
         n_features = X_train_fold_np.shape[1] # Should be 16
 
@@ -502,15 +480,15 @@ if __name__ == "__main__":
             'c10k_time': fold_time_c10k,
             'c10k_roc_data': fold_roc_data_c10k,
 
-            'c8_report': fold_report_c8,
-            'c8_matrix': fold_matrix_c8.tolist(),
-            'c8_time': fold_time_c8,
-            'c8_roc_data': fold_roc_data_c8,
+            'c_report': fold_report_c,
+            'c_matrix': fold_matrix_c.tolist(),
+            'c_time': fold_time_c,
+            'c_roc_data': fold_roc_data_c,
 
-            'q8_report': fold_report_q8,
-            'q8_matrix': fold_matrix_q8.tolist(),
-            'q8_time': fold_time_q8,
-            'q8_roc_data': fold_roc_data_q8,
+            'q_report': fold_report_q,
+            'q_matrix': fold_matrix_q.tolist(),
+            'q_time': fold_time_q,
+            'q_roc_data': fold_roc_data_q,
 
             'vqc_report': fold_report_vqc,
             'vqc_matrix': fold_matrix_vqc.tolist(),
@@ -535,15 +513,15 @@ if __name__ == "__main__":
         classical_10k_times.append(fold_time_c10k)
         classical_10k_roc_data.extend(fold_roc_data_c10k)
 
-        classical_8_reports.append(fold_report_c8)
-        classical_8_matrices.append(fold_matrix_c8)
-        classical_8_times.append(fold_time_c8)
-        classical_8_roc_data.extend(fold_roc_data_c8)
+        classical_reports.append(fold_report_c)
+        classical_matrices.append(fold_matrix_c)
+        classical_times.append(fold_time_c)
+        classical_roc_data.extend(fold_roc_data_c)
 
-        quantum_8_reports.append(fold_report_q8)
-        quantum_8_matrices.append(fold_matrix_q8)
-        quantum_8_times.append(fold_time_q8)
-        quantum_8_roc_data.extend(fold_roc_data_q8)
+        quantum_reports.append(fold_report_q)
+        quantum_matrices.append(fold_matrix_q)
+        quantum_times.append(fold_time_q)
+        quantum_roc_data.extend(fold_roc_data_q)
 
         vqc_reports.append(fold_report_vqc)
         vqc_matrices.append(fold_matrix_vqc)
@@ -561,8 +539,8 @@ if __name__ == "__main__":
     print("\n--- 5. Cross-Validation Results Summary ---")
 
     print_cv_summary("Classical Model (D=10000)", classical_10k_reports, classical_10k_matrices, classical_10k_times, N_SPLITS)
-    print_cv_summary("Classical Model (D=8)", classical_8_reports, classical_8_matrices, classical_8_times, N_SPLITS)
-    print_cv_summary("Quantum Model (D=8)", quantum_8_reports, quantum_8_matrices, quantum_8_times, N_SPLITS)
+    print_cv_summary(f"Classical Model (D={dimensionality})", classical_reports, classical_matrices, classical_times, N_SPLITS)
+    print_cv_summary(f"Quantum Model (D={dimensionality})", quantum_reports, quantum_matrices, quantum_times, N_SPLITS)
     print_cv_summary("VQC Model (QNN)", vqc_reports, vqc_matrices, vqc_times, N_SPLITS)
     print_cv_summary("QSVC Model (QSVM)", qsvc_reports, qsvc_matrices, qsvc_times, N_SPLITS)
 
@@ -573,13 +551,13 @@ if __name__ == "__main__":
     print("[(True Label, Score for Class 1), ...]")
     print(classical_10k_roc_data)
 
-    print(f"\nClassical Model (D=8) ROC Data ({len(classical_8_roc_data)} points):")
+    print(f"\nClassical Model (D={dimensionality}) ROC Data ({len(classical_roc_data)} points):")
     print("[(True Label, Score for Class 1), ...]")
-    print(classical_8_roc_data)
+    print(classical_roc_data)
 
-    print(f"\nQuantum Model (D=8) ROC Data ({len(quantum_8_roc_data)} points):")
+    print(f"\nQuantum Model (D={dimensionality}) ROC Data ({len(quantum_roc_data)} points):")
     print("[(True Label, Score for Class 1), ...]")
-    print(quantum_8_roc_data)
+    print(quantum_roc_data)
 
     print(f"\nVQC Model (QNN) ROC Data ({len(vqc_roc_data)} points):")
     print("[(True Label, Score for Class 1), ...]")
@@ -610,27 +588,27 @@ if __name__ == "__main__":
             print("[(FPR, TPR), ...]")
             print(roc_points_c10k)
 
-        # --- Classical Model (D=8) ---
-        if classical_8_roc_data:
-            y_true_c8 = [item[0] for item in classical_8_roc_data]
-            y_scores_c8 = [item[1] for item in classical_8_roc_data]
-            fpr_c8, tpr_c8, _ = roc_curve(y_true_c8, y_scores_c8)
-            roc_points_c8 = list(zip(fpr_c8, tpr_c8))
+        # --- Classical Model ---
+        if classical_roc_data:
+            y_true_c = [item[0] for item in classical_roc_data]
+            y_scores_c = [item[1] for item in classical_roc_data]
+            fpr_c, tpr_c, _ = roc_curve(y_true_c, y_scores_c)
+            roc_points_c = list(zip(fpr_c, tpr_c))
 
-            print(f"\nClassical Model (D=8) ROC Plot Points ({len(roc_points_c8)} points):")
+            print(f"\nClassical Model (D={dimensionality}) ROC Plot Points ({len(roc_points_c)} points):")
             print("[(FPR, TPR), ...]")
-            print(roc_points_c8)
+            print(roc_points_c)
 
-        # --- Quantum Model (D=8) ---
-        if quantum_8_roc_data:
-            y_true_q8 = [item[0] for item in quantum_8_roc_data]
-            y_scores_q8 = [item[1] for item in quantum_8_roc_data]
-            fpr_q8, tpr_q8, _ = roc_curve(y_true_q8, y_scores_q8)
-            roc_points_q8 = list(zip(fpr_q8, tpr_q8))
+        # --- Quantum Model ---
+        if quantum_roc_data:
+            y_true_q = [item[0] for item in quantum_roc_data]
+            y_scores_q = [item[1] for item in quantum_roc_data]
+            fpr_q, tpr_q, _ = roc_curve(y_true_q, y_scores_q)
+            roc_points_q = list(zip(fpr_q, tpr_q))
 
-            print(f"\nQuantum Model (D=8) ROC Plot Points ({len(roc_points_q8)} points):")
+            print(f"\nQuantum Model (D={dimensionality}) ROC Plot Points ({len(roc_points_q)} points):")
             print("[(FPR, TPR), ...]")
-            print(roc_points_q8)
+            print(roc_points_q)
 
         # --- VQC Model (QNN) ---
         if vqc_roc_data:
