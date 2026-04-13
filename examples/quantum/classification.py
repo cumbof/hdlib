@@ -57,7 +57,7 @@ def print_cv_summary(model_name, reports, matrices, times, n_splits):
 
     # Average metrics from reports
     try:
-        # avg_accuracy = np.mean([r['accuracy'] for r in reports])
+        avg_accuracy = np.mean([r['accuracy'] for r in reports])
 
         # Calculate average and std dev for F1 scores
         macro_f1_scores = [r['macro avg']['f1-score'] for r in reports]
@@ -93,7 +93,7 @@ def print_cv_summary(model_name, reports, matrices, times, n_splits):
         avg_f1_3 = np.mean(f1_3_scores) if f1_3_scores else 0
         std_f1_3 = np.std(f1_3_scores) if f1_3_scores else 0
 
-        # print(f"Average Accuracy: {avg_accuracy:.4f}")
+        print(f"Average Accuracy: {avg_accuracy:.4f}")
         print(f"Average Macro F1-Score:     {avg_macro_f1:.4f} ± {std_macro_f1:.4f}")
         print(f"Average Weighted F1-Score: {avg_weighted_f1:.4f} ± {std_weighted_f1:.4f}")
 
@@ -137,8 +137,8 @@ if __name__ == "__main__":
     print(f"Filtered pool size: {len(X_filtered)}")
 
     # Downscale the images
-    # An image size of 28x28 is much too large for current quantum computers. Resize the image down to 8x8
-    X_small = tf.image.resize(X_filtered, (8, 8)).numpy()
+    # An image size of 28x28 is much too large for current quantum computers. Resize the image down to 4x4
+    X_small = tf.image.resize(X_filtered, (4, 4)).numpy()
 
     # Remove contradictory examples
     # Filter the dataset to remove images that are labeled as belonging to both classes
@@ -185,17 +185,30 @@ if __name__ == "__main__":
 
     print("Data formatting complete. Sample features are now 16-element vectors of 0s and 1s")
 
-    print("\n--- 3. Subsampling Data and Preparing for Cross-Validation ---")
+    print("\n--- 3. Subsampling Data and Preparing for Balanced Cross-Validation ---")
 
     # Define the total number of samples to keep for cross validation
     total_cv_samples = 150
+    samples_per_class = total_cv_samples // 2
 
     # Use a fixed seed for reproducibility shuffling
     np.random.seed(42)
 
-    # Shuffle the training data to ensure randomness
-    shuffle_indices = np.random.permutation(len(X_flat))
-    cv_indices = shuffle_indices[:total_cv_samples]
+    # Separate indices by class to ensure a balanced dataset
+    indices_class_0 = np.where(np.array(y_nocon) == 0)[0]
+    indices_class_1 = np.where(np.array(y_nocon) == 1)[0]
+
+    # Shuffle indices for each class independently
+    np.random.shuffle(indices_class_0)
+    np.random.shuffle(indices_class_1)
+
+    # Take the required number of samples from each class
+    selected_indices_0 = indices_class_0[:samples_per_class]
+    selected_indices_1 = indices_class_1[:(total_cv_samples - len(selected_indices_0))]
+
+    # Combine and shuffle the final selected indices
+    cv_indices = np.concatenate([selected_indices_0, selected_indices_1])
+    np.random.shuffle(cv_indices)
 
     # Apply shuffle to both data and labels
     X_cv_pool = [X_flat[i].tolist() for i in cv_indices]
@@ -205,7 +218,12 @@ if __name__ == "__main__":
     X_cv_pool_np = np.array(X_cv_pool)
     y_cv_pool_np = np.array(y_cv_pool)
 
+    # Verify balance
+    count_0 = np.sum(y_cv_pool_np == 0)
+    count_1 = np.sum(y_cv_pool_np == 1)
+    
     print(f"Combined dataset for cross-validation: {len(X_cv_pool_np)} samples")
+    print(f"Class balance - Digit 6 (Label 0): {count_0}, Digit 3 (Label 1): {count_1}")
 
     # --- 4. Running 5-Fold Cross-Validation ---
     print("\n--- 4. Initializing 5-Fold Cross-Validation ---")
@@ -239,7 +257,7 @@ if __name__ == "__main__":
     vqc_roc_data = list()
     qsvc_roc_data = list()
 
-    dimensionality = 128
+    dimensionality = 32
 
     fold_num = 1
 
@@ -375,7 +393,7 @@ if __name__ == "__main__":
         #model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000, channel=CHANNEL, instance=INSTANCE, backend=BACKEND, api_key=API_KEY)
 
         # One-shot learning
-        model_q.fit(X_train_fold, y_train_fold, chunk_size=5) # Quantum model uses standard fit/predict
+        model_q.fit(X_train_fold, y_train_fold) # Quantum model uses standard fit/predict
 
         print(f"Retraining Quantum Model (D={dimensionality}; epochs=10)...")
         error_rate, epochs = model_q.retrain(X_train_fold, y_train_fold, epochs=10)
