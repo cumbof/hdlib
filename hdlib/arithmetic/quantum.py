@@ -397,39 +397,6 @@ def permute(qc: QuantumCircuit, num_qubits: int, shift: int=0) -> QuantumCircuit
 
     return qc
 
-def negate_circuits(circuits: List[QuantumCircuit]) -> List[QuantumCircuit]:
-    """Flips the bipolar phase of the circuits for subtraction.
-    Multiplying the complex eigenvalues of the DiagonalGate by -1 reflects the vector.
-
-    Parameters
-    ----------
-    circuits : list
-        The input circuits.
-
-    Returns
-    -------
-    list
-        List of phase-flipped circuits.
-    """
-
-    negated = list()
-
-    for circuit in circuits:
-        neg_circuit = QuantumCircuit(*circuit.qregs, name=f"{circuit.name}_neg")
-
-        for instr in circuit.data:
-            if isinstance(instr.operation, DiagonalGate):
-                # -1 inverts the bipolar phases
-                new_phases = np.array(instr.operation.params, dtype=complex) * -1.0
-                neg_circuit.append(DiagonalGate(new_phases.tolist()), instr.qubits)
-
-            else:
-                neg_circuit.append(instr)
-
-        negated.append(neg_circuit)
-
-    return negated
-
 def __get_measured_physical_qubits(transpiled_circuit: QuantumCircuit, measured_register: ClassicalRegister) -> list[int]:
     """Returns the list of physical qubits that correspond to the measured classical bits.
     """

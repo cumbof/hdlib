@@ -44,7 +44,6 @@ from hdlib.arithmetic.quantum import (
     bundle as quantum_bundle,
     permute as quantum_permute,
     compress_circuit,
-    negate_circuits,
     run_compute_uncompute_test,
     get_circuit_metrics,
 )
@@ -1277,7 +1276,7 @@ class QuantumClassificationModel(object):
         Examples
         --------
         >>> from hdlib.model import QuantumClassificationModel
-        >>> model = QuantumClassificationModel(size=32, levels=2, oaa_rounds=2)
+        >>> model = QuantumClassificationModel(size=32, levels=2)
         >>> type(model)
         <class 'hdlib.model.QuantumClassificationModel'>
 
@@ -1323,7 +1322,15 @@ class QuantumClassificationModel(object):
 
             # Use a simulator if no channel is specified
             # This can be noise-free or use a specific noise model
-            self.backend = AerSimulator(noise_model=noise_model)
+            try:
+                # Attempt to initialize with GPU acceleration
+                self.backend = AerSimulator(device="GPU", noise_model=noise_model)
+
+            except Exception as e:
+                # Fallback to the default CPU device
+                print(f"GPU not available, falling back to CPU.")
+
+                self.backend = AerSimulator(noise_model=noise_model)
 
         else:
             # Initialize a quantum runtime service for a specific IBM QC channel, instance, and backend
@@ -1353,7 +1360,7 @@ class QuantumClassificationModel(object):
         -------
         str
             A description of the QuantumClassificationModel object. It reports the vectors size, the vector type,
-            the number of level vectors, the number of shots, and the number of OAA rounds.
+            the number of level vectors, and the number of shots.
 
         Examples
         --------
@@ -1367,7 +1374,6 @@ class QuantumClassificationModel(object):
                 Type:       bipolar
                 Levels:     2
                 Shots:      1024
-                OAA Rounds: 1
 
         Print the QuantumClassificationModel object properties.
         """
@@ -1379,7 +1385,6 @@ class QuantumClassificationModel(object):
             Type:       {self.vtype}
             Levels:     {self.levels}
             Shots:      {self.shots}
-            OAA Rounds: {self.oaa_rounds}
         """
 
     def _build_quantum_sample_encoder(self, sample_row: List[float], level_vectors: List[np.ndarray], D: int) -> List[QuantumCircuit]:
@@ -1404,7 +1409,7 @@ class QuantumClassificationModel(object):
         feature_circuits = list()
 
         for i, value in enumerate(sample_row):
-            level_index = int(value * (len(level_vectors) - 1))
+            level_index = max(0, min(len(level_vectors) - 1, int(value * (len(level_vectors) - 1))))
             level_vec = level_vectors[level_index]
 
             # Create a quantum circuit for this single feature
@@ -1422,12 +1427,27 @@ class QuantumClassificationModel(object):
         # belonging to the same class to build the circuit representation of that class.
         return feature_circuits
 
-    def fit(
-        self,
-        train_points: List[List[float]],
-        train_labels: List[str],
-        chunk_size: Optional[int]=None
-    ) -> None:
+    def _scale_circuit_phases(self, circuit: Any, factor: float) -> Any:
+        """Helper to safely scale the precise phase angles of a compressed circuit.
+        """
+
+        new_circ = QuantumCircuit(circuit.num_qubits, name=circuit.name)
+
+        for instr in circuit.data:
+            if instr.operation.name == "diagonal":
+                # Extract the exact angles and multiply by the factor (negates if factor is negative)
+                phases = np.angle(np.array(instr.operation.params, dtype=complex))
+                new_phases = np.exp(1j * phases * factor)
+
+                GateClass = instr.operation.__class__
+                new_circ.append(GateClass(new_phases.tolist()), instr.qubits)
+
+            else:
+                new_circ.append(instr)
+
+        return new_circ
+
+    def fit(self, train_points: List[List[float]], train_labels: List[str]) -> None:
         """Build a vector-symbolic architecture. Define level vectors, encode samples, and build prototypes.
 
         Parameters
@@ -1436,9 +1456,6 @@ class QuantumClassificationModel(object):
             List of lists with numerical data points (floats).
         train_labels : list
             List with class labels. It has the same size of `points`.
-        chunk_size : int, default None, optional
-            The number of samples to bundle together into a single quantum chunk.
-            If None, all samples for a given class are bundled into a single chunk for the definition of the class prototype.
         """
 
         def _generate_level_vectors(D, num_levels, rng):
@@ -1471,39 +1488,29 @@ class QuantumClassificationModel(object):
 
         self.classes_ = sorted(list(set(train_labels)))
 
-        # Dictionaries to hold chunks and their raw encoders
-        self.prototypes = {c: list() for c in self.classes_}
-        self._chunk_encoders = {c: list() for c in self.classes_}
+        # Hold class prototypes
+        self.prototypes = dict()
+
+        # Track the mass of each class so we can normalize updates proportionally later
+        self.class_counts_ = dict()
 
         for c in self.classes_:
             # Building quantum prototype for Class `c`
             class_samples = [sample for pos, sample in enumerate(train_points) if train_labels[pos] == c]
 
-            if chunk_size is None or chunk_size < 1:
-                # Bundle all samples into a single chunk
-                chunk_size = len(class_samples)
+            # Building quantum samples' feature encoder circuits
+            sample_encoders = [encoder for sample in class_samples for encoder in self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)]
 
-            else:
-                # Shuffle samples to avoid clustering bias
-                rand.shuffle(class_samples)
+            # Bundling
+            prototype_circuit = compress_circuit(quantum_bundle(sample_encoders))
+            prototype_circuit.name = f"Prototype_{c}"
 
-            # Break the class samples into smaller chunks
-            for i in range(0, len(class_samples), chunk_size):
-                chunk_samples = class_samples[i : i + chunk_size]
+            # Report circuit metrics
+            #print(f"Class prototype bundling metrics: {get_circuit_metrics(prototype_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
 
-                # Building quantum samples' feature encoder circuits
-                sample_encoders = [encoder for sample in chunk_samples for encoder in self._build_quantum_sample_encoder(sample, self.level_hvs, self.size)]
-
-                # Bundling
-                prototype_circuit = compress_circuit(quantum_bundle(sample_encoders))
-                prototype_circuit.name = f"Prototype_{c}" if chunk_size == len(class_samples) else f"Prototype_{c}_Chunk_{i // chunk_size}"
-
-                # Report circuit metrics
-                #print(f"Class prototype bundling metrics: {get_circuit_metrics(prototype_circuit, int(log2(self.size)), self.backend, optimization_level=3)}")
-
-                # The prototype is the circuit that prepares the state
-                self.prototypes[c].append(prototype_circuit)
-                self._chunk_encoders[c].append(sample_encoders)
+            # The prototype is the circuit that prepares the state
+            self.prototypes[c] = prototype_circuit
+            self.class_counts_[c] = float(len(class_samples))
 
     def predict(self, test_points: List[List[float]]) -> Tuple[List[str], List[List[float]]]:
         """Predict the class labels of the data points in the test set.
@@ -1535,7 +1542,7 @@ class QuantumClassificationModel(object):
         similarities = list()
 
         # For hardware, manage a single session for all prediction tasks
-        with Session(backend=self.backend) if not is_simulated else nullcontext() as session:
+        with (Session(backend=self.backend) if not is_simulated else nullcontext()) as session:
             sampler = None
 
             # Use the session-based Sampler if on hardware
@@ -1554,16 +1561,7 @@ class QuantumClassificationModel(object):
 
                 sampler = Sampler(mode=session, options=options)
 
-            # 1. Flatten the dictionary of chunks into a 1D list for batching
-            chunks = list()
-            chunk_class_map = list()
-
-            for c in self.classes_:
-                for chunk_circuit in self.prototypes[c]:
-                    chunks.append(chunk_circuit)
-                    chunk_class_map.append(c)
-
-            # 2. Build all query circuits
+            # Build all query circuits
             queries = list()
 
             for sample in test_points:
@@ -1578,37 +1576,25 @@ class QuantumClassificationModel(object):
 
                 queries.append(query_circuit)
 
-            # 3. Evaluate all queries against all chunks in safe hardware batch mode to prevent IBM memory overflow
+            # Evaluate all queries against class prototypes in safe hardware batch mode to prevent IBM memory overflow
             # https://ibm.biz/error_codes#6073
-            batch_similarities = list()
-
             max_queries_per_job = 5
+
+            # Sort prototype circuits based on self.classes_
+            prototype_circuits = [self.prototypes[c] for c in self.classes_]
 
             for i in range(0, len(queries), max_queries_per_job):
                 query_batch = queries[i : i + max_queries_per_job]
 
-                sims, _ = run_compute_uncompute_test(query_batch, chunks, self.backend, shots=self.shots, seed=self.seed, sampler=sampler)
-                batch_similarities.extend(sims)
-
-            # 4. Group the results by class for each sample
-            for sample_batch_sim in batch_similarities:
-                class_similarity = {c: list() for c in self.classes_}
-
-                for sim, c in zip(sample_batch_sim, chunk_class_map):
-                    class_similarity[c].append(sim)
-
-                sample_similarities = list()
-
-                for c in self.classes_:
-                    # Average the probabilities across the chunks for this class
-                    sample_similarities.append(statistics.mean(class_similarity[c]))
-
-                predictions.append(self.classes_[int(np.argmax(sample_similarities))])
-                similarities.append(sample_similarities)
+                sims, _ = run_compute_uncompute_test(query_batch, prototype_circuits, self.backend, shots=self.shots, seed=self.seed, sampler=sampler)
+                
+                for sim in sims:
+                    predictions.append(self.classes_[int(np.argmax(sim))])
+                    similarities.append(sim)
 
         return predictions, similarities
 
-    def retrain(self, train_points: List[List[float]], train_labels: List[str], epochs: int=10) -> Tuple[float, int]:
+    def retrain(self, train_points: List[List[float]], train_labels: List[str], epochs: int=10, lr: float=1.0) -> Tuple[float, int]:
         """Retrain the model by adjusting class prototypes based on misclassified samples.
         """
 
@@ -1616,58 +1602,62 @@ class QuantumClassificationModel(object):
             raise RuntimeError("You must call fit before calling retrain.")
 
         # 1. Evaluate the base model before any retraining to establish a baseline
-        predictions, similarities = self.predict(train_points)
+        predictions, _ = self.predict(train_points)
 
         best_error = sum(1 for p, t in zip(predictions, train_labels) if p != t) / len(train_labels)
-
         print(f"\tepoch 0: {best_error}")
 
         if best_error == 0.0:
             return best_error, 0
 
         # Save a backup of the best circuits
-        best_prototypes = {c: [qc.copy() for qc in chunks] for c, chunks in self.prototypes.items()}
-        best_chunk_encoders = {c: [list(chunk_list) for chunk_list in class_chunks] for c, class_chunks in self._chunk_encoders.items()}
+        best_prototypes = {c: qc.copy() for c, qc in self.prototypes.items()}
 
         final_epoch = 0
 
         for epoch in range(1, epochs + 1):
             final_epoch = epoch
 
-            bundle_circuits = False
+            # Queue to store correctly phase-scaled updates
+            epoch_updates = {c: [] for c in self.classes_}
+            updates_made = False
 
-            # 2. Apply updates based on the current predictions
+            # 2. Adjust circuits based on misclassifications
             for i, (pred, true_label) in enumerate(zip(predictions, train_labels)):
                 if pred != true_label:
                     # Encode the misclassified sample
-                    sample_features = self._build_quantum_sample_encoder(train_points[i], self.level_hvs, self.size)
+                    raw_features = self._build_quantum_sample_encoder(train_points[i], self.level_hvs, self.size)
+                    sample_update = compress_circuit(quantum_bundle(raw_features))
 
-                    # Precompute the negated features once for efficiency
-                    negated_features = negate_circuits(sample_features)
+                    # Calculate exact scale factor to match the prototype's mass denominator.
+                    # lr defaults to 1.0 (pure Perceptron rule), but is adjusted based on class population
+                    factor_true = lr / self.class_counts_[true_label]
+                    factor_pred = lr / self.class_counts_[pred]
 
                     # Add to the true class
-                    true_idx = int(np.argmax(similarities[i][true_label]))
-                    self._chunk_encoders[true_label][true_idx].extend(sample_features)
+                    epoch_updates[true_label].append(self._scale_circuit_phases(sample_update, factor=factor_true))
 
-                    # Remove from the incorrectly predicted class (apply the inverse)
-                    pred_idx = int(np.argmax(similarities[i][pred]))
-                    self._chunk_encoders[pred][pred_idx].extend(negated_features)
+                    # Remove from the incorrectly predicted class (negative factor)
+                    epoch_updates[pred].append(self._scale_circuit_phases(sample_update, factor=-factor_pred))
 
-                    # Bundle and compress circuits in case of at least one misclassification
-                    bundle_circuits = True
+                    updates_made = True
 
-            if bundle_circuits:
-                # 3. Compress the updated prototypes once after preprocessing all samples
-                for label in self.prototypes:
-                    # Iterate over chunks
-                    for idx in range(len(self.prototypes[label])):
-                        self.prototypes[label][idx] = compress_circuit(quantum_bundle(self._chunk_encoders[label][idx]))
+            if updates_made:
+                for label, updates in epoch_updates.items():
+                    if updates:
+                        # 3. Apply the update to the prototype
+                        new_proto = self.prototypes[label].copy()
+
+                        for upd in updates:
+                            new_proto.compose(upd, inplace=True)
+
+                        self.prototypes[label] = compress_circuit(new_proto)
+                        self.prototypes[label].name = f"Prototype_{label}"
 
             # 4. Evaluate the newly updated model
-            predictions, similarities = self.predict(train_points)
+            predictions, _ = self.predict(train_points)
 
             current_error = sum(1 for p, t in zip(predictions, train_labels) if p != t) / len(train_labels)
-
             print(f"\tepoch {epoch}: {current_error}")
 
             # 5. Check early stopping condition
@@ -1675,15 +1665,12 @@ class QuantumClassificationModel(object):
                 # The updates made the model worse (or it stopped improving).
                 # Revert to the best known state and exit!
                 self.prototypes = best_prototypes
-                self._chunk_encoders = best_chunk_encoders
 
                 break
 
             # 6. Improvement found! Update the best error and save the new state
             best_error = current_error
-
-            best_prototypes = {c: [qc.copy() for qc in chunks] for c, chunks in self.prototypes.items()}
-            best_chunk_encoders = {c: [list(chunk_list) for chunk_list in class_chunks] for c, class_chunks in self._chunk_encoders.items()}
+            best_prototypes = {c: qc.copy() for c, qc in self.prototypes.items()}
 
             if best_error == 0.0:
                 break
