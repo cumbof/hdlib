@@ -16,7 +16,7 @@ import os
 import statistics
 from math import log2
 from functools import partial
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from contextlib import nullcontext
 
 import numpy as np

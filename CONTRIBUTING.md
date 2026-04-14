@@ -30,6 +30,6 @@ As an open source project, every kind of contribution is very welcome! Contribut
 
 If the PR is intended to fix a known issue, please do not forget to link the PR to the existing issue.
 
-> **Note:** In order to run the unit tests, simply run the following command in your terminal from the project root folder: `python -m unittest test.test`.
+> **Note:** In order to run the unit tests, install the test dependencies with `python -m pip install -e ".[test]"`, then run `python -m pytest` from the project root folder.
 
 Also in case of PRs, please, do not forget to add as many details as possible, describing what kind of bugfix or new features you worked on. You are not allowed to merge any PRs. A _hdlib_ maintainer will review your PR, eventually ask for additional details and changes, and decide whether to accept or decline your request.

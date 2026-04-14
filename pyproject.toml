@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["test"]
+python_files = ["test.py", "test_*.py", "*_test.py"]
+pythonpath = ["."]
+addopts = [
+    "--import-mode=importlib",
+]
