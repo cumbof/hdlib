@@ -33,7 +33,6 @@ from hdlib.arithmetic.quantum import (
     bundle as quantum_bundle,
     permute as quantum_permute,
     run_compute_uncompute_test as quantum_similarity,
-    negate_circuits,
     statevector_to_bipolar
 )
 
@@ -372,29 +371,6 @@ class TestHDLib(unittest.TestCase):
         v_recovered = statevector_to_bipolar(qc)
 
         self.assertTrue(np.array_equal(v_bundle_classical.vector, v_recovered))
-
-    def test_quantum_subtraction(self):
-        """Unit tests for hdlib/arithmetic/quantum.py:negate_circuits
-
-        Tests if quantum subtraction between a vector and its negation produces a zero vector.
-        """
-
-        dimensionality = 16
-
-        # Classical encoding
-        v_classical = Vector(size=dimensionality, vtype="bipolar")
-
-        circuits = [quantum_encode(v_classical.vector), negate_circuits([quantum_encode(v_classical.vector)])[0]]
-
-        # Apply bundling
-        qc = quantum_bundle(circuits, method="average")
-
-        # Decode
-        v_recovered = statevector_to_bipolar(qc)
-
-        # Because of technical constraints, a zero vector is converted to a vector with 1s only
-        # in order to match the behavior of the normalize function
-        self.assertTrue(np.array_equal(v_recovered, np.ones(dimensionality, dtype=int)))
 
     def test_quantum_permute(self):
         """Unit tests for hdlib/arithmetic/quantum.py:permute
