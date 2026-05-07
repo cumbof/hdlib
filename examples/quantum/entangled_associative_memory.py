@@ -1,7 +1,7 @@
 """Entangled Associative Memory in Hyperdimensional Computing.
 
 Demonstrates quantum associative memory using :func:`entangled_bind` and
-:func:`quantum_inner_product`.  The memory stores K country→currency
+:func:`run_compute_uncompute_test`.  The memory stores K country→currency
 key-value pairs as entangled quantum HD records and retrieves the correct
 currency given a noisy country key.
 
@@ -15,15 +15,15 @@ Quantum approach
 * Each key-value pair is encoded as an entangled state via
   :func:`entangled_bind`—a circuit that places both the key state and the
   value state into a quantum superposition.
-* :func:`quantum_inner_product` (IQAE) measures the similarity between the
-  query key and each stored key, exploiting Heisenberg-limited precision.
+* :func:`run_compute_uncompute_test` measures the similarity between the
+  query key and each stored key via the compute-uncompute method.
 
 Quantum advantage summary
 -------------------------
 * The entangled bind state encodes a key-value pair in O(n) qubits while
   preserving quantum coherence.
-* IQAE achieves precision ε with O(1/ε) evaluations vs O(1/ε²) for
-  classical sampling.
+* The compute-uncompute similarity test measures |⟨ψ_query|ψ_key⟩|²
+  without needing a separate inner-product function.
 
 Usage
 -----
@@ -40,7 +40,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from hdlib.arithmetic.quantum import (
     encode,
     entangled_bind,
-    quantum_inner_product,
     run_compute_uncompute_test,
     statevector_to_bipolar,
 )
@@ -130,10 +129,10 @@ def quantum_retrieval(query_key_oracle, pairs, concepts, backend):
         # entangled_bind creates (1/√2)(|0⟩|ψ_k⟩|ψ_v⟩ + |1⟩|ψ_v⟩|ψ_k⟩)
         # The key information lives in sys_a when ancilla = 0.
         # We estimate the similarity between the query and the key oracle directly.
-        ip = quantum_inner_product(
-            query_key_oracle, key_oracle,
-            backend=backend, epsilon=EPSILON
+        sims_matrix, _ = run_compute_uncompute_test(
+            [query_key_oracle], [key_oracle], backend=backend, shots=SHOTS
         )
+        ip = sims_matrix[0][0]
         sims[v] = ip
 
     best_val = max(sims, key=sims.get)
@@ -183,10 +182,8 @@ def main():
     print(f"  Encodes both key and value simultaneously in superposition.")
     print()
     print("Quantum advantage summary:")
-    print("  IQAE estimates inner product with O(1/ε) evaluations.")
-    print("  Classical sampling requires O(1/ε²) shots for precision ε.")
-    print(f"  At ε={EPSILON}: quantum needs ~{int(1/EPSILON)} calls vs "
-          f"~{int(1/EPSILON**2)} for classical.")
+    print("  Entangled bind encodes a key-value pair in O(n) qubits.")
+    print("  Compute-uncompute similarity: O(1/shots) statistical precision.")
 
 
 if __name__ == "__main__":

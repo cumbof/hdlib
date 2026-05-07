@@ -16,7 +16,7 @@ Hadamard basis).  From the server's perspective, before measurement, the
 query state appears as a uniform superposition with maximal quantum
 information entropy—indistinguishable from any other query.  The server
 applies its codebook as a SELECT unitary and returns the result.  The client
-post-processes locally with :func:`quantum_inner_product` (IQAE) to identify
+post-processes locally with :func:`run_compute_uncompute_test` to identify
 the nearest prototype—without the server ever learning the query direction.
 
 Quantum advantage
@@ -49,7 +49,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from hdlib.arithmetic.quantum import (
     encode,
-    quantum_inner_product,
     run_compute_uncompute_test,
     statevector_to_bipolar,
     _build_select_circuit,
@@ -114,9 +113,10 @@ def quantum_privacy_analysis(query_oracle, codebook_oracles, dim, backend):
     # ── Client-side retrieval ─────────────────────────────────────────────
     sims = {}
     for k, proto_oracle in enumerate(codebook_oracles):
-        ip = quantum_inner_product(
-            query_oracle, proto_oracle, backend=backend, epsilon=EPSILON
+        sims_matrix, _ = run_compute_uncompute_test(
+            [query_oracle], [proto_oracle], backend=backend, shots=SHOTS
         )
+        ip = sims_matrix[0][0]
         sims[k] = ip
 
     best_idx = max(sims, key=sims.get)
@@ -130,7 +130,7 @@ def main():
     print("=" * 64)
     print(f"HD dimension   : {DIMENSION}  (n_sys = {int(np.ceil(np.log2(DIMENSION)))} qubits)")
     print(f"Codebook size  : {N_PROTOTYPES}")
-    print(f"IQAE precision : ε = {EPSILON}")
+    print(f"Shots          : {SHOTS}")
     print()
 
     codebook = make_codebook(N_PROTOTYPES, DIMENSION, SEED)

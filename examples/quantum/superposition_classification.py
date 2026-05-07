@@ -45,7 +45,7 @@ from hdlib.arithmetic import bind, bundle
 from hdlib.arithmetic.quantum import (
     encode,
     superposition_bundle,
-    quantum_inner_product,
+    run_compute_uncompute_test,
     statevector_to_bipolar,
     _build_select_circuit,
     get_circuit_metrics,
@@ -59,7 +59,6 @@ DIMENSION = 8           # Small HD dimension so quantum sim stays tractable
 LEVELS = 4              # Number of level hypervectors for encoding
 TEST_SIZE = 0.3
 SHOTS = 1024
-QIP_EPSILON = 0.05
 
 
 def encode_features(points, features, dim, seed):
@@ -158,16 +157,17 @@ def classical_predict(X_test, prototypes, dim):
 
 
 def quantum_predict(X_test, quantum_prototypes, backend):
-    """Nearest prototype classifier using IQAE inner product."""
+    """Nearest prototype classifier using compute-uncompute similarity."""
     preds = []
     classes = list(quantum_prototypes.keys())
     for x in X_test:
         query_oracle = encode(x)
         best_cls, best_ip = None, -np.inf
         for cls, proto_circ in quantum_prototypes.items():
-            ip = quantum_inner_product(
-                query_oracle, proto_circ, backend=backend, epsilon=QIP_EPSILON
+            sims_matrix, _ = run_compute_uncompute_test(
+                [query_oracle], [proto_circ], backend=backend, shots=SHOTS
             )
+            ip = sims_matrix[0][0]
             if ip > best_ip:
                 best_ip, best_cls = ip, cls
         preds.append(best_cls)
@@ -241,7 +241,7 @@ def main():
     print("Quantum advantage summary:")
     print("  SELECT circuit depth ≈ O(log M) layers for a tree-structured LCU.")
     print("  Sequential bundle depth ≈ O(M) layers.")
-    print("  IQAE for classification uses O(1/ε) shots vs O(1/ε²) classical.")
+    print("  Compute-uncompute similarity: O(1/shots) statistical precision.")
 
 
 if __name__ == "__main__":

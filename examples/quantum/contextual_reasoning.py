@@ -48,7 +48,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from hdlib.arithmetic.quantum import (
     encode,
     quantum_contextual_bind,
-    quantum_inner_product,
+    run_compute_uncompute_test,
     statevector_to_bipolar,
     bind as quantum_bind,
 )
@@ -61,7 +61,7 @@ from hdlib.arithmetic import bind, bundle
 
 SEED = 42
 DIMENSION = 8       # Must be a power of 2 ≥ 4 for oracle encoding
-EPSILON = 0.05
+SHOTS = 4096
 
 
 # ── Analogy problems ─────────────────────────────────────────────────────────
@@ -111,9 +111,10 @@ def quantum_analogy_single(src_country, src_currency, tgt_country,
     ])
     best_name, best_ip = None, -np.inf
     for name, vec in codebook.items():
-        ip = quantum_inner_product(
-            query_oracle, encode(vec), backend=backend, epsilon=EPSILON
+        sims_matrix, _ = run_compute_uncompute_test(
+            [query_oracle], [encode(vec)], backend=backend, shots=SHOTS
         )
+        ip = sims_matrix[0][0]
         if ip > best_ip:
             best_ip, best_name = ip, name
     return best_name

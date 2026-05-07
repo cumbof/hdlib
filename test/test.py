@@ -37,9 +37,7 @@ from hdlib.arithmetic.quantum import (
     superposition_bundle,
     entangled_bind,
     grover_search,
-    quantum_inner_product,
     quantum_majority_bundle,
-    quantum_teleport_vector,
     quantum_contextual_bind,
 )
 
@@ -565,37 +563,6 @@ class TestHDLib(unittest.TestCase):
             )
             self.assertAlmostEqual(sim, 1.0, delta=0.1)
 
-    def test_quantum_inner_product(self):
-        """Unit tests for hdlib/arithmetic/quantum.py:quantum_inner_product
-
-        Tests that IQAE correctly estimates:
-        (i)  inner product ≈ 1.0 for identical vectors;
-        (ii) inner product within expected range for a random vector pair.
-        """
-
-        dimensionality = 16
-        v1 = Vector(size=dimensionality, vtype="bipolar", seed=10)
-        v2 = Vector(size=dimensionality, vtype="bipolar", seed=11)
-
-        oracle1 = quantum_encode(v1.vector)
-        oracle2 = quantum_encode(v2.vector)
-
-        backend = AerSimulator()
-
-        with self.subTest("identical vectors → inner product ≈ 1.0"):
-            ip = quantum_inner_product(oracle1, oracle1, backend=backend)
-            self.assertAlmostEqual(ip, 1.0, delta=0.1)
-
-        with self.subTest("random vectors → result in [0, 1]"):
-            ip = quantum_inner_product(oracle1, oracle2, backend=backend)
-            self.assertGreaterEqual(ip, 0.0)
-            self.assertLessEqual(ip, 1.0)
-
-        with self.subTest("result agrees with classical cosine similarity"):
-            classical_sim = abs(1 - v1.dist(v2, method="cosine"))
-            ip = quantum_inner_product(oracle1, oracle2, backend=backend, epsilon=0.05)
-            self.assertAlmostEqual(ip, classical_sim, delta=0.15)
-
     def test_quantum_majority_bundle(self):
         """Unit tests for hdlib/arithmetic/quantum.py:quantum_majority_bundle
 
@@ -639,46 +606,6 @@ class TestHDLib(unittest.TestCase):
                 np.array_equal(classical_bundled.vector, v_recovered),
                 msg=f"Quantum: {v_recovered}\nClassical: {classical_bundled.vector}",
             )
-
-    def test_quantum_teleport_vector(self):
-        """Unit tests for hdlib/arithmetic/quantum.py:quantum_teleport_vector
-
-        Tests that the teleportation circuit:
-        (i)  has 3n qubits total;
-        (ii) produces exactly 2n correction qubit indices;
-        (iii) Bob's final state is identical to the original HD state.
-        """
-
-        dimensionality = 4  # 2 qubits per register
-        v = Vector(size=dimensionality, vtype="bipolar", seed=5)
-        oracle_circ = quantum_encode(v.vector)
-        n = oracle_circ.num_qubits  # 2
-
-        qc_tele, correction_idxs = quantum_teleport_vector(oracle_circ)
-
-        with self.subTest("circuit has 3n qubits"):
-            self.assertEqual(qc_tele.num_qubits, 3 * n)
-
-        with self.subTest("correction_qubit_indices has length 2n"):
-            self.assertEqual(len(correction_idxs), 2 * n)
-
-        with self.subTest("Bob's state matches the original HD state"):
-            # Simulate the full teleportation circuit
-            sv = Statevector.from_instruction(qc_tele.decompose().decompose())
-            # Bob's register is the last n qubits (indices 2n..3n-1 in global order)
-            # Trace over Alice's sys (qubits 0..n-1) and Alice's bell (n..2n-1)
-            rho_bob = partial_trace(sv, list(range(2 * n)))
-
-            # Build reference: |ψ_v⟩ = O_v |+⟩^n on n qubits
-            qc_ref = QuantumCircuit(n)
-            qc_ref.h(range(n))
-            qc_ref.compose(oracle_circ, inplace=True)
-            sv_ref = Statevector.from_instruction(qc_ref.decompose().decompose())
-            rho_ref = sv_ref.to_operator()
-
-            # Fidelity F(ρ_bob, ρ_ref) = Tr[ρ_bob · ρ_ref] for a pure reference state
-            fidelity = float(np.real(np.trace(rho_bob.data @ rho_ref.data)))
-            self.assertAlmostEqual(fidelity, 1.0, delta=0.01)
 
     def test_quantum_contextual_bind(self):
         """Unit tests for hdlib/arithmetic/quantum.py:quantum_contextual_bind
