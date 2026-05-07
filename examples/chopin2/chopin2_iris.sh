@@ -15,11 +15,12 @@ curl -o ${DATASET_PATH} ${DATASET_URL}
 
 # Run chopin2.py on the iris.csv dataset
 # The python script is located under the same folder of this bash script
-python $ROOT/chopin2.py --input ${DATASET_PATH} \
+python chopin2.py --input ${DATASET_PATH} \
                         --fieldsep , \
                         --dimensionality 10000 \
                         --levels 10 \
                         --feature-selection backward \
                         --kfolds 5 \
                         --retrain 10 \
-                        --nproc 2
+                        --nproc 2 \
+                        --output $ROOT/results_iris.txt

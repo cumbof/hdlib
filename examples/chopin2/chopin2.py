@@ -7,6 +7,7 @@ __version__ = "1.1.1"
 __date__ = "Nov 7, 2025"
 
 import argparse as ap
+import contextlib
 import errno
 import os
 import statistics
@@ -101,6 +102,12 @@ def read_params():
         type=int,
         default=1,
         help="Make it parallel when possible",
+    )
+    p.add_argument(
+        "--output",
+        type=os.path.abspath,
+        default=None,
+        help="Path to the output file (full path). If not specified, output is printed to stdout",
     )
     p.add_argument(
         "-v",
@@ -447,9 +454,20 @@ def chopin2():
 
 
 if __name__ == "__main__":
+    # Pre-parse --output only so redirection is set up before full argument parsing
+    _pre = ap.ArgumentParser(add_help=False)
+    _pre.add_argument("--output", default=None)
+    _output_arg, _ = _pre.parse_known_args()
+
     t0 = time.time()
 
-    chopin2()
-
-    t1 = time.time()
-    print("Total elapsed time: {}s".format(int(t1 - t0)))
+    if _output_arg.output:
+        with open(_output_arg.output, "w") as _outfile, contextlib.redirect_stdout(_outfile):
+            chopin2()
+            t1 = time.time()
+            print("Total elapsed time: {}s".format(int(t1 - t0)))
+        print("Output written to: {}".format(_output_arg.output))
+    else:
+        chopin2()
+        t1 = time.time()
+        print("Total elapsed time: {}s".format(int(t1 - t0)))
