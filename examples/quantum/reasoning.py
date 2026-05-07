@@ -15,8 +15,8 @@ from hdlib.arithmetic import (
 )
 
 from hdlib.arithmetic.quantum import (
-    phase_oracle_gate,
-    run_hadamard_test,
+    encode,
+    run_compute_uncompute_test,
     bundle as quantum_bundle,
     bind as quantum_bind,
 )
@@ -94,7 +94,6 @@ def run_quantum_reasoning(
     dim: int, 
     concepts: Dict[str, np.ndarray],
     backend: Backend, 
-    oaa_rounds: int=1, 
     shots: int=10000, 
     seed: int=42,
     sampler: Optional[Sampler]=None
@@ -147,18 +146,8 @@ def run_quantum_reasoning(
     def get_oracle_circuit(vec_name: str) -> QuantumCircuit:
         """Creates a circuit containing only the phase oracle for a concept."""
         vec = get_padded_vec(vec_name)
-        gate = phase_oracle_gate(vec, label=f"O_{vec_name}")
-        qc = QuantumCircuit(n, name=vec_name)
-        qc.append(gate, range(n))
-        return qc
-
-    def get_state_prep_circuit(op_circuit: QuantumCircuit) -> QuantumCircuit:
-        """Creates a state preparation circuit |v> = O_v |+> from an oracle circuit O_v."""
-        n_q = op_circuit.num_qubits
-        # Ensure we are using the same register as the operator
-        qc = QuantumCircuit(*op_circuit.qregs, name=f"Prep_{op_circuit.name}")
-        qc.h(range(n_q)) # Start in uniform superposition
-        qc.append(op_circuit.to_gate(), range(n_q)) # Apply the operator
+        qc = encode(vec, label=f"O_{vec_name}")
+        qc.name = vec_name
         return qc
 
     # 3. --- Define Base Operators ---
@@ -191,7 +180,7 @@ def run_quantum_reasoning(
     ]
 
     # 5. --- Build Final Query State ---
-    print(f"3. Building final query state (Bundle of 9 terms - {oaa_rounds} OAA rounds)...")
+    print(f"3. Building final query state (Bundle of 9 terms)...")
 
     # Build the 9 terms for the final bundle
     # Query = bundle( [ bind(DOL, U_i, M_j) for U_i in ustates_ops for M_j in mexico_ops ] )
@@ -203,44 +192,36 @@ def run_quantum_reasoning(
             query_component_ops.append(term_op)
 
     # Now, bundle these 9 operators to create the final query state
-    # The 'bundle' function returns a state preparation circuit
-    query_circ, _, _ = quantum_bundle(
-        unitary_circuits=query_component_ops,
-        weights=[1/9] * 9, # Equal weights
-        oaa_rounds=oaa_rounds
-    )
+    query_circ = quantum_bundle(query_component_ops)
     query_circ.name = "QUERY_Guess"
 
-    # 6. --- Build Codebook Target States ---
-    print("4. Building target state circuits for codebook...")
+    # 6. --- Build Codebook Target Circuits ---
+    print("4. Building target oracle circuits for codebook...")
 
     codebook_circuits = dict()
     codebook_items = ["PES", "MXC", "MEX", "DOL", "WDC", "USA"]
 
     for name in codebook_items:
-        # Get the base operator circuit
-        op_circ = C[name]
-        # Create the state prep circuit |v> = O_v |+>
-        codebook_circuits[name] = get_state_prep_circuit(op_circ)
+        codebook_circuits[name] = C[name]
 
-    # 7. --- Run Hadamard Tests ---
-    print(f"5. Running Hadamard tests ({shots} shots each)...")
+    # 7. --- Run Compute-Uncompute Tests ---
+    print(f"5. Running compute-uncompute tests ({shots} shots each)...")
 
     similarities = dict()
 
     for name, target_circ in codebook_circuits.items():
         print(f"  - Comparing Query with {name}...")
 
-        # state_left_circ = the small circuit (system only)
-        # state_right = the big circuit (system + ancillas)
-        similarity, counts = run_hadamard_test(
-            target_circ,     # The simple |v> = O_v |+> state (n_sys qubits)
-            query_circ,          # The complex bundled state (n_total qubits)
+        sims, counts_list = run_compute_uncompute_test(
+            [query_circ],
+            [target_circ],
             backend,
             shots=shots,
             seed=seed,
             sampler=sampler
         )
+        similarity = sims[0][0]
+        counts = counts_list[0]
 
         similarities[name] = similarity
         print(f"    Similarity with {name}: {similarity:.4f} (Counts: {counts})")
@@ -275,7 +256,7 @@ if __name__ == "__main__":
 
     # --- PART 2: QUANTUM EXPERIMENT - SIMULATION (NOISE-FREE) ---
     # Simulation (noise-free)
-    run_quantum_reasoning(16, CONCEPTS_16D, AerSimulator(), oaa_rounds=6, shots=10000, seed=seed, sampler=None)
+    run_quantum_reasoning(16, CONCEPTS_16D, AerSimulator(), shots=10000, seed=seed, sampler=None)
 
     # --- PART 3: QUANTUM EXPERIMENT - SIMULATION (WITH NOISE MODEL) ---
     # Initialize a temporary service connection
@@ -290,7 +271,7 @@ if __name__ == "__main__":
     noise_model = NoiseModel.from_backend(backend_for_noise)
 
     # Simulation (with noise model)
-    run_quantum_reasoning(16, CONCEPTS_16D, AerSimulator(noise_model=noise_model), oaa_rounds=6, shots=10000, seed=seed, sampler=None)
+    run_quantum_reasoning(16, CONCEPTS_16D, AerSimulator(noise_model=noise_model), shots=10000, seed=seed, sampler=None)
 
     # --- PART 4: QUANTUM EXPERIMENT - HARDWARE ---
     # Initialize a quantum runtime service for a specific IBM QC channel, instance, and backend
@@ -306,4 +287,4 @@ if __name__ == "__main__":
         sampler = Sampler(mode=session, options=options)
 
         # Hardware
-        run_quantum_reasoning(16, CONCEPTS_16D, backend, oaa_rounds=6, shots=10000, seed=seed, sampler=sampler)
+        run_quantum_reasoning(16, CONCEPTS_16D, backend, shots=10000, seed=seed, sampler=sampler)
