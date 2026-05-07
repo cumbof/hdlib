@@ -630,12 +630,6 @@ def get_circuit_metrics(circuit: QuantumCircuit, num_system_qubits: int, backend
         "ops_count": ops_count
     }
 
-
-# ---------------------------------------------------------------------------
-# New quantum-native operations exploiting superposition and entanglement
-# ---------------------------------------------------------------------------
-
-
 def _build_select_circuit(circuits: List[QuantumCircuit]) -> QuantumCircuit:
     """Builds a SELECT (quantum multiplexer) circuit.
 
@@ -711,7 +705,6 @@ def _build_select_circuit(circuits: List[QuantumCircuit]) -> QuantumCircuit:
 
     return qc
 
-
 def _decode_select_bundle(select_circuit: QuantumCircuit, n_sys: int, n_idx: int, num_circuits: int) -> np.ndarray:
     """Decodes the bundle result from a SELECT circuit via statevector simulation.
 
@@ -768,7 +761,6 @@ def _decode_select_bundle(select_circuit: QuantumCircuit, n_sys: int, n_idx: int
     result[raw_sum < -tolerance] = -1
 
     return result
-
 
 def superposition_bundle(circuits: List[QuantumCircuit]) -> QuantumCircuit:
     """Bundles N oracle circuits in parallel using a quantum SELECT unitary.
@@ -841,7 +833,6 @@ def superposition_bundle(circuits: List[QuantumCircuit]) -> QuantumCircuit:
 
     # Re-encode as a shallow phase oracle compatible with the rest of the pipeline
     return encode(bundled_vector, label="SuperposBundle")
-
 
 def entangled_bind(circuit1: QuantumCircuit, circuit2: QuantumCircuit) -> QuantumCircuit:
     """Creates an entangled quantum record encoding two hypervectors simultaneously.
@@ -932,7 +923,6 @@ def entangled_bind(circuit1: QuantumCircuit, circuit2: QuantumCircuit) -> Quantu
         qc.cswap(anc_reg[0], sys_a[i], sys_b[i])
 
     return qc
-
 
 def grover_search(
     query_circuit: QuantumCircuit,
@@ -1091,7 +1081,6 @@ def grover_search(
 
     return measured_idx, float(sims[measured_idx])
 
-
 def quantum_majority_bundle(
     circuits: List[QuantumCircuit],
     backend: Optional[Backend] = None,
@@ -1162,7 +1151,6 @@ def quantum_majority_bundle(
     majority_vector = _decode_select_bundle(select_qc, n_sys, n_idx, N)
 
     return encode(majority_vector, label="MajorityBundle")
-
 
 def quantum_contextual_bind(
     context_circuit: QuantumCircuit,
