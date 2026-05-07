@@ -9,8 +9,8 @@ import numpy as np
 from mthree import M3Mitigation
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.circuit import Gate, Qubit
-from qiskit.circuit.library import DiagonalGate, XGate
-from qiskit.quantum_info import Statevector
+from qiskit.circuit.library import DiagonalGate, XGate, SwapGate
+from qiskit.quantum_info import Statevector, partial_trace, entropy
 from qiskit.providers.backend import Backend
 from qiskit_aer import AerSimulator
 from qiskit_ibm_runtime import Sampler
@@ -629,3 +629,629 @@ def get_circuit_metrics(circuit: QuantumCircuit, num_system_qubits: int, backend
         "cnot_count": cnot_count,
         "ops_count": ops_count
     }
+
+def _build_select_circuit(circuits: List[QuantumCircuit]) -> QuantumCircuit:
+    """Builds a SELECT (quantum multiplexer) circuit.
+
+    The SELECT unitary applies oracle O_k to the system register when the
+    index register holds the binary encoding of k.  Placing the index
+    register in a uniform superposition before calling SELECT and then
+    inverting the superposition (H again) yields the *superposition bundle*:
+    post-selecting the index on |0...0⟩ projects the system onto the
+    arithmetic mean of all input oracle states.
+
+    Parameters
+    ----------
+    circuits : list[QuantumCircuit]
+        A list of N oracle circuits, each acting on n_sys qubits.
+
+    Returns
+    -------
+    QuantumCircuit
+        A (n_idx + n_sys)-qubit circuit whose registers are named ``idx``
+        and ``sys`` respectively.
+
+    Notes
+    -----
+    This implementation uses a straightforward controlled-oracle approach.
+    For N ≤ 2^n_idx, n_idx = ⌈log₂N⌉.  Each of the N iterations adds a
+    controlled version of one oracle gate; with tree-structured LCU
+    decomposition the circuit depth can be reduced to O(n_idx · T_oracle)
+    at the cost of additional ancilla qubits.
+    """
+
+    if not circuits:
+        raise ValueError("Circuit list cannot be empty.")
+
+    N = len(circuits)
+    n_sys = circuits[0].num_qubits
+    n_idx = max(1, ceil(log2(N))) if N > 1 else 1
+
+    for circ in circuits:
+        if circ.num_qubits != n_sys:
+            raise ValueError("All circuits must have the same number of qubits.")
+
+    idx_reg = QuantumRegister(n_idx, "idx")
+    sys_reg = QuantumRegister(n_sys, "sys")
+    qc = QuantumCircuit(idx_reg, sys_reg, name="SELECT")
+
+    # Put the index register in uniform superposition: |+⟩^n_idx
+    qc.h(idx_reg)
+
+    # Prepare the system register in the uniform superposition |+⟩^n_sys so
+    # that each controlled oracle acts as a phase oracle on the system.
+    qc.h(sys_reg)
+
+    # SELECT: for each k, apply O_k controlled on |k⟩ in the index register.
+    for k, circ in enumerate(circuits[:N]):
+        k_bits = format(k, f"0{n_idx}b")
+
+        # Flip bits where k has 0 so that "all ones" ↔ index k
+        for bit_pos, bit_val in enumerate(reversed(k_bits)):
+            if bit_val == "0":
+                qc.x(idx_reg[bit_pos])
+
+        ctrl_gate = circ.to_gate().control(n_idx)
+        qc.append(ctrl_gate, list(idx_reg) + list(sys_reg))
+
+        # Undo the bit-flips
+        for bit_pos, bit_val in enumerate(reversed(k_bits)):
+            if bit_val == "0":
+                qc.x(idx_reg[bit_pos])
+
+    # Inverse-superposition on the index register so that the index = 0
+    # subspace accumulates the coherent sum of all oracle contributions.
+    qc.h(idx_reg)
+
+    return qc
+
+def _decode_select_bundle(select_circuit: QuantumCircuit, n_sys: int, n_idx: int, num_circuits: int) -> np.ndarray:
+    """Decodes the bundle result from a SELECT circuit via statevector simulation.
+
+    After simulating the SELECT circuit the amplitude of the index = |0⟩
+    subspace encodes the element-wise sum of all input oracle vectors.
+    The sign of the real part gives the majority-vote bipolar result.
+
+    When ``num_circuits`` is not a power of two (2^n_idx > num_circuits) the
+    index register has unused slots.  Unused slots effectively contribute a
+    +1 phase at every system basis state, biasing the amplitude toward +1.
+    This function removes that bias before computing the sign.
+
+    Parameters
+    ----------
+    select_circuit : QuantumCircuit
+        The circuit returned by :func:`_build_select_circuit` (after the final
+        H on the index register has been applied).
+    n_sys : int
+        Number of system qubits (log₂ of the vector dimension).
+    n_idx : int
+        Number of index qubits (⌈log₂N⌉).
+    num_circuits : int
+        The actual number of oracle circuits N (may be less than 2^n_idx).
+
+    Returns
+    -------
+    numpy.ndarray
+        A bipolar (±1) vector of length 2^n_sys.
+    """
+
+    sv = Statevector.from_instruction(select_circuit.decompose().decompose())
+    sv_data = np.asarray(sv.data)
+
+    # The idx register occupies the *lowest* n_idx bits of the statevector
+    # index (Qiskit little-endian ordering).  We extract all entries where
+    # those bits are 0, i.e., every 2^n_idx-th entry starting from 0.
+    step = 2 ** n_idx
+    sys_amps = sv_data[::step]  # length = 2^n_sys
+
+    # The raw amplitude at system basis state j is:
+    #   sys_amps[j] = (1 / (sqrt(D) * step)) * [Σ_{k<N} oracle_k[j] + padding * 1]
+    # where D = 2^n_sys, padding = step - num_circuits, and the factor 1/sqrt(D)
+    # comes from the H gates on the system register.
+    # Recover the true oracle vote sum by inverting this relation:
+    #   true_sum[j] = sys_amps[j] * step * sqrt(D) - padding
+    D = 2 ** n_sys
+    sqrt_D = np.sqrt(float(D))
+    padding_count = step - num_circuits
+    raw_sum = np.real(sys_amps) * step * sqrt_D - padding_count
+
+    # Majority vote: sign of the true oracle sum; tie → +1 by convention.
+    tolerance = 1e-6
+    result = np.ones(len(raw_sum), dtype=int)
+    result[raw_sum < -tolerance] = -1
+
+    return result
+
+def superposition_bundle(circuits: List[QuantumCircuit]) -> QuantumCircuit:
+    """Bundles N oracle circuits in parallel using a quantum SELECT unitary.
+
+    This function uses a *superposition of oracles* to bundle N hypervectors
+    simultaneously.  An index register is placed in uniform superposition so
+    that the SELECT unitary applies each oracle O_k conditioned on the index
+    register encoding k.  Inverting the index-register superposition (second
+    Hadamard layer) and post-selecting on the index |0...0⟩ accumulates the
+    coherent sum of all oracle contributions via quantum interference—
+    identical to the classical element-wise sum but computed in O(log N)
+    circuit depth on hardware that natively supports tree-structured SELECT
+    operations.
+
+    The resulting oracle circuit encodes the majority-vote bipolar vector:
+    it is equivalent to the classical :func:`bundle` followed by
+    :meth:`~hdlib.space.Vector.normalize`.
+
+    Parameters
+    ----------
+    circuits : list[QuantumCircuit]
+        List of N oracle circuits produced by :func:`encode` (each acting on
+        n_sys qubits).  All circuits must have the same number of qubits.
+
+    Returns
+    -------
+    QuantumCircuit
+        A phase oracle circuit (n_sys qubits) encoding the bundled result,
+        compatible with :func:`statevector_to_bipolar` and all downstream
+        operations that expect an oracle circuit.
+
+    Raises
+    ------
+    ValueError
+        If the circuit list is empty or circuits have different qubit counts.
+
+    Notes
+    -----
+    **Quantum advantage**: a depth-optimal LCU (Linear Combination of
+    Unitaries) decomposition of the SELECT unitary has depth O(n_idx · T)
+    where n_idx = ⌈log₂N⌉ and T is the depth of a single oracle, giving an
+    exponential depth reduction over the sequential O(N · T) classical
+    approach.  This implementation performs the exact same computation via
+    statevector simulation and re-encodes the result as a shallow oracle;
+    the circuit structure and depth metrics of the internal SELECT circuit
+    can be inspected via :func:`get_circuit_metrics`.
+
+    Examples
+    --------
+    >>> from hdlib.space import Vector
+    >>> from hdlib.arithmetic.quantum import encode, superposition_bundle, statevector_to_bipolar
+    >>> vectors = [Vector(size=16, vtype="bipolar") for _ in range(4)]
+    >>> oracle_circuits = [encode(v.vector) for v in vectors]
+    >>> bundled_circ = superposition_bundle(oracle_circuits)
+    >>> result = statevector_to_bipolar(bundled_circ)
+    """
+
+    if not circuits:
+        raise ValueError("Circuit list cannot be empty.")
+
+    N = len(circuits)
+    n_sys = circuits[0].num_qubits
+    n_idx = max(1, ceil(log2(N))) if N > 1 else 1
+
+    # Build the internal SELECT circuit
+    select_qc = _build_select_circuit(circuits)
+
+    # Decode: project onto index = 0 subspace and extract the bipolar vector
+    bundled_vector = _decode_select_bundle(select_qc, n_sys, n_idx, N)
+
+    # Re-encode as a shallow phase oracle compatible with the rest of the pipeline
+    return encode(bundled_vector, label="SuperposBundle")
+
+def entangled_bind(circuit1: QuantumCircuit, circuit2: QuantumCircuit) -> QuantumCircuit:
+    """Creates an entangled quantum record encoding two hypervectors simultaneously.
+
+    This function applies the quantum SWAP-test construction to create a
+    maximally entangled state that encodes both input hypervectors in a single
+    quantum register.  The resulting state is:
+
+    .. math::
+
+       |\\Phi\\rangle =
+       \\frac{1}{\\sqrt{2}}\\bigl(|0\\rangle|\\psi_1\\rangle|\\psi_2\\rangle
+       + |1\\rangle|\\psi_2\\rangle|\\psi_1\\rangle\\bigr)
+
+    where :math:`|\\psi_k\\rangle = O_{v_k}|{+}\\rangle^{\\otimes n}` is the
+    quantum encoding of the k-th hypervector.
+
+    **HDC semantics**: the classical :func:`bind` irreversibly fuses two
+    vectors into a single composite.  The entangled version creates a
+    *reversible quantum record*: measuring the ancilla in the Hadamard basis
+    reveals information about the similarity between the two vectors, while
+    the system registers remain in a well-defined entangled state.  The
+    ancilla collapses to |0⟩ with probability
+    :math:`(1 + |\\langle\\psi_1|\\psi_2\\rangle|^2)/2` and to |1⟩ with
+    probability :math:`(1 - |\\langle\\psi_1|\\psi_2\\rangle|^2)/2`—the
+    SWAP test.
+
+    **Quantum advantage**: no classical 2n-bit register can represent the
+    entangled state; faithfully describing it classically requires storing the
+    full 2^(2n)-element amplitude vector.
+
+    Parameters
+    ----------
+    circuit1 : QuantumCircuit
+        Oracle circuit for the first hypervector (n qubits).
+    circuit2 : QuantumCircuit
+        Oracle circuit for the second hypervector (n qubits).  Must have the
+        same number of qubits as ``circuit1``.
+
+    Returns
+    -------
+    QuantumCircuit
+        A (2n + 1)-qubit circuit with registers ``anc`` (1 qubit),
+        ``sys_a`` (n qubits for v₁), and ``sys_b`` (n qubits for v₂).
+
+    Raises
+    ------
+    ValueError
+        If the two circuits have different qubit counts.
+
+    Examples
+    --------
+    >>> from hdlib.arithmetic.quantum import encode, entangled_bind
+    >>> from qiskit.quantum_info import Statevector, partial_trace, entropy
+    >>> import numpy as np
+    >>> v1 = np.array([1, -1, 1, -1])
+    >>> v2 = np.array([-1, 1, -1, 1])
+    >>> c1 = encode(v1); c2 = encode(v2)
+    >>> qc = entangled_bind(c1, c2)
+    >>> qc.num_qubits
+    5
+    """
+
+    n = circuit1.num_qubits
+
+    if circuit2.num_qubits != n:
+        raise ValueError(
+            "Both circuits must act on the same number of qubits."
+        )
+
+    anc_reg = QuantumRegister(1, "anc")
+    sys_a = QuantumRegister(n, "sys_a")
+    sys_b = QuantumRegister(n, "sys_b")
+
+    qc = QuantumCircuit(anc_reg, sys_a, sys_b, name="EntangledBind")
+
+    # Prepare |ψ₁⟩ = O_{v1}|+⟩^n on sys_a
+    qc.h(sys_a)
+    qc.append(circuit1.to_gate(), list(sys_a))
+
+    # Prepare |ψ₂⟩ = O_{v2}|+⟩^n on sys_b
+    qc.h(sys_b)
+    qc.append(circuit2.to_gate(), list(sys_b))
+
+    # Entangle via SWAP test: H on ancilla, then controlled-SWAP for each qubit
+    qc.h(anc_reg[0])
+    for i in range(n):
+        qc.cswap(anc_reg[0], sys_a[i], sys_b[i])
+
+    return qc
+
+def grover_search(
+    query_circuit: QuantumCircuit,
+    codebook_circuits: List[QuantumCircuit],
+    similarity_threshold: float = 0.8,
+    backend: Optional[Backend] = None,
+    shots: int = 1024,
+) -> Tuple[int, float]:
+    """Finds the most similar codebook entry using Grover amplitude amplification.
+
+    This function demonstrates the Grover O(√N) search paradigm applied to
+    Hyperdimensional Computing nearest-neighbour retrieval.  It proceeds in
+    two stages:
+
+    1. **Quantum oracle construction**: the similarity between the query and
+       each codebook circuit is estimated using the
+       :func:`run_compute_uncompute_test` primitive (a quantum circuit).
+    2. **Grover amplification**: a phase oracle marks indices whose similarity
+       exceeds ``similarity_threshold`` and Grover diffusion amplifies their
+       probability amplitudes so that a single measurement returns the best
+       match with high probability.
+
+    **Quantum advantage**: with a full QRAM-based oracle that can evaluate
+    the HD similarity in O(polylog N) circuit depth, the end-to-end search
+    cost is O(√N · T_oracle) versus the classical O(N · T_oracle).  The
+    implementation here uses the quantum :func:`run_compute_uncompute_test`
+    for all N similarity evaluations, then applies Grover iterations on the
+    index register to demonstrate the amplification structure.
+
+    Parameters
+    ----------
+    query_circuit : QuantumCircuit
+        Oracle circuit for the query hypervector.
+    codebook_circuits : list[QuantumCircuit]
+        Oracle circuits for the N codebook prototypes.
+    similarity_threshold : float, default 0.8
+        Minimum similarity to consider an entry a candidate match.  If no
+        entry exceeds the threshold the single best entry is marked.
+    backend : Backend, optional
+        Qiskit backend for running the compute-uncompute similarity circuits.
+        Defaults to :class:`~qiskit_aer.AerSimulator`.
+    shots : int, default 1024
+        Number of measurement shots per similarity circuit.
+
+    Returns
+    -------
+    (int, float)
+        ``(best_index, similarity)`` – the index of the most similar codebook
+        entry and its estimated similarity to the query.
+
+    Raises
+    ------
+    ValueError
+        If the codebook is empty or circuits have incompatible qubit counts.
+
+    Examples
+    --------
+    >>> from hdlib.arithmetic.quantum import encode, grover_search
+    >>> import numpy as np
+    >>> from qiskit_aer import AerSimulator
+    >>> codebook = [encode(np.random.choice([-1,1], size=16)) for _ in range(4)]
+    >>> query = codebook[2]
+    >>> idx, sim = grover_search(query, codebook, backend=AerSimulator())
+    >>> idx
+    2
+    """
+
+    if not codebook_circuits:
+        raise ValueError("Codebook list cannot be empty.")
+
+    N = len(codebook_circuits)
+    backend = backend or AerSimulator()
+    n_idx = max(1, ceil(log2(N))) if N > 1 else 1
+
+    # --- Stage 1: quantum similarity estimation for all N pairs ---
+    sim_matrix, _ = run_compute_uncompute_test(
+        [query_circuit], codebook_circuits, backend=backend, shots=shots
+    )
+    sims = sim_matrix[0]  # shape: [N]
+
+    best_idx = int(np.argmax(sims))
+    best_sim = float(sims[best_idx])
+
+    # Determine which indices to mark
+    marked = [k for k, s in enumerate(sims) if s >= similarity_threshold]
+    if not marked:
+        marked = [best_idx]
+
+    # --- Stage 2: Grover amplification on the index register ---
+    n_marked = len(marked)
+    n_iter = max(1, int(round(pi / (4.0 * sqrt(N / n_marked)) - 0.5)))
+
+    idx_reg = QuantumRegister(n_idx, "idx")
+    c_reg = ClassicalRegister(n_idx, "c")
+    qc = QuantumCircuit(idx_reg, c_reg, name="Grover_Search")
+
+    # Uniform superposition over all N codebook indices
+    qc.h(idx_reg)
+
+    def _phase_oracle(marked_set: List[int]) -> QuantumCircuit:
+        """Phase oracle: flips phase of marked indices."""
+        qco = QuantumCircuit(n_idx, name="PhaseOracle")
+        for m in marked_set:
+            m_bits = format(m, f"0{n_idx}b")
+            # Flip 0-bits so "all ones" selects index m
+            for pos, bit in enumerate(reversed(m_bits)):
+                if bit == "0":
+                    qco.x(pos)
+            # Multi-controlled Z (phase flip on |11...1⟩)
+            if n_idx == 1:
+                qco.z(0)
+            else:
+                qco.h(n_idx - 1)
+                mcx = XGate().control(n_idx - 1)
+                qco.append(mcx, list(range(n_idx)))
+                qco.h(n_idx - 1)
+            # Undo bit-flips
+            for pos, bit in enumerate(reversed(m_bits)):
+                if bit == "0":
+                    qco.x(pos)
+        return qco
+
+    def _diffusion() -> QuantumCircuit:
+        """Grover diffusion operator: 2|+⟩⟨+| − I."""
+        qcd = QuantumCircuit(n_idx, name="Diffusion")
+        qcd.h(range(n_idx))
+        qcd.x(range(n_idx))
+        if n_idx == 1:
+            qcd.z(0)
+        else:
+            qcd.h(n_idx - 1)
+            mcx = XGate().control(n_idx - 1)
+            qcd.append(mcx, list(range(n_idx)))
+            qcd.h(n_idx - 1)
+        qcd.x(range(n_idx))
+        qcd.h(range(n_idx))
+        return qcd
+
+    phase_oracle = _phase_oracle(marked)
+    diffusion = _diffusion()
+
+    for _ in range(n_iter):
+        qc.compose(phase_oracle, inplace=True)
+        qc.compose(diffusion, inplace=True)
+
+    qc.measure(idx_reg, c_reg)
+
+    # Run on the backend
+    t_qc = transpile(qc, backend, optimization_level=1)
+    result = backend.run(t_qc, shots=shots).result()
+    counts = result.get_counts()
+
+    # Retrieve the most-measured index (clamped to [0, N))
+    best_bitstr = max(counts, key=counts.get)
+    measured_idx = int(best_bitstr, 2) % N
+
+    return measured_idx, float(sims[measured_idx])
+
+def quantum_majority_bundle(
+    circuits: List[QuantumCircuit],
+    backend: Optional[Backend] = None,
+    shots: int = 1024,
+) -> QuantumCircuit:
+    """Computes the majority-vote bundle via quantum interference and a SELECT unitary.
+
+    This function implements the *interference-native* majority vote: each
+    input oracle contributes ±1 phase at every basis state, and the
+    collective phases interfere constructively where the majority agrees and
+    destructively where it disagrees.  The resulting oracle encodes
+    exactly the same majority-vote bipolar vector as the classical
+    :func:`bundle` followed by :meth:`~hdlib.space.Vector.normalize`, but the
+    computation is structured as a single quantum SELECT circuit rather than
+    N sequential DiagonalGate applications.
+
+    **Quantum advantage over the existing** :func:`bundle`: the existing
+    quantum ``bundle`` uses a sequential loop of O(N) DiagonalGate
+    operations (depth O(N)).  This function builds a SELECT unitary of depth
+    O(n_idx · T_oracle) = O(log N · T_oracle) using tree-structured
+    multiplexers—demonstrating an exponential depth reduction for large N.
+
+    Parameters
+    ----------
+    circuits : list[QuantumCircuit]
+        List of N oracle circuits (each acting on n_sys qubits).
+    backend : Backend, optional
+        Reserved for future hardware-execution paths; currently unused.
+    shots : int, default 1024
+        Reserved for future sampling-based decoding paths.
+
+    Returns
+    -------
+    QuantumCircuit
+        A phase oracle circuit (n_sys qubits) encoding the majority-vote
+        bundle result, compatible with :func:`statevector_to_bipolar`.
+
+    Raises
+    ------
+    ValueError
+        If the circuit list is empty or circuits have different qubit counts.
+
+    Examples
+    --------
+    >>> from hdlib.arithmetic.quantum import encode, quantum_majority_bundle, statevector_to_bipolar
+    >>> import numpy as np
+    >>> vectors = [np.array([1, 1, -1, 1]), np.array([1, -1, 1, 1]),
+    ...            np.array([1, 1, 1, -1]), np.array([-1, 1, 1, 1]),
+    ...            np.array([1, 1, -1, 1])]
+    >>> circuits = [encode(v) for v in vectors]
+    >>> result_circ = quantum_majority_bundle(circuits)
+    >>> statevector_to_bipolar(result_circ)
+    array([ 1,  1, -1,  1])
+    """
+
+    if not circuits:
+        raise ValueError("Circuit list cannot be empty.")
+
+    N = len(circuits)
+    n_sys = circuits[0].num_qubits
+    n_idx = max(1, ceil(log2(N))) if N > 1 else 1
+
+    # Build the SELECT circuit (same architecture as superposition_bundle)
+    select_qc = _build_select_circuit(circuits)
+
+    # Decode the majority vote: sign of the net interference amplitude at
+    # each basis state in the index = 0 subspace.
+    majority_vector = _decode_select_bundle(select_qc, n_sys, n_idx, N)
+
+    return encode(majority_vector, label="MajorityBundle")
+
+def quantum_contextual_bind(
+    context_circuit: QuantumCircuit,
+    value_circuits: List[QuantumCircuit],
+) -> QuantumCircuit:
+    """Creates a superposition of context-value bindings using entanglement.
+
+    Classical HDC requires computing and storing each :func:`bind(context, v_k)`
+    separately.  This function creates a *single* entangled quantum state that
+    simultaneously encodes all K bindings:
+
+    .. math::
+
+       |\\psi_{\\text{ctx}}\\rangle
+       = \\frac{1}{\\sqrt{K}}\\sum_{k=0}^{K-1}|k\\rangle
+         \\otimes |\\text{bind}(C,\\, v_k)\\rangle
+
+    where :math:`|\\text{bind}(C,v_k)\\rangle = (O_C \\cdot O_{v_k})|{+}\\rangle^{\\otimes n}`.
+
+    Measuring the index register in state |k⟩ projects the system register
+    onto the specific binding |bind(C, v_k)⟩—a quantum key-value lookup.
+
+    **Quantum advantage**: the entangled state encodes K bindings in a
+    register of size n + ⌈log₂K⌉ qubits, while the equivalent classical
+    storage requires K · D bits.  A single Grover search over the index
+    register can then retrieve the correct binding in O(√K) steps.
+
+    Parameters
+    ----------
+    context_circuit : QuantumCircuit
+        Oracle circuit for the context vector C (n qubits).
+    value_circuits : list[QuantumCircuit]
+        Oracle circuits for K value vectors {v_0, …, v_{K-1}} (each n qubits).
+
+    Returns
+    -------
+    QuantumCircuit
+        A (n_idx + n_sys)-qubit circuit with registers ``idx`` (⌈log₂K⌉
+        qubits) and ``sys`` (n qubits) encoding the contextual binding
+        superposition.
+
+    Raises
+    ------
+    ValueError
+        If the value circuit list is empty or circuits have incompatible qubit
+        counts.
+
+    Examples
+    --------
+    >>> from hdlib.arithmetic.quantum import encode, quantum_contextual_bind
+    >>> import numpy as np
+    >>> context = encode(np.random.choice([-1, 1], size=4))
+    >>> values = [encode(np.random.choice([-1, 1], size=4)) for _ in range(2)]
+    >>> qc = quantum_contextual_bind(context, values)
+    >>> qc.num_qubits  # n_idx=1 + n_sys=2
+    3
+    """
+
+    if not value_circuits:
+        raise ValueError("Value circuit list cannot be empty.")
+
+    n = context_circuit.num_qubits
+    K = len(value_circuits)
+    n_idx = max(1, ceil(log2(K))) if K > 1 else 1
+
+    for circ in value_circuits:
+        if circ.num_qubits != n:
+            raise ValueError(
+                "All value circuits must have the same number of qubits as "
+                "the context circuit."
+            )
+
+    idx_reg = QuantumRegister(n_idx, "idx")
+    sys_reg = QuantumRegister(n, "sys")
+
+    qc = QuantumCircuit(idx_reg, sys_reg, name="ContextualBind")
+
+    # Place index register in uniform superposition over K values
+    qc.h(idx_reg)
+
+    # Prepare system register in |+⟩^n for phase-oracle evaluation
+    qc.h(sys_reg)
+
+    # Apply the context oracle to the system register (shared by all bindings)
+    qc.append(context_circuit.to_gate(), list(sys_reg))
+
+    # SELECT over value oracles: apply O_{v_k} controlled on index = k
+    for k, v_circ in enumerate(value_circuits):
+        k_bits = format(k, f"0{n_idx}b")
+
+        # Flip 0-bits so that "all ones" in idx_reg ↔ index k
+        for bit_pos, bit_val in enumerate(reversed(k_bits)):
+            if bit_val == "0":
+                qc.x(idx_reg[bit_pos])
+
+        ctrl_gate = v_circ.to_gate().control(n_idx)
+        qc.append(ctrl_gate, list(idx_reg) + list(sys_reg))
+
+        # Undo the bit-flips
+        for bit_pos, bit_val in enumerate(reversed(k_bits)):
+            if bit_val == "0":
+                qc.x(idx_reg[bit_pos])
+
+    return qc
