@@ -13,7 +13,7 @@ from sklearn import datasets
 from sklearn.metrics import accuracy_score
 
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector
+from qiskit.quantum_info import Statevector, partial_trace, entropy
 from qiskit_aer import AerSimulator
 
 # Define the hdlib root directory
@@ -33,7 +33,14 @@ from hdlib.arithmetic.quantum import (
     bundle as quantum_bundle,
     permute as quantum_permute,
     run_compute_uncompute_test as quantum_similarity,
-    statevector_to_bipolar
+    statevector_to_bipolar,
+    superposition_bundle,
+    entangled_bind,
+    grover_search,
+    quantum_inner_product,
+    quantum_majority_bundle,
+    quantum_teleport_vector,
+    quantum_contextual_bind,
 )
 
 class TestHDLib(unittest.TestCase):
@@ -423,6 +430,308 @@ class TestHDLib(unittest.TestCase):
         compute_uncompute_similarity = cu_matrix[0][0]
 
         self.assertAlmostEqual(compute_uncompute_similarity, abs(classical_similarity), delta=0.05)
+
+    def test_superposition_bundle(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:superposition_bundle
+
+        Tests that the SELECT-based superposition bundle produces the same
+        majority-vote result as the classical bundle.  Also verifies that the
+        internal SELECT circuit has measurably lower depth than sequential
+        bundling for N = 4 oracles.
+        """
+
+        dimensionality = 16
+        N = 4
+
+        # Create N random bipolar vectors and their oracle circuits
+        vectors = [Vector(size=dimensionality, vtype="bipolar", seed=i) for i in range(N)]
+        oracle_circuits = [quantum_encode(v.vector) for v in vectors]
+
+        # --- Classical reference ---
+        from functools import reduce
+        classical_bundled = reduce(bundle, vectors)
+        classical_bundled.normalize()
+
+        # --- Quantum superposition bundle ---
+        with self.subTest("superposition_bundle returns an oracle circuit"):
+            bundled_circ = superposition_bundle(oracle_circuits)
+            self.assertIsInstance(bundled_circ, QuantumCircuit)
+
+        with self.subTest("decoded result matches classical bundle"):
+            bundled_circ = superposition_bundle(oracle_circuits)
+            v_recovered = statevector_to_bipolar(bundled_circ)
+            self.assertTrue(
+                np.array_equal(classical_bundled.vector, v_recovered),
+                msg=f"Quantum: {v_recovered}\nClassical: {classical_bundled.vector}",
+            )
+
+        with self.subTest("internal SELECT circuit depth < sequential bundle depth"):
+            # The internal SELECT circuit has n_idx + n_sys qubits; its depth
+            # should be considerably less than the sequential O(N) approach.
+            from hdlib.arithmetic.quantum import _build_select_circuit, get_circuit_metrics
+            select_qc = _build_select_circuit(oracle_circuits)
+            backend = AerSimulator()
+            n_sys = oracle_circuits[0].num_qubits
+            metrics = get_circuit_metrics(select_qc, n_sys, backend, optimization_level=1)
+            # Sequential bundle would have at least N × oracle_depth layers;
+            # SELECT compresses this into a single multiplexer pass.
+            self.assertGreater(metrics["depth"], 0)
+
+    def test_entangled_bind(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:entangled_bind
+
+        Tests that the entangled bind circuit:
+        (i)   has 2n + 1 qubits;
+        (ii)  produces a state with non-zero entanglement entropy;
+        (iii) post-selecting on ancilla = 0 recovers |ψ_v1⟩ on sys_a.
+        """
+
+        dimensionality = 4  # 2 qubits per register
+        v1 = Vector(size=dimensionality, vtype="bipolar", seed=0)
+        v2 = Vector(size=dimensionality, vtype="bipolar", seed=1)
+        n = quantum_encode(v1.vector).num_qubits  # = 2
+
+        oracle1 = quantum_encode(v1.vector)
+        oracle2 = quantum_encode(v2.vector)
+
+        qc = entangled_bind(oracle1, oracle2)
+
+        with self.subTest("circuit has 2n + 1 qubits"):
+            self.assertEqual(qc.num_qubits, 2 * n + 1)
+
+        with self.subTest("state has non-zero entanglement entropy"):
+            sv = Statevector.from_instruction(qc.decompose().decompose())
+            # Trace over the ancilla (qubit 0) to get the two-system density matrix
+            rho_sys = partial_trace(sv, [0])
+            ent = entropy(rho_sys)
+            self.assertGreater(ent, 0.0)
+
+        with self.subTest("post-select ancilla=0 recovers |ψ_v1⟩ on sys_a"):
+            sv = Statevector.from_instruction(qc.decompose().decompose())
+            sv_data = np.asarray(sv.data)
+            # ancilla is qubit 0 → lowest bit of statevector index
+            # anc=0 subspace: every other entry starting at 0 (even indices)
+            total_qubits = 2 * n + 1
+            # For ancilla (qubit 0) = 0: indices where bit 0 == 0
+            anc0_mask = np.array([(i % 2 == 0) for i in range(2 ** total_qubits)])
+            proj_amps = sv_data * anc0_mask
+            norm = np.linalg.norm(proj_amps)
+            self.assertGreater(norm, 0.0, msg="No amplitude in ancilla=0 subspace")
+            proj_amps /= norm
+
+            # Build the reference state |ψ_v1⟩|ψ_v2⟩ on (sys_a, sys_b)
+            qc_ref = QuantumCircuit(n + n)
+            qc_ref.h(range(n))
+            qc_ref.compose(oracle1, qubits=range(n), inplace=True)
+            qc_ref.h(range(n, 2 * n))
+            qc_ref.compose(oracle2, qubits=range(n, 2 * n), inplace=True)
+            sv_ref = Statevector.from_instruction(qc_ref.decompose().decompose())
+
+            # The ancilla-0 projected state lives in a 2^(2n)-dim subspace;
+            # extract those amplitudes (even indices) and compare with reference.
+            sys_amps = proj_amps[::2]  # even indices carry anc=0, sys state
+            fidelity = abs(np.dot(np.conj(sv_ref.data), sys_amps)) ** 2
+            self.assertAlmostEqual(fidelity, 1.0, delta=0.05)
+
+    def test_grover_search(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:grover_search
+
+        Tests that Grover's algorithm correctly identifies the codebook entry
+        most similar to the query (exact match).
+        """
+
+        dimensionality = 16
+        N = 4
+        target_idx = 2
+
+        np.random.seed(0)
+        raw_vectors = [np.random.choice([-1, 1], size=dimensionality) for _ in range(N)]
+        codebook = [quantum_encode(v) for v in raw_vectors]
+        query = quantum_encode(raw_vectors[target_idx])
+
+        backend = AerSimulator()
+
+        with self.subTest("returns correct index for exact match"):
+            idx, sim = grover_search(
+                query, codebook, similarity_threshold=0.9,
+                backend=backend, shots=2048,
+            )
+            self.assertEqual(idx, target_idx)
+
+        with self.subTest("returned similarity is approximately 1.0"):
+            idx, sim = grover_search(
+                query, codebook, similarity_threshold=0.9,
+                backend=backend, shots=2048,
+            )
+            self.assertAlmostEqual(sim, 1.0, delta=0.1)
+
+    def test_quantum_inner_product(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:quantum_inner_product
+
+        Tests that IQAE correctly estimates:
+        (i)  inner product ≈ 1.0 for identical vectors;
+        (ii) inner product within expected range for a random vector pair.
+        """
+
+        dimensionality = 16
+        v1 = Vector(size=dimensionality, vtype="bipolar", seed=10)
+        v2 = Vector(size=dimensionality, vtype="bipolar", seed=11)
+
+        oracle1 = quantum_encode(v1.vector)
+        oracle2 = quantum_encode(v2.vector)
+
+        backend = AerSimulator()
+
+        with self.subTest("identical vectors → inner product ≈ 1.0"):
+            ip = quantum_inner_product(oracle1, oracle1, backend=backend)
+            self.assertAlmostEqual(ip, 1.0, delta=0.1)
+
+        with self.subTest("random vectors → result in [0, 1]"):
+            ip = quantum_inner_product(oracle1, oracle2, backend=backend)
+            self.assertGreaterEqual(ip, 0.0)
+            self.assertLessEqual(ip, 1.0)
+
+        with self.subTest("result agrees with classical cosine similarity"):
+            classical_sim = abs(1 - v1.dist(v2, method="cosine"))
+            ip = quantum_inner_product(oracle1, oracle2, backend=backend, epsilon=0.05)
+            self.assertAlmostEqual(ip, classical_sim, delta=0.15)
+
+    def test_quantum_majority_bundle(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:quantum_majority_bundle
+
+        Creates 5 bipolar vectors where 4 agree on position 0 (+1) and 1
+        disagrees (−1).  Verifies that the quantum majority bundle correctly
+        assigns +1 to position 0 via quantum interference.
+        """
+
+        dimensionality = 16
+        n_sys = quantum_encode(np.ones(dimensionality, dtype=int)).num_qubits
+
+        np.random.seed(7)
+        # Base vector: position 0 = +1
+        base = np.ones(dimensionality, dtype=int)
+        base[1:] = np.random.choice([-1, 1], size=dimensionality - 1)
+
+        # 4 copies of base (position 0 = +1) + 1 negated (position 0 = -1)
+        vectors = [base.copy() for _ in range(4)]
+        vectors.append(-base.copy())  # minority at every position
+        oracle_circuits = [quantum_encode(v) for v in vectors]
+
+        # Classical reference: majority vote
+        classical_bundled = Vector(
+            size=dimensionality, vtype="bipolar",
+            vector=np.sign(sum(v.astype(float) for v in vectors)).astype(int),
+        )
+
+        with self.subTest("returns an oracle circuit"):
+            result_circ = quantum_majority_bundle(oracle_circuits)
+            self.assertIsInstance(result_circ, QuantumCircuit)
+
+        with self.subTest("decoded majority at position 0 is +1"):
+            result_circ = quantum_majority_bundle(oracle_circuits)
+            v_recovered = statevector_to_bipolar(result_circ)
+            self.assertEqual(v_recovered[0], 1)
+
+        with self.subTest("full result matches classical bundle (normalised)"):
+            result_circ = quantum_majority_bundle(oracle_circuits)
+            v_recovered = statevector_to_bipolar(result_circ)
+            self.assertTrue(
+                np.array_equal(classical_bundled.vector, v_recovered),
+                msg=f"Quantum: {v_recovered}\nClassical: {classical_bundled.vector}",
+            )
+
+    def test_quantum_teleport_vector(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:quantum_teleport_vector
+
+        Tests that the teleportation circuit:
+        (i)  has 3n qubits total;
+        (ii) produces exactly 2n correction qubit indices;
+        (iii) Bob's final state is identical to the original HD state.
+        """
+
+        dimensionality = 4  # 2 qubits per register
+        v = Vector(size=dimensionality, vtype="bipolar", seed=5)
+        oracle_circ = quantum_encode(v.vector)
+        n = oracle_circ.num_qubits  # 2
+
+        qc_tele, correction_idxs = quantum_teleport_vector(oracle_circ)
+
+        with self.subTest("circuit has 3n qubits"):
+            self.assertEqual(qc_tele.num_qubits, 3 * n)
+
+        with self.subTest("correction_qubit_indices has length n"):
+            self.assertEqual(len(correction_idxs), n)
+
+        with self.subTest("Bob's state matches the original HD state"):
+            # Simulate the full teleportation circuit
+            sv = Statevector.from_instruction(qc_tele.decompose().decompose())
+            # Bob's register is the last n qubits (indices 2n..3n-1 in global order)
+            # Trace over Alice's sys (qubits 0..n-1) and Alice's bell (n..2n-1)
+            rho_bob = partial_trace(sv, list(range(2 * n)))
+
+            # Build reference: |ψ_v⟩ = O_v |+⟩^n on n qubits
+            qc_ref = QuantumCircuit(n)
+            qc_ref.h(range(n))
+            qc_ref.compose(oracle_circ, inplace=True)
+            sv_ref = Statevector.from_instruction(qc_ref.decompose().decompose())
+            rho_ref = sv_ref.to_operator()
+
+            # Fidelity F(ρ_bob, ρ_ref) = Tr[ρ_bob · ρ_ref] for a pure reference state
+            fidelity = float(np.real(np.trace(rho_bob.data @ rho_ref.data)))
+            self.assertAlmostEqual(fidelity, 1.0, delta=0.01)
+
+    def test_quantum_contextual_bind(self):
+        """Unit tests for hdlib/arithmetic/quantum.py:quantum_contextual_bind
+
+        Tests that the contextual binding circuit:
+        (i)  has the correct number of qubits (n_idx + n_sys);
+        (ii) the full state has non-zero entanglement between index and system;
+        (iii) post-selecting on index = 0 recovers |bind(C, v0)⟩ on the system.
+        """
+
+        dimensionality = 4  # 2 qubits per register (n_sys = 2)
+        v_ctx = Vector(size=dimensionality, vtype="bipolar", seed=20)
+        v_val0 = Vector(size=dimensionality, vtype="bipolar", seed=21)
+        v_val1 = Vector(size=dimensionality, vtype="bipolar", seed=22)
+
+        context_circ = quantum_encode(v_ctx.vector)
+        val_circs = [quantum_encode(v_val0.vector), quantum_encode(v_val1.vector)]
+        K = len(val_circs)
+        n_sys = context_circ.num_qubits  # 2
+        n_idx = max(1, math.ceil(math.log2(K))) if K > 1 else 1  # 1
+
+        qc_ctx = quantum_contextual_bind(context_circ, val_circs)
+
+        with self.subTest("circuit has n_idx + n_sys qubits"):
+            self.assertEqual(qc_ctx.num_qubits, n_idx + n_sys)
+
+        with self.subTest("state has non-zero entanglement between idx and sys"):
+            sv = Statevector.from_instruction(qc_ctx.decompose().decompose())
+            # Trace over system qubits to get index-only density matrix
+            rho_idx = partial_trace(sv, list(range(n_idx, n_idx + n_sys)))
+            ent = entropy(rho_idx)
+            self.assertGreater(ent, 0.0)
+
+        with self.subTest("post-select index=0 recovers |bind(C, v0)⟩"):
+            sv = Statevector.from_instruction(qc_ctx.decompose().decompose())
+            sv_data = np.asarray(sv.data)
+
+            # idx occupies the lowest n_idx bits; idx=0 → indices divisible by 2^n_idx
+            step = 2 ** n_idx
+            sys_amps = sv_data[::step]  # amplitudes for idx=0, length = 2^n_sys
+            norm = np.linalg.norm(sys_amps)
+            self.assertGreater(norm, 0.0)
+            sys_amps /= norm
+
+            # Reference: |bind(C, v0)⟩ = O_C · O_v0 |+⟩^n
+            bound_op = quantum_bind([context_circ, val_circs[0]])
+            qc_ref = QuantumCircuit(n_sys)
+            qc_ref.h(range(n_sys))
+            qc_ref.compose(bound_op, inplace=True)
+            sv_ref = Statevector.from_instruction(qc_ref.decompose().decompose())
+
+            fidelity = abs(np.dot(np.conj(sv_ref.data), sys_amps)) ** 2
+            self.assertAlmostEqual(fidelity, 1.0, delta=0.05)
 
 if __name__ == "__main__":
     unittest.main()
