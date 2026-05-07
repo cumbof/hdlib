@@ -1384,8 +1384,10 @@ def quantum_teleport_vector(
         qc.cx(alice_bell[i], bob_reg[i])  # X correction controlled on alice_bell
         qc.cz(alice_sys[i], bob_reg[i])  # Z correction controlled on alice_sys
 
-    # Correction qubit indices: alice_bell qubits (0..n-1 in alice_bell register)
-    correction_indices = list(range(n, 2 * n))  # alice_bell qubits in global ordering
+    # Correction qubit indices: both alice_sys (qubits 0..n-1) and alice_bell
+    # (qubits n..2n-1) carry the 2n classical correction bits.
+    # alice_sys → Z corrections;  alice_bell → X corrections.
+    correction_indices = list(range(n)) + list(range(n, 2 * n))
 
     return qc, correction_indices
 

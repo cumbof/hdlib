@@ -14,7 +14,7 @@ Quantum approach
 :func:`quantum_contextual_bind` creates a *single* entangled quantum state
 that simultaneously encodes all C contextual bindings:
 
-    |ψ_ctx⟩ = (1/√C) Σ_k |k⟩ ⊗ |bind(DOL, USTATES_k, MEXICO_k)⟩
+    |ψ_ctx⟩ = (1/√C) Σ_k |k⟩ ⊗ |bind(context_k, src_country_k, tgt_country_k)⟩
 
 Measuring the index register in basis |k⟩ projects the system onto the
 specific analogy result for query k—a quantum key-value lookup over multiple
@@ -228,9 +228,9 @@ def main():
     print("  quantum_contextual_bind encodes all C analogy states in a single")
     print("  entangled circuit using n + ⌈log₂C⌉ qubits.")
     print("  Classical: C separate bind+search chains.")
-    print(f"  Here C={len(ANALOGIES)}, circuit qubits = {DIMENSION.bit_length()-1} + "
+    print(f"  Here C={len(ANALOGIES)}, circuit qubits = {int(np.ceil(np.log2(DIMENSION)))} + "
           f"{max(1, int(np.ceil(np.log2(len(ANALOGIES)))))} = "
-          f"{DIMENSION.bit_length()-1 + max(1, int(np.ceil(np.log2(len(ANALOGIES)))))}.")
+          f"{int(np.ceil(np.log2(DIMENSION))) + max(1, int(np.ceil(np.log2(len(ANALOGIES)))))}.")
 
 
 if __name__ == "__main__":

@@ -128,7 +128,7 @@ def main():
     print("=" * 64)
     print(" Quantum Private HD Codebook Query")
     print("=" * 64)
-    print(f"HD dimension   : {DIMENSION}  (n_sys = {DIMENSION.bit_length()-1} qubits)")
+    print(f"HD dimension   : {DIMENSION}  (n_sys = {int(np.ceil(np.log2(DIMENSION)))} qubits)")
     print(f"Codebook size  : {N_PROTOTYPES}")
     print(f"IQAE precision : ε = {EPSILON}")
     print()

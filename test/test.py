@@ -659,8 +659,8 @@ class TestHDLib(unittest.TestCase):
         with self.subTest("circuit has 3n qubits"):
             self.assertEqual(qc_tele.num_qubits, 3 * n)
 
-        with self.subTest("correction_qubit_indices has length n"):
-            self.assertEqual(len(correction_idxs), n)
+        with self.subTest("correction_qubit_indices has length 2n"):
+            self.assertEqual(len(correction_idxs), 2 * n)
 
         with self.subTest("Bob's state matches the original HD state"):
             # Simulate the full teleportation circuit
