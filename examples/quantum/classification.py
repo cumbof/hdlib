@@ -4,6 +4,7 @@ Data retrieval and preprocessing borrowed from https://www.tensorflow.org/quantu
 import collections
 import contextlib
 import copy
+import multiprocessing as mp
 import os
 import math
 import sys
@@ -43,6 +44,11 @@ API_KEY = "YOUR-API-KEY"
 RETRAIN = True
 RETRAIN_EPOCHS = 10
 RETRAIN_LR = 1.0
+# When True the retrain loop stops as soon as an epoch stops improving the
+# training error (original behaviour). Set to False to run the full
+# RETRAIN_EPOCHS budget and record the complete per-epoch curve; the returned
+# model is unchanged either way (the best-known prototypes are restored).
+RETRAIN_EARLY_STOP = True
 
 def print_cv_summary(model_name, reports, matrices, times, n_splits):
     """Prints a summary of cross-validation results."""
@@ -240,11 +246,17 @@ def _run_fold_body(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
     model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000)
     model_q.fit(X_train_fold, y_train_fold)
 
-    print(f"Retraining Quantum Model (D={dimensionality}; epochs={RETRAIN_EPOCHS}; lr={RETRAIN_LR})...")
     if RETRAIN:
+        print(f"Retraining Quantum Model (D={dimensionality}; epochs={RETRAIN_EPOCHS}; lr={RETRAIN_LR})...")
+        # Passing the held-out fold as test_points records a per-epoch
+        # ``test_error`` alongside the training error, so the saved history is a
+        # genuine test curve (not just training error). This costs one extra
+        # quantum predict over the test set per epoch.
         error_rate, epochs = model_q.retrain(
             X_train_fold, y_train_fold,
             epochs=RETRAIN_EPOCHS, lr=RETRAIN_LR, verbose=False,
+            test_points=X_test_fold, test_labels=y_test_fold,
+            early_stop=RETRAIN_EARLY_STOP,
         )
         # Capture the per-epoch error curve and save it inside this fold's
         # own JSON checkpoint (under ``q_epochs`` / ``q_final_epoch`` /
@@ -268,9 +280,13 @@ def _run_fold_body(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
 
     fold_roc_data_q = list()
     for true_label, score_pair in zip(y_test_fold, scores_q):
-        score_for_class_1 = score_pair[1]
+        # Use the decision MARGIN (similarity to the positive prototype minus
+        # similarity to the negative one). The classifier decides on both
+        # prototypes, so ranking on score_pair[1] alone is inconsistent with the
+        # predictions and makes AUC move opposite to accuracy after retraining.
+        score_for_class_1 = score_pair[1] - score_pair[0]
         if math.isnan(score_for_class_1):
-            score_for_class_1 = 0.5
+            score_for_class_1 = 0.0
         fold_roc_data_q.append((true_label, float(score_for_class_1)))
 
     n_features = X_train_fold_np.shape[1]
@@ -531,8 +547,16 @@ if __name__ == "__main__":
 
     # --- Submit all folds to a process pool so they run in parallel ---
     # Using ProcessPoolExecutor (not threads) so each fold runs in its own
-    # Python process and is not limited by the GIL. max_workers is set to
-    # N_SPLITS so all 5 folds can execute concurrently.
+    # Python process and is not limited by the GIL.
+    #
+    # Force the "spawn" start method: this parent process has already imported
+    # and used TensorFlow (and each worker uses Qiskit Aer), both of which start
+    # background threads. Forking a multi-threaded process can deadlock the
+    # children, so we start them fresh with "spawn" instead. We also cap the
+    # worker count at the number of CPUs to avoid oversubscribing the machine,
+    # since every fold itself spins up TF/Aer threads.
+    mp_ctx = mp.get_context("spawn")
+    max_workers = max(1, min(N_SPLITS, os.cpu_count() or N_SPLITS))
     fold_splits = list(enumerate(kf.split(X_cv_pool_np), start=1))
 
     print(f"\n--- Launching {len(fold_splits)} folds in parallel ---")
@@ -551,7 +575,7 @@ if __name__ == "__main__":
     results_by_fold = {}
     total_folds = len(fold_splits)
     _render_progress(0, total_folds)
-    with ProcessPoolExecutor(max_workers=N_SPLITS) as executor:
+    with ProcessPoolExecutor(max_workers=max_workers, mp_context=mp_ctx) as executor:
         futures = [
             executor.submit(
                 run_fold,

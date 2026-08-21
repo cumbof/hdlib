@@ -1594,23 +1594,46 @@ class QuantumClassificationModel(object):
 
         return predictions, similarities
 
-    def retrain(self, train_points: List[List[float]], train_labels: List[str], epochs: int=10, lr: float=1.0, verbose: bool=True) -> Tuple[float, int]:
+    def retrain(self, train_points: List[List[float]], train_labels: List[str], epochs: int=10, lr: float=1.0, verbose: bool=True, test_points: Optional[List[List[float]]]=None, test_labels: Optional[List[str]]=None, early_stop: bool=True) -> Tuple[float, int]:
         """Retrain the model by adjusting class prototypes based on misclassified samples.
 
         Per-epoch error rates are recorded on ``self.retrain_history_`` as a list
         of ``{"epoch": int, "error": float}`` entries (starting at epoch 0), so
         callers can access the training curve without parsing stdout. Setting
         ``verbose=False`` suppresses the per-epoch prints.
+
+        If ``test_points`` (and ``test_labels``) are provided, each history entry
+        also carries a ``"test_error"`` field measured on that held-out set. This
+        lets callers plot a genuine test-error-vs-epoch curve, but note it costs
+        one extra ``predict`` over the test set per epoch (the expensive step for
+        the quantum model), so it is opt-in.
+
+        ``early_stop`` (default ``True``) preserves the original behaviour: as soon
+        as an epoch fails to reduce the training error the best-known prototypes are
+        restored and the loop exits. Set ``early_stop=False`` to run the full
+        ``epochs`` budget and record the complete curve; the best-known prototypes
+        are still restored before returning, so the returned model is unchanged by
+        this flag.
         """
 
         if not hasattr(self, "classes_"):
             raise RuntimeError("You must call fit before calling retrain.")
 
+        if test_points is not None and test_labels is None:
+            raise ValueError("test_labels must be provided when test_points is given.")
+
+        def _error(points, labels):
+            preds, _ = self.predict(points)
+            return sum(1 for p, t in zip(preds, labels) if p != t) / len(labels)
+
         # 1. Evaluate the base model before any retraining to establish a baseline
         predictions, _ = self.predict(train_points)
 
         best_error = sum(1 for p, t in zip(predictions, train_labels) if p != t) / len(train_labels)
-        self.retrain_history_ = [{"epoch": 0, "error": float(best_error)}]
+        epoch_0 = {"epoch": 0, "error": float(best_error)}
+        if test_points is not None:
+            epoch_0["test_error"] = float(_error(test_points, test_labels))
+        self.retrain_history_ = [epoch_0]
         if verbose:
             print(f"\tepoch 0: {best_error}")
 
@@ -1665,23 +1688,32 @@ class QuantumClassificationModel(object):
             predictions, _ = self.predict(train_points)
 
             current_error = sum(1 for p, t in zip(predictions, train_labels) if p != t) / len(train_labels)
-            self.retrain_history_.append({"epoch": epoch, "error": float(current_error)})
+            epoch_entry = {"epoch": epoch, "error": float(current_error)}
+            if test_points is not None:
+                epoch_entry["test_error"] = float(_error(test_points, test_labels))
+            self.retrain_history_.append(epoch_entry)
             if verbose:
                 print(f"\tepoch {epoch}: {current_error}")
 
-            # 5. Check early stopping condition
-            if current_error >= best_error:
+            # 5. Track the best-known state; optionally stop early
+            if current_error < best_error:
+                # Improvement found: update the best error and save the new state
+                best_error = current_error
+                best_prototypes = {c: qc.copy() for c, qc in self.prototypes.items()}
+
+                if best_error == 0.0:
+                    break
+            elif early_stop:
                 # The updates made the model worse (or it stopped improving).
                 # Revert to the best known state and exit!
                 self.prototypes = best_prototypes
 
                 break
+            # When early_stop is False the loop keeps running from the current
+            # (possibly worse) prototypes so the full curve is recorded; the best
+            # state is restored just before returning below.
 
-            # 6. Improvement found! Update the best error and save the new state
-            best_error = current_error
-            best_prototypes = {c: qc.copy() for c, qc in self.prototypes.items()}
-
-            if best_error == 0.0:
-                break
+        # Always return the best-known prototypes, regardless of early_stop.
+        self.prototypes = best_prototypes
 
         return best_error, final_epoch
