@@ -20,14 +20,12 @@ from sklearn.model_selection import KFold
 from hdlib.model import ClassificationModel, QuantumClassificationModel
 
 # Qiskit imports required for the QSVC and VQC baselines.
-# NOTE: QSVC and VQC baselines are currently disabled. Re-enable these
-# imports if the QSVC/VQC sections below are uncommented again.
-# from qiskit_algorithms.optimizers import COBYLA
-# from qiskit.circuit.library import ZFeatureMap, ZZFeatureMap, RealAmplitudes
-# from qiskit_machine_learning.algorithms.classifiers import VQC, QSVC
-# from qiskit_machine_learning.state_fidelities import ComputeUncompute
-# from qiskit_machine_learning.kernels import FidelityQuantumKernel
-# from qiskit.primitives import StatevectorSampler
+from qiskit_algorithms.optimizers import COBYLA
+from qiskit.circuit.library import ZFeatureMap, ZZFeatureMap, RealAmplitudes
+from qiskit_machine_learning.algorithms.classifiers import VQC, QSVC
+from qiskit_machine_learning.state_fidelities import ComputeUncompute
+from qiskit_machine_learning.kernels import FidelityQuantumKernel
+from qiskit.primitives import StatevectorSampler
 
 
 # Configuration for Hardware (Optional)
@@ -291,71 +289,64 @@ def _run_fold_body(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
 
     n_features = X_train_fold_np.shape[1]
 
-    # --- QSVC and VQC baselines are currently DISABLED. ---
-    # The blocks below have been commented out on request. To re-enable,
-    # uncomment (a) the qiskit imports near the top of the file, (b) the
-    # QSVC/VQC training and evaluation blocks below, (c) the corresponding
-    # entries in ``fold_data``, and (d) the aggregation / summary / ROC
-    # sections in ``__main__``.
-    #
-    # # --- QSVC Model (QSVM) ---
-    # print("\nTraining QSVC Model (QSVM)...")
-    # start_time_qsvc = time.perf_counter()
-    #
-    # feature_map_qsvc = ZZFeatureMap(feature_dimension=n_features, reps=1, entanglement='linear')
-    #
-    # sampler = StatevectorSampler()
-    # fidelity = ComputeUncompute(sampler=sampler)
-    # qsvc_kernel = FidelityQuantumKernel(fidelity=fidelity, feature_map=feature_map_qsvc)
-    #
-    # qsvc = QSVC(quantum_kernel=qsvc_kernel)
-    # qsvc.fit(X_train_fold_np, y_train_fold_np)
-    #
-    # print("Evaluating QSVC Model...")
-    # y_pred_qsvc = qsvc.predict(X_test_fold_np)
-    # scores_qsvc = qsvc.decision_function(X_test_fold_np)
-    #
-    # end_time_qsvc = time.perf_counter()
-    #
-    # fold_time_qsvc = end_time_qsvc - start_time_qsvc
-    # fold_report_qsvc = classification_report(y_test_fold, y_pred_qsvc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-    # fold_matrix_qsvc = confusion_matrix(y_test_fold, y_pred_qsvc, labels=[0, 1])
-    #
-    # scores_qsvc_list = scores_qsvc.tolist()
-    # fold_roc_data_qsvc = []
-    # for true_label, score_for_class_1 in zip(y_test_fold, scores_qsvc_list):
-    #     fold_roc_data_qsvc.append((true_label, float(score_for_class_1)))
-    #
-    # # --- VQC Model (QNN) ---
-    # print("\nTraining VQC Model (QNN)...")
-    # start_time_vqc = time.perf_counter()
-    #
-    # feature_map_vqc = ZFeatureMap(feature_dimension=n_features, reps=1)
-    # ansatz_vqc = RealAmplitudes(num_qubits=n_features, reps=3)
-    # optimizer_vqc = COBYLA(maxiter=100)
-    #
-    # vqc = VQC(
-    #     feature_map=feature_map_vqc,
-    #     ansatz=ansatz_vqc,
-    #     optimizer=optimizer_vqc
-    # )
-    #
-    # vqc.fit(X_train_fold_np, y_train_fold_np)
-    #
-    # print("Evaluating VQC Model...")
-    # y_pred_vqc = vqc.predict(X_test_fold_np)
-    # scores_vqc_raw = vqc.neural_network.forward(X_test_fold_np, vqc.weights)
-    #
-    # end_time_vqc = time.perf_counter()
-    #
-    # fold_time_vqc = end_time_vqc - start_time_vqc
-    # fold_report_vqc = classification_report(y_test_fold, y_pred_vqc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-    # fold_matrix_vqc = confusion_matrix(y_test_fold, y_pred_vqc, labels=[0, 1])
-    #
-    # scores_vqc_class1 = [prob[1] for prob in scores_vqc_raw.tolist()]
-    # fold_roc_data_vqc = []
-    # for true_label, score_for_class_1 in zip(y_test_fold, scores_vqc_class1):
-    #     fold_roc_data_vqc.append((true_label, float(score_for_class_1)))
+    # --- QSVC Model (QSVM) ---
+    print("\nTraining QSVC Model (QSVM)...")
+    start_time_qsvc = time.perf_counter()
+
+    feature_map_qsvc = ZZFeatureMap(feature_dimension=n_features, reps=1, entanglement='linear')
+
+    sampler = StatevectorSampler()
+    fidelity = ComputeUncompute(sampler=sampler)
+    qsvc_kernel = FidelityQuantumKernel(fidelity=fidelity, feature_map=feature_map_qsvc)
+
+    qsvc = QSVC(quantum_kernel=qsvc_kernel)
+    qsvc.fit(X_train_fold_np, y_train_fold_np)
+
+    print("Evaluating QSVC Model...")
+    y_pred_qsvc = qsvc.predict(X_test_fold_np)
+    scores_qsvc = qsvc.decision_function(X_test_fold_np)
+
+    end_time_qsvc = time.perf_counter()
+
+    fold_time_qsvc = end_time_qsvc - start_time_qsvc
+    fold_report_qsvc = classification_report(y_test_fold, y_pred_qsvc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+    fold_matrix_qsvc = confusion_matrix(y_test_fold, y_pred_qsvc, labels=[0, 1])
+
+    scores_qsvc_list = scores_qsvc.tolist()
+    fold_roc_data_qsvc = []
+    for true_label, score_for_class_1 in zip(y_test_fold, scores_qsvc_list):
+        fold_roc_data_qsvc.append((true_label, float(score_for_class_1)))
+
+    # --- VQC Model (QNN) ---
+    print("\nTraining VQC Model (QNN)...")
+    start_time_vqc = time.perf_counter()
+
+    feature_map_vqc = ZFeatureMap(feature_dimension=n_features, reps=1)
+    ansatz_vqc = RealAmplitudes(num_qubits=n_features, reps=3)
+    optimizer_vqc = COBYLA(maxiter=100)
+
+    vqc = VQC(
+        feature_map=feature_map_vqc,
+        ansatz=ansatz_vqc,
+        optimizer=optimizer_vqc
+    )
+
+    vqc.fit(X_train_fold_np, y_train_fold_np)
+
+    print("Evaluating VQC Model...")
+    y_pred_vqc = vqc.predict(X_test_fold_np)
+    scores_vqc_raw = vqc.neural_network.forward(X_test_fold_np, vqc.weights)
+
+    end_time_vqc = time.perf_counter()
+
+    fold_time_vqc = end_time_vqc - start_time_vqc
+    fold_report_vqc = classification_report(y_test_fold, y_pred_vqc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+    fold_matrix_vqc = confusion_matrix(y_test_fold, y_pred_vqc, labels=[0, 1])
+
+    scores_vqc_class1 = [prob[1] for prob in scores_vqc_raw.tolist()]
+    fold_roc_data_vqc = []
+    for true_label, score_for_class_1 in zip(y_test_fold, scores_vqc_class1):
+        fold_roc_data_vqc.append((true_label, float(score_for_class_1)))
 
     # --- Checkpoint Saving ---
     fold_data = {
@@ -377,16 +368,15 @@ def _run_fold_body(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
         'q_final_epoch': int(epochs),
         'q_final_error': float(error_rate),
 
-        # QSVC / VQC entries are disabled along with those models above.
-        # 'vqc_report': fold_report_vqc,
-        # 'vqc_matrix': fold_matrix_vqc.tolist(),
-        # 'vqc_time': fold_time_vqc,
-        # 'vqc_roc_data': fold_roc_data_vqc,
-        #
-        # 'qsvc_report': fold_report_qsvc,
-        # 'qsvc_matrix': fold_matrix_qsvc.tolist(),
-        # 'qsvc_time': fold_time_qsvc,
-        # 'qsvc_roc_data': fold_roc_data_qsvc,
+        'vqc_report': fold_report_vqc,
+        'vqc_matrix': fold_matrix_vqc.tolist(),
+        'vqc_time': fold_time_vqc,
+        'vqc_roc_data': fold_roc_data_vqc,
+
+        'qsvc_report': fold_report_qsvc,
+        'qsvc_matrix': fold_matrix_qsvc.tolist(),
+        'qsvc_time': fold_time_qsvc,
+        'qsvc_roc_data': fold_roc_data_qsvc,
     }
 
     with open(checkpoint_file, 'w') as f:
@@ -523,25 +513,24 @@ if __name__ == "__main__":
     classical_matrices = list()
     quantum_reports = list()
     quantum_matrices = list()
-    # QSVC / VQC aggregation lists are disabled together with those models.
-    # vqc_reports = list()
-    # vqc_matrices = list()
-    # qsvc_reports = list()
-    # qsvc_matrices = list()
+    vqc_reports = list()
+    vqc_matrices = list()
+    qsvc_reports = list()
+    qsvc_matrices = list()
 
     # Lists to store timing for each fold
     classical_10k_times = list()
     classical_times = list()
     quantum_times = list()
-    # vqc_times = list()
-    # qsvc_times = list()
+    vqc_times = list()
+    qsvc_times = list()
 
     # New lists to store (true_label, score) tuples for ROC curve data
     classical_10k_roc_data = list()
     classical_roc_data = list()
     quantum_roc_data = list()
-    # vqc_roc_data = list()
-    # qsvc_roc_data = list()
+    vqc_roc_data = list()
+    qsvc_roc_data = list()
 
     dimensionality = 32
 
@@ -617,16 +606,15 @@ if __name__ == "__main__":
         quantum_times.append(fold_data['q_time'])
         quantum_roc_data.extend(fold_data['q_roc_data'])
 
-        # QSVC / VQC aggregation is disabled together with those models.
-        # vqc_reports.append(fold_data['vqc_report'])
-        # vqc_matrices.append(np.array(fold_data['vqc_matrix']))
-        # vqc_times.append(fold_data['vqc_time'])
-        # vqc_roc_data.extend(fold_data['vqc_roc_data'])
-        #
-        # qsvc_reports.append(fold_data['qsvc_report'])
-        # qsvc_matrices.append(np.array(fold_data['qsvc_matrix']))
-        # qsvc_times.append(fold_data['qsvc_time'])
-        # qsvc_roc_data.extend(fold_data['qsvc_roc_data'])
+        vqc_reports.append(fold_data['vqc_report'])
+        vqc_matrices.append(np.array(fold_data['vqc_matrix']))
+        vqc_times.append(fold_data['vqc_time'])
+        vqc_roc_data.extend(fold_data['vqc_roc_data'])
+
+        qsvc_reports.append(fold_data['qsvc_report'])
+        qsvc_matrices.append(np.array(fold_data['qsvc_matrix']))
+        qsvc_times.append(fold_data['qsvc_time'])
+        qsvc_roc_data.extend(fold_data['qsvc_roc_data'])
 
     # --- 5. Cross-Validation Results Summary ---
     print("\n--- 5. Cross-Validation Results Summary ---")
@@ -634,9 +622,8 @@ if __name__ == "__main__":
     print_cv_summary("Classical Model (D=10000)", classical_10k_reports, classical_10k_matrices, classical_10k_times, N_SPLITS)
     print_cv_summary(f"Classical Model (D={dimensionality})", classical_reports, classical_matrices, classical_times, N_SPLITS)
     print_cv_summary(f"Quantum Model (D={dimensionality})", quantum_reports, quantum_matrices, quantum_times, N_SPLITS)
-    # QSVC / VQC summaries are disabled together with those models.
-    # print_cv_summary("VQC Model (QNN)", vqc_reports, vqc_matrices, vqc_times, N_SPLITS)
-    # print_cv_summary("QSVC Model (QSVM)", qsvc_reports, qsvc_matrices, qsvc_times, N_SPLITS)
+    print_cv_summary("VQC Model (QNN)", vqc_reports, vqc_matrices, vqc_times, N_SPLITS)
+    print_cv_summary("QSVC Model (QSVM)", qsvc_reports, qsvc_matrices, qsvc_times, N_SPLITS)
 
     # --- 6. ROC Curve Data Points ---
     print("\n--- 6. ROC Curve Data Points (True Label, Score) ---")
@@ -653,14 +640,13 @@ if __name__ == "__main__":
     print("[(True Label, Score for Class 1), ...]")
     print(quantum_roc_data)
 
-    # QSVC / VQC ROC data are disabled together with those models.
-    # print(f"\nVQC Model (QNN) ROC Data ({len(vqc_roc_data)} points):")
-    # print("[(True Label, Score for Class 1), ...]")
-    # print(vqc_roc_data)
-    #
-    # print(f"\nQSVC Model (QSVM) ROC Data ({len(qsvc_roc_data)} points):")
-    # print("[(True Label, Score for Class 1), ...]")
-    # print(qsvc_roc_data)
+    print(f"\nVQC Model (QNN) ROC Data ({len(vqc_roc_data)} points):")
+    print("[(True Label, Score for Class 1), ...]")
+    print(vqc_roc_data)
+
+    print(f"\nQSVC Model (QSVM) ROC Data ({len(qsvc_roc_data)} points):")
+    print("[(True Label, Score for Class 1), ...]")
+    print(qsvc_roc_data)
 
     # --- 7. Calculate Exact ROC Plotting Points ---
     print("\n--- 7. Exact (FPR, TPR) Points for Plotting ---")
@@ -705,28 +691,27 @@ if __name__ == "__main__":
             print("[(FPR, TPR), ...]")
             print(roc_points_q)
 
-        # --- VQC / QSVC ROC plot points are disabled together with those models. ---
-        # # --- VQC Model (QNN) ---
-        # if vqc_roc_data:
-        #     y_true_vqc = [item[0] for item in vqc_roc_data]
-        #     y_scores_vqc = [item[1] for item in vqc_roc_data]
-        #     fpr_vqc, tpr_vqc, _ = roc_curve(y_true_vqc, y_scores_vqc)
-        #     roc_points_vqc = list(zip(fpr_vqc, tpr_vqc))
-        #
-        #     print(f"\nVQC Model (QNN) ROC Plot Points ({len(roc_points_vqc)} points):")
-        #     print("[(FPR, TPR), ...]")
-        #     print(roc_points_vqc)
-        #
-        # # --- QSVC Model (QSVM) ---
-        # if qsvc_roc_data:
-        #     y_true_qsvc = [item[0] for item in qsvc_roc_data]
-        #     y_scores_qsvc = [item[1] for item in qsvc_roc_data]
-        #     fpr_qsvc, tpr_qsvc, _ = roc_curve(y_true_qsvc, y_scores_qsvc)
-        #     roc_points_qsvc = list(zip(fpr_qsvc, tpr_qsvc))
-        #
-        #     print(f"\nQSVC Model (QSVM) ROC Plot Points ({len(roc_points_qsvc)} points):")
-        #     print("[(FPR, TPR), ...]")
-        #     print(roc_points_qsvc)
+        # --- VQC Model (QNN) ---
+        if vqc_roc_data:
+            y_true_vqc = [item[0] for item in vqc_roc_data]
+            y_scores_vqc = [item[1] for item in vqc_roc_data]
+            fpr_vqc, tpr_vqc, _ = roc_curve(y_true_vqc, y_scores_vqc)
+            roc_points_vqc = list(zip(fpr_vqc, tpr_vqc))
+
+            print(f"\nVQC Model (QNN) ROC Plot Points ({len(roc_points_vqc)} points):")
+            print("[(FPR, TPR), ...]")
+            print(roc_points_vqc)
+
+        # --- QSVC Model (QSVM) ---
+        if qsvc_roc_data:
+            y_true_qsvc = [item[0] for item in qsvc_roc_data]
+            y_scores_qsvc = [item[1] for item in qsvc_roc_data]
+            fpr_qsvc, tpr_qsvc, _ = roc_curve(y_true_qsvc, y_scores_qsvc)
+            roc_points_qsvc = list(zip(fpr_qsvc, tpr_qsvc))
+
+            print(f"\nQSVC Model (QSVM) ROC Plot Points ({len(roc_points_qsvc)} points):")
+            print("[(FPR, TPR), ...]")
+            print(roc_points_qsvc)
 
     except Exception as e:
         print(f"\nCould not calculate ROC curve points: {e}")
