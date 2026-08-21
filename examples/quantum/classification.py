@@ -2,11 +2,15 @@
 Data retrieval and preprocessing borrowed from https://www.tensorflow.org/quantum/tutorials/mnist"""
 
 import collections
+import contextlib
 import copy
+import multiprocessing as mp
 import os
 import math
+import sys
 import time # Import the time module
 import json # Import the json module for checkpoints
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 import tensorflow as tf
@@ -15,6 +19,7 @@ from sklearn.model_selection import KFold
 
 from hdlib.model import ClassificationModel, QuantumClassificationModel
 
+# Qiskit imports required for the QSVC and VQC baselines.
 from qiskit_algorithms.optimizers import COBYLA
 from qiskit.circuit.library import ZFeatureMap, ZZFeatureMap, RealAmplitudes
 from qiskit_machine_learning.algorithms.classifiers import VQC, QSVC
@@ -28,6 +33,20 @@ CHANNEL = "IBM-CHANNEL"
 INSTANCE = "IBM-INSTANCE"
 BACKEND = "IBM-BACKEND"
 API_KEY = "YOUR-API-KEY"
+
+# --- Retrain configuration ---
+# Toggle whether the Quantum Model retrain step runs. When set to False the
+# retrain call is skipped and the downstream code uses safe defaults for
+# ``error_rate``, ``epochs`` and the per-epoch history so the script keeps
+# working with or without retrain.
+RETRAIN = True
+RETRAIN_EPOCHS = 10
+RETRAIN_LR = 1.0
+# When True the retrain loop stops as soon as an epoch stops improving the
+# training error (original behaviour). Set to False to run the full
+# RETRAIN_EPOCHS budget and record the complete per-epoch curve; the returned
+# model is unchanged either way (the best-known prototypes are restored).
+RETRAIN_EARLY_STOP = True
 
 def print_cv_summary(model_name, reports, matrices, times, n_splits):
     """Prints a summary of cross-validation results."""
@@ -110,6 +129,262 @@ def print_cv_summary(model_name, reports, matrices, times, n_splits):
     except Exception as e:
         print(f"Could not calculate average metrics: {e}")
         print("Note: This can happen if one class was not predicted in a fold.")
+
+
+def run_fold(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
+             X_cv_pool_np, y_cv_pool_np, dimensionality, n_splits):
+    """Run a single CV fold and return its results dict.
+
+    This function is defined at module scope so it can be pickled and
+    executed in a worker process by ``ProcessPoolExecutor``.
+
+    If a checkpoint file ``fold_<fold_num>_results.json`` already exists,
+    the cached results are loaded and returned instead of recomputing.
+
+    All stdout produced inside this function is suppressed so that folds
+    running concurrently do not interleave their progress messages on the
+    terminal. The aggregated results are printed by the main process once
+    every fold has completed.
+    """
+    checkpoint_file = f"fold_{fold_num}_results.json"
+
+    # Redirect stdout to /dev/null for the entire fold so the parallel
+    # workers stay silent; the main process renders a progress bar and
+    # prints the final summary once everything is done.
+    with open(os.devnull, "w") as _devnull, contextlib.redirect_stdout(_devnull):
+        return _run_fold_body(
+            fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
+            X_cv_pool_np, y_cv_pool_np, dimensionality, n_splits,
+            checkpoint_file,
+        )
+
+
+def _run_fold_body(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
+                   X_cv_pool_np, y_cv_pool_np, dimensionality, n_splits,
+                   checkpoint_file):
+    """Actual fold body; extracted so ``run_fold`` can wrap it in an
+    stdout-redirect context manager without indenting the whole function."""
+
+    # --- Checkpoint Loading ---
+    if os.path.exists(checkpoint_file):
+        print(f"\n--- LOADING FOLD {fold_num}/{n_splits} FROM CHECKPOINT ---")
+        with open(checkpoint_file, 'r') as f:
+            fold_data = json.load(f)
+        return fold_num, fold_data
+
+    # --- If checkpoint not found, run the fold ---
+    print(f"\n--- RUNNING FOLD {fold_num}/{n_splits} ---")
+
+    # Create list-based data for this fold
+    # The models expect lists, not numpy arrays
+    X_train_fold = [X_cv_pool[i] for i in train_index]
+    y_train_fold = [y_cv_pool[i] for i in train_index]
+    X_test_fold = [X_cv_pool[i] for i in test_index]
+    y_test_fold = [y_cv_pool[i] for i in test_index]
+
+    # Create numpy versions for Qiskit models
+    X_train_fold_np = X_cv_pool_np[train_index]
+    y_train_fold_np = y_cv_pool_np[train_index]
+    X_test_fold_np = X_cv_pool_np[test_index]
+    # y_test_fold_np is y_test_fold (already a list of ints)
+
+    # Prepare data for the classical model's specific fit/predict format
+    X_all_fold = X_train_fold + X_test_fold
+    y_all_fold = y_train_fold + y_test_fold
+
+    # Get the indices for the test set relative to X_all_fold
+    test_idx_fold = list(range(len(X_train_fold), len(X_all_fold)))
+
+    # --- Classical Model (Dimensionality=10000) ---
+    print("\nTraining Classical Model (D=10000)...")
+    start_time_c10k = time.perf_counter()
+    model_c10k = ClassificationModel(size=10000, levels=2)
+    model_c10k.fit(X_all_fold, y_all_fold)
+
+    print("Evaluating Classical Model (D=10000)...")
+    _, y_pred_c10k, similarities_c10k, _, _, _ = model_c10k.predict(test_idx_fold, retrain=0)
+    end_time_c10k = time.perf_counter()
+
+    fold_time_c10k = end_time_c10k - start_time_c10k
+    fold_report_c10k = classification_report(y_test_fold, y_pred_c10k, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+    fold_matrix_c10k = confusion_matrix(y_test_fold, y_pred_c10k, labels=[0, 1])
+
+    fold_roc_data_c10k = list()
+    for true_label, sim_pair in zip(y_test_fold, similarities_c10k):
+        score_for_class_1 = 1.0 - sim_pair[1]
+        if math.isnan(score_for_class_1):
+            score_for_class_1 = 0.5
+        fold_roc_data_c10k.append((true_label, float(score_for_class_1)))
+
+    # --- Classical Model ---
+    print(f"\nTraining Classical Model (D={dimensionality})...")
+    start_time_c = time.perf_counter()
+    model_c = ClassificationModel(size=dimensionality, levels=2)
+    model_c.fit(X_all_fold, y_all_fold)
+
+    print(f"Evaluating Classical Model (D={dimensionality})...")
+    _, y_pred_c, similarities_c, _, _, _ = model_c.predict(test_idx_fold, retrain=0)
+    end_time_c = time.perf_counter()
+
+    fold_time_c = end_time_c - start_time_c
+    fold_report_c = classification_report(y_test_fold, y_pred_c, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+    fold_matrix_c = confusion_matrix(y_test_fold, y_pred_c, labels=[0, 1])
+
+    fold_roc_data_c = list()
+    for true_label, sim_pair in zip(y_test_fold, similarities_c):
+        score_for_class_1 = 1.0 - sim_pair[1]
+        if math.isnan(score_for_class_1):
+            score_for_class_1 = 0.5
+        fold_roc_data_c.append((true_label, float(score_for_class_1)))
+
+    # --- Quantum Model ---
+    print(f"\nTraining Quantum Model (D={dimensionality}; chunk_size=5)...")
+    start_time_q = time.perf_counter()
+
+    model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000)
+    model_q.fit(X_train_fold, y_train_fold)
+
+    if RETRAIN:
+        print(f"Retraining Quantum Model (D={dimensionality}; epochs={RETRAIN_EPOCHS}; lr={RETRAIN_LR})...")
+        # Passing the held-out fold as test_points records a per-epoch
+        # ``test_error`` alongside the training error, so the saved history is a
+        # genuine test curve (not just training error). This costs one extra
+        # quantum predict over the test set per epoch.
+        error_rate, epochs = model_q.retrain(
+            X_train_fold, y_train_fold,
+            epochs=RETRAIN_EPOCHS, lr=RETRAIN_LR, verbose=False,
+            test_points=X_test_fold, test_labels=y_test_fold,
+            early_stop=RETRAIN_EARLY_STOP,
+        )
+        # Capture the per-epoch error curve and save it inside this fold's
+        # own JSON checkpoint (under ``q_epochs`` / ``q_final_epoch`` /
+        # ``q_final_error``) so all fold data lives in a single file per fold.
+        fold_epoch_history = list(getattr(model_q, "retrain_history_", []))
+    else:
+        # Retrain skipped: fall back to safe defaults so the rest of the fold
+        # (checkpoint payload, JSON serialisation) still has valid values.
+        print("Retrain disabled (RETRAIN=False); skipping retrain step.")
+        error_rate = float("nan")
+        epochs = 0
+        fold_epoch_history = []
+
+    print(f"\nEvaluating Quantum Model (D={dimensionality})...")
+    y_pred_q, scores_q = model_q.predict(X_test_fold)
+    end_time_q = time.perf_counter()
+
+    fold_time_q = end_time_q - start_time_q
+    fold_report_q = classification_report(y_test_fold, y_pred_q, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+    fold_matrix_q = confusion_matrix(y_test_fold, y_pred_q, labels=[0, 1])
+
+    fold_roc_data_q = list()
+    for true_label, score_pair in zip(y_test_fold, scores_q):
+        # Use the decision MARGIN (similarity to the positive prototype minus
+        # similarity to the negative one). The classifier decides on both
+        # prototypes, so ranking on score_pair[1] alone is inconsistent with the
+        # predictions and makes AUC move opposite to accuracy after retraining.
+        score_for_class_1 = score_pair[1] - score_pair[0]
+        if math.isnan(score_for_class_1):
+            score_for_class_1 = 0.0
+        fold_roc_data_q.append((true_label, float(score_for_class_1)))
+
+    n_features = X_train_fold_np.shape[1]
+
+    # --- QSVC Model (QSVM) ---
+    print("\nTraining QSVC Model (QSVM)...")
+    start_time_qsvc = time.perf_counter()
+
+    feature_map_qsvc = ZZFeatureMap(feature_dimension=n_features, reps=1, entanglement='linear')
+
+    sampler = StatevectorSampler()
+    fidelity = ComputeUncompute(sampler=sampler)
+    qsvc_kernel = FidelityQuantumKernel(fidelity=fidelity, feature_map=feature_map_qsvc)
+
+    qsvc = QSVC(quantum_kernel=qsvc_kernel)
+    qsvc.fit(X_train_fold_np, y_train_fold_np)
+
+    print("Evaluating QSVC Model...")
+    y_pred_qsvc = qsvc.predict(X_test_fold_np)
+    scores_qsvc = qsvc.decision_function(X_test_fold_np)
+
+    end_time_qsvc = time.perf_counter()
+
+    fold_time_qsvc = end_time_qsvc - start_time_qsvc
+    fold_report_qsvc = classification_report(y_test_fold, y_pred_qsvc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+    fold_matrix_qsvc = confusion_matrix(y_test_fold, y_pred_qsvc, labels=[0, 1])
+
+    scores_qsvc_list = scores_qsvc.tolist()
+    fold_roc_data_qsvc = []
+    for true_label, score_for_class_1 in zip(y_test_fold, scores_qsvc_list):
+        fold_roc_data_qsvc.append((true_label, float(score_for_class_1)))
+
+    # --- VQC Model (QNN) ---
+    print("\nTraining VQC Model (QNN)...")
+    start_time_vqc = time.perf_counter()
+
+    feature_map_vqc = ZFeatureMap(feature_dimension=n_features, reps=1)
+    ansatz_vqc = RealAmplitudes(num_qubits=n_features, reps=3)
+    optimizer_vqc = COBYLA(maxiter=100)
+
+    vqc = VQC(
+        feature_map=feature_map_vqc,
+        ansatz=ansatz_vqc,
+        optimizer=optimizer_vqc
+    )
+
+    vqc.fit(X_train_fold_np, y_train_fold_np)
+
+    print("Evaluating VQC Model...")
+    y_pred_vqc = vqc.predict(X_test_fold_np)
+    scores_vqc_raw = vqc.neural_network.forward(X_test_fold_np, vqc.weights)
+
+    end_time_vqc = time.perf_counter()
+
+    fold_time_vqc = end_time_vqc - start_time_vqc
+    fold_report_vqc = classification_report(y_test_fold, y_pred_vqc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
+    fold_matrix_vqc = confusion_matrix(y_test_fold, y_pred_vqc, labels=[0, 1])
+
+    scores_vqc_class1 = [prob[1] for prob in scores_vqc_raw.tolist()]
+    fold_roc_data_vqc = []
+    for true_label, score_for_class_1 in zip(y_test_fold, scores_vqc_class1):
+        fold_roc_data_vqc.append((true_label, float(score_for_class_1)))
+
+    # --- Checkpoint Saving ---
+    fold_data = {
+        'c10k_report': fold_report_c10k,
+        'c10k_matrix': fold_matrix_c10k.tolist(),
+        'c10k_time': fold_time_c10k,
+        'c10k_roc_data': fold_roc_data_c10k,
+
+        'c_report': fold_report_c,
+        'c_matrix': fold_matrix_c.tolist(),
+        'c_time': fold_time_c,
+        'c_roc_data': fold_roc_data_c,
+
+        'q_report': fold_report_q,
+        'q_matrix': fold_matrix_q.tolist(),
+        'q_time': fold_time_q,
+        'q_roc_data': fold_roc_data_q,
+        'q_epochs': fold_epoch_history,
+        'q_final_epoch': int(epochs),
+        'q_final_error': float(error_rate),
+
+        'vqc_report': fold_report_vqc,
+        'vqc_matrix': fold_matrix_vqc.tolist(),
+        'vqc_time': fold_time_vqc,
+        'vqc_roc_data': fold_roc_data_vqc,
+
+        'qsvc_report': fold_report_qsvc,
+        'qsvc_matrix': fold_matrix_qsvc.tolist(),
+        'qsvc_time': fold_time_qsvc,
+        'qsvc_roc_data': fold_roc_data_qsvc,
+    }
+
+    with open(checkpoint_file, 'w') as f:
+        json.dump(fold_data, f, indent=4)
+
+    print(f"--- SAVED FOLD {fold_num} RESULTS TO {checkpoint_file} ---")
+
+    return fold_num, fold_data
 
 
 if __name__ == "__main__":
@@ -259,299 +534,87 @@ if __name__ == "__main__":
 
     dimensionality = 32
 
-    fold_num = 1
+    # --- Submit all folds to a process pool so they run in parallel ---
+    # Using ProcessPoolExecutor (not threads) so each fold runs in its own
+    # Python process and is not limited by the GIL.
+    #
+    # Force the "spawn" start method: this parent process has already imported
+    # and used TensorFlow (and each worker uses Qiskit Aer), both of which start
+    # background threads. Forking a multi-threaded process can deadlock the
+    # children, so we start them fresh with "spawn" instead. We also cap the
+    # worker count at the number of CPUs to avoid oversubscribing the machine,
+    # since every fold itself spins up TF/Aer threads.
+    mp_ctx = mp.get_context("spawn")
+    max_workers = max(1, min(N_SPLITS, os.cpu_count() or N_SPLITS))
+    fold_splits = list(enumerate(kf.split(X_cv_pool_np), start=1))
 
-    for train_index, test_index in kf.split(X_cv_pool_np):        
-        checkpoint_file = f"fold_{fold_num}_results.json"
+    print(f"\n--- Launching {len(fold_splits)} folds in parallel ---")
 
-        # --- Checkpoint Loading ---
-        # Check if results for this fold already exist
-        if os.path.exists(checkpoint_file):
-            print(f"\n--- LOADING FOLD {fold_num}/{N_SPLITS} FROM CHECKPOINT ---")
+    def _render_progress(completed, total, width=40):
+        """Render a simple in-place progress bar on stderr."""
+        pct = completed / total if total else 0.0
+        filled = int(width * pct)
+        bar = "#" * filled + "-" * (width - filled)
+        sys.stderr.write(f"\rProgress: [{bar}] {pct * 100:6.2f}%  ({completed}/{total} folds)")
+        sys.stderr.flush()
+        if completed == total:
+            sys.stderr.write("\n")
+            sys.stderr.flush()
 
-            with open(checkpoint_file, 'r') as f:
-                fold_data = json.load(f)
+    results_by_fold = {}
+    total_folds = len(fold_splits)
+    _render_progress(0, total_folds)
+    with ProcessPoolExecutor(max_workers=max_workers, mp_context=mp_ctx) as executor:
+        futures = [
+            executor.submit(
+                run_fold,
+                fold_num,
+                train_index,
+                test_index,
+                X_cv_pool,
+                y_cv_pool,
+                X_cv_pool_np,
+                y_cv_pool_np,
+                dimensionality,
+                N_SPLITS,
+            )
+            for fold_num, (train_index, test_index) in fold_splits
+        ]
 
-            # Load and append C10K data
-            classical_10k_reports.append(fold_data['c10k_report'])
-            classical_10k_matrices.append(np.array(fold_data['c10k_matrix']))
-            classical_10k_times.append(fold_data['c10k_time'])
-            classical_10k_roc_data.extend(fold_data['c10k_roc_data'])
+        for future in as_completed(futures):
+            fold_num, fold_data = future.result()
+            results_by_fold[fold_num] = fold_data
+            _render_progress(len(results_by_fold), total_folds)
 
-            # Load and append C data
-            classical_reports.append(fold_data['c_report'])
-            classical_matrices.append(np.array(fold_data['c_matrix']))
-            classical_times.append(fold_data['c_time'])
-            classical_roc_data.extend(fold_data['c_roc_data'])
+    # Aggregate results in deterministic fold order (1..N_SPLITS) so the
+    # downstream summary is identical to the sequential version.
+    for fold_num in sorted(results_by_fold.keys()):
+        fold_data = results_by_fold[fold_num]
 
-            # Load and append Q data
-            quantum_reports.append(fold_data['q_report'])
-            quantum_matrices.append(np.array(fold_data['q_matrix']))
-            quantum_times.append(fold_data['q_time'])
-            quantum_roc_data.extend(fold_data['q_roc_data'])
+        classical_10k_reports.append(fold_data['c10k_report'])
+        classical_10k_matrices.append(np.array(fold_data['c10k_matrix']))
+        classical_10k_times.append(fold_data['c10k_time'])
+        classical_10k_roc_data.extend(fold_data['c10k_roc_data'])
 
-            # Load and append VQC data
-            vqc_reports.append(fold_data['vqc_report'])
-            vqc_matrices.append(np.array(fold_data['vqc_matrix']))
-            vqc_times.append(fold_data['vqc_time'])
-            vqc_roc_data.extend(fold_data['vqc_roc_data'])
+        classical_reports.append(fold_data['c_report'])
+        classical_matrices.append(np.array(fold_data['c_matrix']))
+        classical_times.append(fold_data['c_time'])
+        classical_roc_data.extend(fold_data['c_roc_data'])
 
-            # Load and append QSVC data
-            qsvc_reports.append(fold_data['qsvc_report'])
-            qsvc_matrices.append(np.array(fold_data['qsvc_matrix']))
-            qsvc_times.append(fold_data['qsvc_time'])
-            qsvc_roc_data.extend(fold_data['qsvc_roc_data'])
+        quantum_reports.append(fold_data['q_report'])
+        quantum_matrices.append(np.array(fold_data['q_matrix']))
+        quantum_times.append(fold_data['q_time'])
+        quantum_roc_data.extend(fold_data['q_roc_data'])
 
-            fold_num += 1
+        vqc_reports.append(fold_data['vqc_report'])
+        vqc_matrices.append(np.array(fold_data['vqc_matrix']))
+        vqc_times.append(fold_data['vqc_time'])
+        vqc_roc_data.extend(fold_data['vqc_roc_data'])
 
-            continue # Skip to the next fold
-
-        # --- If checkpoint not found, run the fold ---
-        print(f"\n--- RUNNING FOLD {fold_num}/{N_SPLITS} ---")
-
-        # Create list-based data for this fold
-        # The models expect lists, not numpy arrays
-        X_train_fold = [X_cv_pool[i] for i in train_index]
-        y_train_fold = [y_cv_pool[i] for i in train_index]
-        X_test_fold = [X_cv_pool[i] for i in test_index]
-        y_test_fold = [y_cv_pool[i] for i in test_index]
-
-        # Create numpy versions for Qiskit models
-        X_train_fold_np = X_cv_pool_np[train_index]
-        y_train_fold_np = y_cv_pool_np[train_index]
-        X_test_fold_np = X_cv_pool_np[test_index]
-        # y_test_fold_np is y_test_fold (already a list of ints)
-
-        # Prepare data for the classical model's specific fit/predict format
-        X_all_fold = X_train_fold + X_test_fold
-        y_all_fold = y_train_fold + y_test_fold
-
-        # Get the indices for the test set relative to X_all_fold
-        test_idx_fold = list(range(len(X_train_fold), len(X_all_fold)))
-
-        # --- Classical Model (Dimensionality=10000) ---
-        print("\nTraining Classical Model (D=10000)...")
-        start_time_c10k = time.perf_counter()
-        model_c10k = ClassificationModel(size=10000, levels=2)
-        model_c10k.fit(X_all_fold, y_all_fold)
-
-        print("Evaluating Classical Model (D=10000)...")
-        # Capture the 'similarities' output (index 2)
-        _, y_pred_c10k, similarities_c10k, _, _, _ = model_c10k.predict(test_idx_fold, retrain=0)
-        end_time_c10k = time.perf_counter()
-
-        # Store this fold's results in variables
-        fold_time_c10k = end_time_c10k - start_time_c10k
-        fold_report_c10k = classification_report(y_test_fold, y_pred_c10k, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-        fold_matrix_c10k = confusion_matrix(y_test_fold, y_pred_c10k, labels=[0, 1]) # Ensure consistent label order
-
-        # Store ROC data points (True Label, Score for Class 1)
-        fold_roc_data_c10k = list()
-        for true_label, sim_pair in zip(y_test_fold, similarities_c10k):
-            # Invert distance (0 to 1) to create a score (0 to 1), where 1 is a perfect match
-            score_for_class_1 = 1.0 - sim_pair[1] # Using 1.0 - distance_to_positive_class
-            if math.isnan(score_for_class_1):
-                score_for_class_1 = 0.5
-            fold_roc_data_c10k.append((true_label, float(score_for_class_1)))
-
-        # --- Classical Model ---
-        print(f"\nTraining Classical Model (D={dimensionality})...")
-        start_time_c = time.perf_counter()
-        model_c = ClassificationModel(size=dimensionality, levels=2)
-        model_c.fit(X_all_fold, y_all_fold) # Uses same X_all_fold, y_all_fold, test_idx_fold
-
-        print(f"Evaluating Classical Model (D={dimensionality})...")
-        # Capture the 'similarities' output (index 2)
-        _, y_pred_c, similarities_c, _, _, _ = model_c.predict(test_idx_fold, retrain=0)
-        end_time_c = time.perf_counter()
-
-        # Store this fold's results in variables
-        fold_time_c = end_time_c - start_time_c
-        fold_report_c = classification_report(y_test_fold, y_pred_c, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-        fold_matrix_c = confusion_matrix(y_test_fold, y_pred_c, labels=[0, 1]) # Ensure consistent label order
-
-        # Store ROC data points (True Label, Score for Class 1)
-        fold_roc_data_c = list()
-        for true_label, sim_pair in zip(y_test_fold, similarities_c):
-            # Invert distance (0 to 1) to create a score (0 to 1), where 1 is a perfect match
-            score_for_class_1 = 1.0 - sim_pair[1] # Using 1.0 - distance_to_positive_class
-            if math.isnan(score_for_class_1):
-                score_for_class_1 = 0.5
-            fold_roc_data_c.append((true_label, float(score_for_class_1)))
-
-        # --- Quantum Model ---
-        print(f"\nTraining Quantum Model (D={dimensionality}; chunk_size=5)...")
-        start_time_q = time.perf_counter()
-
-        # Noise-free simulation
-        model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000)
-
-        # Simulation with noise model
-        #model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000, api_key=API_KEY, noise_model_from=BACKEND)
-
-        # Quantum hardware
-        #model_q = QuantumClassificationModel(size=dimensionality, levels=2, shots=10000, channel=CHANNEL, instance=INSTANCE, backend=BACKEND, api_key=API_KEY)
-
-        # One-shot learning
-        model_q.fit(X_train_fold, y_train_fold) # Quantum model uses standard fit/predict
-
-        print(f"Retraining Quantum Model (D={dimensionality}; epochs=10)...")
-        error_rate, epochs = model_q.retrain(X_train_fold, y_train_fold, epochs=10)
-
-        print(f"\nEvaluating Quantum Model (D={dimensionality})...")
-        y_pred_q, scores_q = model_q.predict(X_test_fold)
-        end_time_q = time.perf_counter()
-
-        # Store this fold's results in variables
-        fold_time_q = end_time_q - start_time_q
-        fold_report_q = classification_report(y_test_fold, y_pred_q, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-        fold_matrix_q = confusion_matrix(y_test_fold, y_pred_q, labels=[0, 1]) # Ensure consistent label order
-
-        # Store ROC data points (True Label, Score for Class 1)
-        fold_roc_data_q = list()
-        for true_label, score_pair in zip(y_test_fold, scores_q):
-            score_for_class_1 = score_pair[1] # Using score for positive class (Digit 3)
-            if math.isnan(score_for_class_1):
-                score_for_class_1 = 0.5
-            fold_roc_data_q.append((true_label, float(score_for_class_1)))
-
-        n_features = X_train_fold_np.shape[1] # Should be 16
-
-        # --- QSVC Model (QSVM) ---
-        print("\nTraining QSVC Model (QSVM)...")
-        start_time_qsvc = time.perf_counter()
-
-        # Setup QSVC feature map
-        feature_map_qsvc = ZZFeatureMap(feature_dimension=n_features, reps=1, entanglement='linear')
-
-        sampler = StatevectorSampler()
-
-        # Create the fidelity object
-        fidelity = ComputeUncompute(sampler=sampler)
-
-        # Create the QuantumKernel using the fidelity and feature map
-        qsvc_kernel = FidelityQuantumKernel(fidelity=fidelity, feature_map=feature_map_qsvc)
-
-        qsvc = QSVC(quantum_kernel=qsvc_kernel)
-
-        qsvc.fit(X_train_fold_np, y_train_fold_np)
-
-        print("Evaluating QSVC Model...")
-        y_pred_qsvc = qsvc.predict(X_test_fold_np)
-        
-        # Get decision function scores for ROC (1D array)
-        scores_qsvc = qsvc.decision_function(X_test_fold_np)
-
-        end_time_qsvc = time.perf_counter()
-
-        # Store this fold's results
-        fold_time_qsvc = end_time_qsvc - start_time_qsvc
-        fold_report_qsvc = classification_report(y_test_fold, y_pred_qsvc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-        fold_matrix_qsvc = confusion_matrix(y_test_fold, y_pred_qsvc, labels=[0, 1])
-
-        scores_qsvc_list = scores_qsvc.tolist()
-        fold_roc_data_qsvc = []
-        for true_label, score_for_class_1 in zip(y_test_fold, scores_qsvc_list):
-            fold_roc_data_qsvc.append((true_label, float(score_for_class_1)))
-
-        # --- VQC Model (QNN) ---
-        print("\nTraining VQC Model (QNN)...")
-        start_time_vqc = time.perf_counter()
-        
-        # Setup VQC components
-        feature_map_vqc = ZFeatureMap(feature_dimension=n_features, reps=1)
-        ansatz_vqc = RealAmplitudes(num_qubits=n_features, reps=3)
-        optimizer_vqc = COBYLA(maxiter=100)
-
-        vqc = VQC(
-            feature_map=feature_map_vqc,
-            ansatz=ansatz_vqc,
-            optimizer=optimizer_vqc
-        )
-
-        vqc.fit(X_train_fold_np, y_train_fold_np)
-        
-        print("Evaluating VQC Model...")
-        y_pred_vqc = vqc.predict(X_test_fold_np)
-        
-        # Get probabilities (scores) for ROC. VQC's network forward pass returns (batch_size, num_classes)
-        scores_vqc_raw = vqc.neural_network.forward(X_test_fold_np, vqc.weights)
-        
-        end_time_vqc = time.perf_counter()
-
-        # Store this fold's results
-        fold_time_vqc = end_time_vqc - start_time_vqc
-        fold_report_vqc = classification_report(y_test_fold, y_pred_vqc, target_names=["Digit 6", "Digit 3"], output_dict=True, zero_division=0)
-        fold_matrix_vqc = confusion_matrix(y_test_fold, y_pred_vqc, labels=[0, 1])
-
-        # Get the score for class 1
-        scores_vqc_class1 = [prob[1] for prob in scores_vqc_raw.tolist()]
-        fold_roc_data_vqc = []
-        for true_label, score_for_class_1 in zip(y_test_fold, scores_vqc_class1):
-            fold_roc_data_vqc.append((true_label, float(score_for_class_1)))
-
-        # --- Checkpoint Saving ---
-        # Collate all results for this fold
-        fold_data = {
-            'c10k_report': fold_report_c10k,
-            'c10k_matrix': fold_matrix_c10k.tolist(),
-            'c10k_time': fold_time_c10k,
-            'c10k_roc_data': fold_roc_data_c10k,
-
-            'c_report': fold_report_c,
-            'c_matrix': fold_matrix_c.tolist(),
-            'c_time': fold_time_c,
-            'c_roc_data': fold_roc_data_c,
-
-            'q_report': fold_report_q,
-            'q_matrix': fold_matrix_q.tolist(),
-            'q_time': fold_time_q,
-            'q_roc_data': fold_roc_data_q,
-
-            'vqc_report': fold_report_vqc,
-            'vqc_matrix': fold_matrix_vqc.tolist(),
-            'vqc_time': fold_time_vqc,
-            'vqc_roc_data': fold_roc_data_vqc,
-
-            'qsvc_report': fold_report_qsvc,
-            'qsvc_matrix': fold_matrix_qsvc.tolist(),
-            'qsvc_time': fold_time_qsvc,
-            'qsvc_roc_data': fold_roc_data_qsvc
-        }
-
-        # Save this fold's data to its checkpoint file
-        with open(checkpoint_file, 'w') as f:
-            json.dump(fold_data, f, indent=4)
-
-        print(f"--- SAVED FOLD {fold_num} RESULTS TO {checkpoint_file} ---")
-
-        # --- Append results to main lists for final summary ---
-        classical_10k_reports.append(fold_report_c10k)
-        classical_10k_matrices.append(fold_matrix_c10k)
-        classical_10k_times.append(fold_time_c10k)
-        classical_10k_roc_data.extend(fold_roc_data_c10k)
-
-        classical_reports.append(fold_report_c)
-        classical_matrices.append(fold_matrix_c)
-        classical_times.append(fold_time_c)
-        classical_roc_data.extend(fold_roc_data_c)
-
-        quantum_reports.append(fold_report_q)
-        quantum_matrices.append(fold_matrix_q)
-        quantum_times.append(fold_time_q)
-        quantum_roc_data.extend(fold_roc_data_q)
-
-        vqc_reports.append(fold_report_vqc)
-        vqc_matrices.append(fold_matrix_vqc)
-        vqc_times.append(fold_time_vqc)
-        vqc_roc_data.extend(fold_roc_data_vqc)
-
-        qsvc_reports.append(fold_report_qsvc)
-        qsvc_matrices.append(fold_matrix_qsvc)
-        qsvc_times.append(fold_time_qsvc)
-        qsvc_roc_data.extend(fold_roc_data_qsvc)
-
-        fold_num += 1
+        qsvc_reports.append(fold_data['qsvc_report'])
+        qsvc_matrices.append(np.array(fold_data['qsvc_matrix']))
+        qsvc_times.append(fold_data['qsvc_time'])
+        qsvc_roc_data.extend(fold_data['qsvc_roc_data'])
 
     # --- 5. Cross-Validation Results Summary ---
     print("\n--- 5. Cross-Validation Results Summary ---")
@@ -634,7 +697,7 @@ if __name__ == "__main__":
             y_scores_vqc = [item[1] for item in vqc_roc_data]
             fpr_vqc, tpr_vqc, _ = roc_curve(y_true_vqc, y_scores_vqc)
             roc_points_vqc = list(zip(fpr_vqc, tpr_vqc))
-            
+
             print(f"\nVQC Model (QNN) ROC Plot Points ({len(roc_points_vqc)} points):")
             print("[(FPR, TPR), ...]")
             print(roc_points_vqc)
@@ -645,7 +708,7 @@ if __name__ == "__main__":
             y_scores_qsvc = [item[1] for item in qsvc_roc_data]
             fpr_qsvc, tpr_qsvc, _ = roc_curve(y_true_qsvc, y_scores_qsvc)
             roc_points_qsvc = list(zip(fpr_qsvc, tpr_qsvc))
-            
+
             print(f"\nQSVC Model (QSVM) ROC Plot Points ({len(roc_points_qsvc)} points):")
             print("[(FPR, TPR), ...]")
             print(roc_points_qsvc)
