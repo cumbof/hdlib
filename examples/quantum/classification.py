@@ -210,10 +210,15 @@ def _run_fold_body(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
     fold_matrix_c10k = confusion_matrix(y_test_fold, y_pred_c10k, labels=[0, 1])
 
     fold_roc_data_c10k = list()
-    for true_label, sim_pair in zip(y_test_fold, similarities_c10k):
-        score_for_class_1 = 1.0 - sim_pair[1]
+    for true_label, dist_pair in zip(y_test_fold, similarities_c10k):
+        # Use the decision MARGIN, matching the quantum model below. Note that
+        # ClassificationModel.predict returns cosine DISTANCES, so the margin is
+        # distance-to-class-0 minus distance-to-class-1 (higher => class 1).
+        # Ranking on 1 - dist_pair[1] alone discards the opposing prototype and
+        # depresses AUC well below what the accuracy implies.
+        score_for_class_1 = dist_pair[0] - dist_pair[1]
         if math.isnan(score_for_class_1):
-            score_for_class_1 = 0.5
+            score_for_class_1 = 0.0
         fold_roc_data_c10k.append((true_label, float(score_for_class_1)))
 
     # --- Classical Model ---
@@ -231,10 +236,12 @@ def _run_fold_body(fold_num, train_index, test_index, X_cv_pool, y_cv_pool,
     fold_matrix_c = confusion_matrix(y_test_fold, y_pred_c, labels=[0, 1])
 
     fold_roc_data_c = list()
-    for true_label, sim_pair in zip(y_test_fold, similarities_c):
-        score_for_class_1 = 1.0 - sim_pair[1]
+    for true_label, dist_pair in zip(y_test_fold, similarities_c):
+        # Decision margin over cosine DISTANCES (see the D=10000 model above):
+        # distance-to-class-0 minus distance-to-class-1, higher => class 1.
+        score_for_class_1 = dist_pair[0] - dist_pair[1]
         if math.isnan(score_for_class_1):
-            score_for_class_1 = 0.5
+            score_for_class_1 = 0.0
         fold_roc_data_c.append((true_label, float(score_for_class_1)))
 
     # --- Quantum Model ---
