@@ -83,6 +83,8 @@ Please credit our work in your manuscript by citing:
 > Cumbo et al., (2026). Quantum Hyperdimensional Computing: a foundational paradigm for quantum neuromorphic architectures. _npj Unconventional Computing_, 3(1), 21. https://doi.org/10.1038/s44335-026-00064-6
 >
 > Cumbo et al., (2026). Designing vector-symbolic architectures for biomedical applications: ten tips and common pitfalls. _PeerJ Computer Science_, 12, e3682. https://doi.org/10.7717/peerj-cs.3682
+>
+> Cumbo et al., (2026). Predicting the toxicity of chemical compounds via Hyperdimensional Computing. _Molecular Informatics_, 45(9), e70052. https://doi.org/10.1002/minf.70052
 
 ## Support and contributions
 
