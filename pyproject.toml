@@ -2,6 +2,73 @@
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "hdlib"
+description = "Hyperdimensional Computing Library for building Vector Symbolic Architectures in Python"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Fabio Cumbo", email = "fabio.cumbo@gmail.com"},
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "mthree>=3.0.0",
+    "numpy>=2.3.4",
+    "qiskit>=2.2.1",
+    "qiskit-aer>=0.17.2",
+    "qiskit-ibm-runtime>=0.42.0",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.16.2",
+    # Required by the chopin2 script, which is installed with the package.
+    "tabulate>=0.9.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+# Only needed to run the scripts under examples/; nothing in hdlib imports these.
+examples = [
+    "qiskit_machine_learning>=0.8.4",
+]
+test = [
+    "pytest>=8",
+]
+dev = [
+    "build>=1",
+    "twine>=5",
+    "pytest>=8",
+]
+
+[project.urls]
+Homepage = "https://github.com/cumbof/hdlib"
+Issues = "https://github.com/cumbof/hdlib/issues"
+Source = "https://github.com/cumbof/hdlib"
+Wiki = "https://github.com/cumbof/hdlib/wiki"
+
+[tool.setuptools]
+zip-safe = false
+license-files = ["LICENSE"]
+# Installed as a plain script rather than a console entry point: chopin2 lives
+# under examples/ and is not an importable package.
+script-files = ["examples/chopin2/chopin2.py"]
+
+[tool.setuptools.dynamic]
+version = {attr = "hdlib.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["hdlib", "hdlib.*"]
+exclude = ["test", "test.*"]
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["test"]
