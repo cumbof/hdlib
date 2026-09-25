@@ -1,0 +1,53 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # Required for PyPI trusted publishing (OIDC). No API token is stored.
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Check distributions
+        run: python -m twine check dist/*
+
+      - name: Verify the built version matches the release tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          BUILT=$(ls dist/*.tar.gz | sed -E 's/.*hdlib-(.*)\.tar\.gz/\1/')
+          echo "release tag: $TAG"
+          echo "built version: $BUILT"
+          if [ "$TAG" != "$BUILT" ]; then
+            echo "::error::Release tag ($TAG) does not match the version in hdlib/__init__.py ($BUILT)"
+            exit 1
+          fi
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
