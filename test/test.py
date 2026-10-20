@@ -132,6 +132,32 @@ class TestHDLib(unittest.TestCase):
             with self.subTest():
                 self.assertEqual(len(space), len(pickle_space))
 
+    def test_bulk_insert(self):
+        """Unit tests for hdlib/space.py:Space class
+
+        The `tags` argument of `bulk_insert` is a list of lists parallel to the `names` argument.
+        The tags at position `i` must be assigned to the vector named `names[i]`.
+        """
+
+        # The names are intentionally not in ascending order
+        names = [30, 20, 10]
+        tags = [["tag_30"], ["tag_20"], ["tag_10"]]
+
+        space = Space(vtype="bipolar")
+
+        # Add the vectors in bulk, each one with its own set of tags
+        space.bulk_insert(names=names, tags=tags)
+
+        for name, expected_tags in zip(names, tags):
+            with self.subTest():
+                # Each vector must carry exactly the tags given for its own name
+                vector = space.get(names=[name])[0]
+                self.assertEqual(vector.tags, set(expected_tags))
+
+        with self.subTest():
+            # Vectors must be added to the space in the same order as the input names
+            self.assertEqual(space.memory(), [str(name) for name in names])
+
     def test_arithmetic(self):
         """Unit tests for hdlib/arithmetic.py"""
 
