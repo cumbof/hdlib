@@ -37,7 +37,21 @@ jobs:
           python -m pip install -e ".[test]"
 
       - name: Run tests
-        run: python -m pytest
+        run: |
+          export LD_PRELOAD="$(python - <<'PY'
+          import glob
+          import os
+          import site
+
+          roots = set(site.getsitepackages() + [site.getusersitepackages()])
+          print(":".join(
+              path
+              for root in roots
+              for path in glob.glob(os.path.join(root, "*.libs", "libgomp-*.so*"))
+          ))
+          PY
+          )"
+          python -m pytest
 
   build:
     name: Build package
