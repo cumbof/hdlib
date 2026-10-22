@@ -444,13 +444,22 @@ class Space(object):
         if tags and len(names) != len(tags):
             raise Exception("The number of vector IDs must match the size of the tags list")
 
-        names = set(names)
+        # The names are iterated in the order they are provided, so that the position used to
+        # index the parallel list of tags always refers to the name given at that position.
+        # The names that have already been processed are tracked to skip the duplicated ones.
+        processed_names = set()
 
         for pos, name in enumerate(names):
             if not isinstance(name, (bool, str, int, float, None)):
                 raise TypeError("Entries in input list must be instances of primitives")
 
             name = str(name)
+
+            if name in processed_names:
+                # Skip the duplicated names, keeping the first occurrence
+                continue
+
+            processed_names.add(name)
 
             if name in self.space:
                 if not ignore_existing:
@@ -459,6 +468,8 @@ class Space(object):
                 else:
                     continue
 
+            # The tags list is parallel to the names list, thus the tags at
+            # position `pos` belong to the vector named `names[pos]`
             vector_tags = set(tags[pos]) if tags else set()
 
             vector = Vector(name=name, size=self.size, tags=vector_tags, vtype=self.vtype)
